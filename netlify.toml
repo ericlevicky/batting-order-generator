@@ -1,0 +1,15 @@
+[build]
+  # Build command
+  command = "npm run build"
+  
+  # Directory that contains the built files
+  publish = "dist"
+  
+  # Node version for build environment
+  environment = { NODE_VERSION = "20" }
+
+# Redirects for single page application
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

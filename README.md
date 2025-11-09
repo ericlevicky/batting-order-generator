@@ -106,6 +106,35 @@ After generating a lineup, you can view:
 - Vite 5.4 (fast build tool)
 - Vanilla CSS (no external styling dependencies)
 
+## Deployment
+
+This project is configured to automatically deploy to Netlify when a pull request is merged to the `main` branch.
+
+### Setup Netlify Deployment
+
+1. **Create a Netlify Account**: Sign up for a free account at [netlify.com](https://www.netlify.com/)
+
+2. **Create a New Site**: In Netlify, create a new site (you can create it manually or link to your GitHub repository)
+
+3. **Get Required Credentials**:
+   - **NETLIFY_AUTH_TOKEN**: Go to User Settings → Applications → Personal Access Tokens → New access token
+   - **NETLIFY_SITE_ID**: Found in Site Settings → General → Site information → API ID
+
+4. **Configure GitHub Secrets**:
+   - Go to your GitHub repository → Settings → Secrets and variables → Actions
+   - Add two repository secrets:
+     - `NETLIFY_AUTH_TOKEN`: Your Netlify personal access token
+     - `NETLIFY_SITE_ID`: Your Netlify site API ID
+
+5. **Automatic Deployment**: Once configured, the site will automatically deploy when PRs are merged to `main`
+
+### Manual Deployment
+
+You can also trigger a deployment manually:
+- Go to Actions tab in GitHub
+- Select "Deploy to Netlify" workflow
+- Click "Run workflow"
+
 ## License
 
 Open source - feel free to use and modify for your team!
