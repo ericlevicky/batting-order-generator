@@ -1,5 +1,7 @@
 # ⚾ Little League Batting Order Generator
 
+[![Tests](https://github.com/ericlevicky/batting-order-generator/actions/workflows/test.yml/badge.svg)](https://github.com/ericlevicky/batting-order-generator/actions/workflows/test.yml)
+
 A modern React web application for generating batting orders and field position rotations for little league baseball games.
 
 ## Features
@@ -39,6 +41,15 @@ A modern React web application for generating batting orders and field position 
    npm run build
    ```
    Built files will be in the `dist/` directory
+
+4. **Run Tests**
+   ```bash
+   npm test
+   ```
+   Run tests in watch mode:
+   ```bash
+   npm run test:watch
+   ```
 
 ## Usage
 
