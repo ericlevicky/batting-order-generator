@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { shuffleArray } from '../utils/storage';
 import './PlayerInput.css';
 
 function PlayerInput({ players, setPlayers }) {
@@ -19,6 +20,12 @@ function PlayerInput({ players, setPlayers }) {
       { id: Date.now() + 9, name: 'Noah Thomas', number: '5' },
     ];
     setPlayers(examplePlayers);
+  };
+
+  const shufflePlayers = () => {
+    if (players.length > 0) {
+      setPlayers(shuffleArray(players));
+    }
   };
 
   const addPlayer = () => {
@@ -68,13 +75,15 @@ function PlayerInput({ players, setPlayers }) {
     <div className="player-input-section">
       <div className="players-header">
         <h3>Players</h3>
-        <button
-          type="button"
-          className="btn-example"
-          onClick={loadExamplePlayers}
-        >
-          Load Example Team
-        </button>
+        <div className="header-buttons">
+          <button
+            type="button"
+            className="btn-example"
+            onClick={loadExamplePlayers}
+          >
+            Load Example Team
+          </button>
+        </div>
       </div>
       <p className="input-hint">
         Enter player name and number, then press Tab to add the next player
@@ -122,7 +131,17 @@ function PlayerInput({ players, setPlayers }) {
         <div className="players-list">
           <div className="players-list-header">
             <span>Batting Order</span>
-            <span>{players.length} Player{players.length !== 1 ? 's' : ''}</span>
+            <div className="header-right">
+              <button
+                type="button"
+                className="btn-shuffle"
+                onClick={shufflePlayers}
+                title="Shuffle batting order"
+              >
+                🔀 Shuffle
+              </button>
+              <span>{players.length} Player{players.length !== 1 ? 's' : ''}</span>
+            </div>
           </div>
           <div className="players-items">
             {players.map((player, index) => (

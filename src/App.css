@@ -47,6 +47,40 @@
   font-weight: 600;
 }
 
+.team-header-badge {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.team-header-badge h2 {
+  margin: 0;
+}
+
+.current-team-label {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.current-team-label strong {
+  color: #667eea;
+  font-size: 1rem;
+}
+
+.no-team-message {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.no-team-message p {
+  color: #64748b;
+  font-size: 1.125rem;
+  margin: 0;
+}
+
 .btn-primary {
   width: 100%;
   padding: 1rem 2rem;
