@@ -1,36 +1,72 @@
 # ⚾ Little League Batting Order Generator
 
-A web application for generating batting orders and field positions for little league baseball games.
+A modern React web application for generating batting orders and field position rotations for little league baseball games.
 
 ## Features
 
-- **Consistent Batting Order**: Players maintain the same batting order throughout the game
-- **Position Rotation**: Positions change each inning with automatic balancing
-- **Fair Playing Time**: Automatically balances infield and outfield innings for each player
+- **Smart Player Input**: Add players with individual name/number fields and Tab navigation
+- **Baseball Field Visualization**: Interactive field diagram showing player positions (desktop view)
+- **Position Rotation**: Automatic rotation ensuring fair playing time
+- **Fair Playing Time**: Balances infield and outfield innings for each player
 - **Configurable Settings**:
   - Number of innings (1-9)
   - Number of outfielders (2-4)
   - Optional catcher position
-- **Bench Management**: Extra players rotate through the bench while all players bat
+- **Responsive Design**: Field overlay on desktop, list view on mobile
 - **Statistics Tracking**: View each player's infield, outfield, and bench time
-- **Print-Friendly**: Easy-to-print lineup sheets for game day
-
-## Usage
-
-1. Open `index.html` in a web browser
-2. Enter player names (one per line)
-3. Configure game settings:
-   - Number of innings
-   - Number of outfielders
-   - Whether to include a catcher position
-4. Click "Generate Lineup"
-5. Review the batting order and position assignments
-6. Use the "Print Lineup" button to print for game day
+- **Print Support**: Print-optimized layout for game day
 
 ## Requirements
 
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-- No installation or dependencies required
+- **Node.js 18.0.0 or higher** (Node.js 20.4+ recommended)
+- npm (comes with Node.js)
+
+## Quick Start
+
+1. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Start Development Server**
+   ```bash
+   npm run dev
+   ```
+   Open http://localhost:5173 in your browser
+
+3. **Build for Production**
+   ```bash
+   npm run build
+   ```
+   Built files will be in the `dist/` directory
+
+## Usage
+
+1. Click "Load Example Team" to populate with sample players, or add players manually
+2. Enter player name → Tab → Enter number (optional) → Tab to add next player
+3. Use up/down arrows to reorder players in batting order
+4. Configure innings, outfielders, and catcher option
+5. Click "Generate Lineup" to create the rotation
+6. Print or save the lineup for game day
+
+## Troubleshooting
+
+### Node.js Version Error
+
+If you see an error like:
+```
+You are using Node.js X.X.X. Vite requires Node.js version 18.0.0+
+```
+
+**Solution**: Upgrade Node.js to version 18 or higher:
+- Visit https://nodejs.org/ to download the latest LTS version
+- Or use nvm: `nvm install 20` and `nvm use 20`
+
+After upgrading, delete `node_modules` and reinstall:
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
 
 ## How It Works
 
@@ -43,7 +79,7 @@ A web application for generating batting orders and field positions for little l
 The algorithm ensures fair distribution of positions:
 1. **Balancing**: Players with fewer active innings get priority for field positions
 2. **Variety**: The system balances time between infield and outfield positions
-3. **Rotation**: Positions rotate each inning to give everyone different experiences
+3. **Rotation**: Positions rotate each inning using standard baseball numbering (1=P, 2=C, 3=1B, etc.)
 4. **Bench**: Players not on the field sit on the bench but remain in the batting order
 
 ### Statistics
@@ -52,6 +88,12 @@ After generating a lineup, you can view:
 - Number of innings in infield positions
 - Number of innings in outfield positions
 - Number of innings on the bench
+
+## Technology Stack
+
+- React 19.2
+- Vite 5.4 (fast build tool)
+- Vanilla CSS (no external styling dependencies)
 
 ## License
 
