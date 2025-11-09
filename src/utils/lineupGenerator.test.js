@@ -77,6 +77,35 @@ describe('lineupGenerator', () => {
       expect(hasCatcher).toBe(true);
       expect(noCatcher).toBe(true);
     });
+
+    it('should handle "all" option for outfielders (everyone on field, no bench)', () => {
+      const players = createPlayers(12);
+      
+      // With catcher: 6 infield positions (P, C, 1B, 2B, 3B, SS)
+      // For 12 players, need 6 outfielders to field everyone
+      const lineupAll = generateLineup(players, 6, 'all', true);
+      
+      // Should have 12 positions total (6 infield + 6 outfield)
+      expect(lineupAll.positions).toHaveLength(12);
+      
+      // Verify no one sits on bench
+      lineupAll.battingOrder.forEach((player) => {
+        expect(player.benchInnings).toBe(0);
+      });
+      
+      // Without catcher: 5 infield positions (P, 1B, 2B, 3B, SS)
+      // For 10 players, need 5 outfielders to field everyone
+      const players10 = createPlayers(10);
+      const lineupAllNoCatcher = generateLineup(players10, 6, 'all', false);
+      
+      // Should have 10 positions total (5 infield + 5 outfield)
+      expect(lineupAllNoCatcher.positions).toHaveLength(10);
+      
+      // Verify no one sits on bench
+      lineupAllNoCatcher.battingOrder.forEach((player) => {
+        expect(player.benchInnings).toBe(0);
+      });
+    });
   });
 
   describe('generateLineup - Batting order rotation with history', () => {

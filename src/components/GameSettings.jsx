@@ -27,15 +27,30 @@ function GameSettings({
         </div>
 
         <div className="setting-item">
-          <label htmlFor="outfielders">Number of Outfielders</label>
-          <input
-            id="outfielders"
-            type="number"
-            min="2"
-            max="4"
-            value={numOutfielders}
-            onChange={(e) => setNumOutfielders(parseInt(e.target.value))}
-          />
+          <label>Number of Outfielders</label>
+          <div className="button-group">
+            <button
+              type="button"
+              className={`button-group-item ${numOutfielders === 3 ? 'active' : ''}`}
+              onClick={() => setNumOutfielders(3)}
+            >
+              3
+            </button>
+            <button
+              type="button"
+              className={`button-group-item ${numOutfielders === 4 ? 'active' : ''}`}
+              onClick={() => setNumOutfielders(4)}
+            >
+              4
+            </button>
+            <button
+              type="button"
+              className={`button-group-item ${numOutfielders === 'all' ? 'active' : ''}`}
+              onClick={() => setNumOutfielders('all')}
+            >
+              Everyone Else
+            </button>
+          </div>
         </div>
       </div>
 
