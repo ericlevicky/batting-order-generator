@@ -53,7 +53,12 @@ function PrintableLineup({ lineup, numInnings }) {
             <th className="player-col">Player</th>
             <th className="number-col">No.</th>
             {Array.from({ length: numInnings }, (_, i) => (
-              <th key={i} className="inning-col">Inn {i + 1}</th>
+              <th key={i} className="inning-col">
+                <div className="inning-header">
+                  <span className="inning-label">Inning</span>
+                  <span className="inning-number">{i + 1}</span>
+                </div>
+              </th>
             ))}
           </tr>
         </thead>
