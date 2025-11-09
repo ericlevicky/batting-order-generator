@@ -52,11 +52,13 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  color: white;
 }
 
 .inning-number {
   font-size: 1.1rem;
   font-weight: 700;
+  color: white;
 }
 
 .lineup-table td {
@@ -165,11 +167,13 @@
 
   .inning-label {
     font-size: 0.6rem;
+    color: white;
   }
 
   .inning-number {
     font-size: 1rem;
     font-weight: 700;
+    color: white;
   }
 
   .lineup-table td {

@@ -137,6 +137,70 @@
   margin: 0 0 0.75rem 0;
 }
 
+.game-lineup-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.history-inning {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+}
+
+.history-inning-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.history-positions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.history-position-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.history-position-label {
+  font-weight: 600;
+  color: #667eea;
+  font-size: 0.75rem;
+}
+
+.history-player-name {
+  color: #1e293b;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.history-bench {
+  padding: 0.75rem;
+  background: #fef3c7;
+  border-top: 1px solid #fbbf24;
+  color: #78350f;
+  font-size: 0.875rem;
+}
+
+.history-bench strong {
+  color: #92400e;
+}
+
 .batting-order-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
