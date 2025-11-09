@@ -1,0 +1,53 @@
+.lineup-display {
+  margin-top: 2rem;
+}
+
+.lineup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.lineup-header h2 {
+  color: white;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.screen-only {
+  /* Visible on screen, hidden on print */
+}
+
+.innings-section {
+  margin-top: 2rem;
+}
+
+.innings-section > h3 {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .lineup-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lineup-header h2 {
+    font-size: 1.5rem;
+  }
+}
+
+@media print {
+  .lineup-header,
+  .screen-only {
+    display: none !important;
+  }
+}

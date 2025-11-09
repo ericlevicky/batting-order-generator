@@ -1,0 +1,212 @@
+/* Print-friendly lineup table */
+.printable-lineup {
+  display: none; /* Hidden by default, only shown on print */
+}
+
+.print-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.print-header h1 {
+  font-size: 1.75rem;
+  margin: 0 0 0.5rem 0;
+  color: #1e293b;
+}
+
+.print-subtitle {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.lineup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.lineup-table thead {
+  background: #1e293b;
+  color: white;
+}
+
+.lineup-table th {
+  padding: 0.5rem 0.3rem;
+  text-align: center;
+  font-weight: 600;
+  border: 1px solid #cbd5e1;
+  font-size: 0.85rem;
+}
+
+.inning-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.inning-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.inning-number {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.lineup-table td {
+  padding: 0.4rem 0.3rem;
+  text-align: center;
+  border: 1px solid #cbd5e1;
+}
+
+.lineup-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.lineup-table tbody tr:hover {
+  background: #e2e8f0;
+}
+
+.order-col {
+  width: 40px;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.player-col {
+  text-align: left;
+  padding-left: 0.5rem !important;
+  font-weight: 600;
+  min-width: 120px;
+}
+
+.number-col {
+  width: 50px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.inning-col {
+  width: 50px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.print-footer {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.position-legend {
+  line-height: 1.4;
+}
+
+/* Print styles - this is where the magic happens */
+@media print {
+  /* Hide everything except the printable lineup */
+  body * {
+    visibility: hidden;
+  }
+
+  .printable-lineup,
+  .printable-lineup * {
+    visibility: visible;
+  }
+
+  .printable-lineup {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0.5in;
+    background: white;
+  }
+
+  /* Optimize for 8.5x11 paper */
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+
+  .print-header {
+    margin-bottom: 1rem;
+  }
+
+  .print-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .print-subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .lineup-table {
+    font-size: 0.85rem;
+    page-break-inside: avoid;
+  }
+
+  .lineup-table th {
+    padding: 0.35rem 0.25rem;
+    font-size: 0.75rem;
+    background: #1e293b !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .inning-label {
+    font-size: 0.6rem;
+  }
+
+  .inning-number {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .lineup-table td {
+    padding: 0.3rem 0.25rem;
+  }
+
+  .lineup-table tbody tr:nth-child(even) {
+    background: #f8fafc !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-footer {
+    margin-top: 0.75rem;
+    font-size: 0.7rem;
+    page-break-inside: avoid;
+  }
+
+  /* Ensure proper spacing for different inning counts */
+  .inning-col {
+    min-width: 35px;
+  }
+
+  /* Hide any hover effects on print */
+  .lineup-table tbody tr:hover {
+    background: inherit !important;
+  }
+}
+
+/* Screen view - show a preview */
+@media screen {
+  .printable-lineup {
+    display: block;
+    margin-top: 2rem;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+}

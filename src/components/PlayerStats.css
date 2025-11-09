@@ -1,0 +1,91 @@
+.player-stats-card {
+  background: white;
+  margin-top: 2rem;
+}
+
+.player-stats-card h3 {
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.stats-table-container {
+  overflow-x: auto;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.stats-table thead {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+}
+
+.stats-table th {
+  padding: 0.875rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.stats-table tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+  transition: background 0.2s ease;
+}
+
+.stats-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.stats-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.stats-table td {
+  padding: 0.875rem 1rem;
+}
+
+.player-name-cell {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.number-cell {
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.order-cell {
+  color: #667eea;
+  font-weight: 700;
+  text-align: center;
+}
+
+.stat-cell {
+  text-align: center;
+  font-weight: 600;
+  color: #475569;
+}
+
+@media (max-width: 768px) {
+  .stats-table {
+    font-size: 0.875rem;
+  }
+
+  .stats-table th,
+  .stats-table td {
+    padding: 0.625rem 0.5rem;
+  }
+
+  .stats-table th {
+    font-size: 0.75rem;
+  }
+}
