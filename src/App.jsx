@@ -103,7 +103,8 @@ function App() {
       players,
       numInnings,
       numOutfielders,
-      hasCatcher
+      hasCatcher,
+      gameHistory  // Pass game history to balance across games
     );
     setLineup(generatedLineup);
 
