@@ -142,3 +142,38 @@
     display: none;
   }
 }
+
+.app-footer {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1.5rem 2rem;
+  border-radius: 12px;
+  text-align: center;
+  margin-top: 3rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.app-footer p {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.donate-link {
+  display: inline-block;
+  margin-left: 0.5rem;
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.donate-link:hover {
+  color: #764ba2;
+  transform: translateY(-1px);
+}
+
+@media print {
+  .app-footer {
+    display: none;
+  }
+}

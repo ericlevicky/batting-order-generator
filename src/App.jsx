@@ -195,6 +195,20 @@ function App() {
           </div>
         )}
       </div>
+
+      <footer className="app-footer">
+        <p>
+          Enjoying this app? 
+          <a 
+            href="https://venmo.com/u/Eric-Levicky" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="donate-link"
+          >
+            ☕ Donate to the developer
+          </a>
+        </p>
+      </footer>
     </div>
   );
 }
