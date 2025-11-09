@@ -121,8 +121,7 @@
 }
 
 .players-items {
-  max-height: 400px;
-  overflow-y: auto;
+  /* No max-height - list expands to show all players */
 }
 
 .player-item {
