@@ -19,13 +19,151 @@ const POSITION_TYPES = {
   BENCH: 'bench',
 };
 
-export function generateLineup(players, numInnings, numOutfielders, hasCatcher) {
-  const playerStats = players.map((player, index) => ({
+/**
+ * Calculate historical statistics for each player across all previous games
+ * Returns an object with player names as keys and their historical stats
+ */
+function calculateHistoricalStats(players, gameHistory) {
+  const stats = {};
+  
+  // Initialize stats for all current players
+  players.forEach(player => {
+    stats[player.name] = {
+      totalInfield: 0,
+      totalOutfield: 0,
+      totalBench: 0,
+      battingPositions: {}, // Maps batting position (1-9) to count
+      gamesPlayed: 0
+    };
+  });
+  
+  // Accumulate stats from game history
+  gameHistory.forEach(game => {
+    if (!game.lineup || !game.lineup.battingOrder) return;
+    
+    game.lineup.battingOrder.forEach(playerData => {
+      // Only track stats for players currently on the team
+      if (stats[playerData.name]) {
+        stats[playerData.name].totalInfield += playerData.infieldInnings || 0;
+        stats[playerData.name].totalOutfield += playerData.outfieldInnings || 0;
+        stats[playerData.name].totalBench += playerData.benchInnings || 0;
+        
+        // Track batting order position
+        const battingPos = playerData.battingOrder;
+        if (battingPos) {
+          stats[playerData.name].battingPositions[battingPos] = 
+            (stats[playerData.name].battingPositions[battingPos] || 0) + 1;
+        }
+        
+        stats[playerData.name].gamesPlayed++;
+      }
+    });
+  });
+  
+  return stats;
+}
+
+/**
+ * Rotate batting order based on historical positions to ensure fairness
+ * Players cycle through all batting positions over time - no one stays in the same spot
+ * Uses variance tracking to ensure players experience diverse positions, not just alternating ends
+ */
+function rotateBattingOrder(players, historicalStats) {
+  if (players.length === 0) return players;
+  
+  const playersWithScores = players.map(player => {
+    const stats = historicalStats[player.name];
+    
+    if (!stats || stats.gamesPlayed === 0) {
+      // New player - assign middle position average with high variance (needs variety)
+      return { 
+        player, 
+        avgPosition: (players.length + 1) / 2,
+        variance: 999, // High variance = needs more variety
+        gamesPlayed: 0
+      };
+    }
+    
+    // Calculate average batting position AND variance
+    let totalPositionWeight = 0;
+    let totalGames = 0;
+    const positions = [];
+    
+    for (const [position, count] of Object.entries(stats.battingPositions)) {
+      const pos = parseInt(position);
+      totalPositionWeight += pos * count;
+      totalGames += count;
+      // Record each occurrence
+      for (let i = 0; i < count; i++) {
+        positions.push(pos);
+      }
+    }
+    
+    const avgPosition = totalGames > 0 ? totalPositionWeight / totalGames : (players.length + 1) / 2;
+    
+    // Calculate variance - how spread out their positions have been
+    let variance = 0;
+    if (positions.length > 0) {
+      variance = positions.reduce((sum, pos) => sum + Math.pow(pos - avgPosition, 2), 0) / positions.length;
+    } else {
+      variance = 999; // High variance for no history
+    }
+    
+    return { 
+      player, 
+      avgPosition,
+      variance,
+      gamesPlayed: stats.gamesPlayed
+    };
+  });
+  
+  // Sort with a combined strategy:
+  // 1. Primary: Balance average position (higher avg position = bat earlier next)
+  // 2. Secondary: Players with LOW variance (stuck in same positions) get extra priority
+  //    to break them out of their rut
+  playersWithScores.sort((a, b) => {
+    // Players with low variance (< 3) get a boost to their position priority
+    // This helps break players out of middle positions or repetitive patterns
+    // The boost is stronger for very low variance
+    const aVarianceBoost = a.variance < 1 ? 3 : (a.variance < 3 ? 1.5 : 0);
+    const bVarianceBoost = b.variance < 1 ? 3 : (b.variance < 3 ? 1.5 : 0);
+    
+    const aAdjusted = a.avgPosition + aVarianceBoost;
+    const bAdjusted = b.avgPosition + bVarianceBoost;
+    
+    const diff = bAdjusted - aAdjusted;
+    if (Math.abs(diff) < 0.001) {
+      // If tied, prefer player with lower variance (needs more variety)
+      const varianceDiff = a.variance - b.variance;
+      if (Math.abs(varianceDiff) < 0.001) {
+        return players.indexOf(a.player) - players.indexOf(b.player);
+      }
+      return varianceDiff;
+    }
+    return diff;
+  });
+  
+  return playersWithScores.map(item => item.player);
+}
+
+export function generateLineup(players, numInnings, numOutfielders, hasCatcher, gameHistory = []) {
+  // Calculate historical stats for each player across all previous games
+  const historicalStats = calculateHistoricalStats(players, gameHistory);
+  
+  // Rotate batting order based on historical positions
+  const rotatedPlayers = rotateBattingOrder(players, historicalStats);
+  
+  // Initialize player stats for THIS game, but include historical data for balancing
+  const playerStats = rotatedPlayers.map((player, index) => ({
     ...player,
     battingOrder: index + 1,
     infieldInnings: 0,
     outfieldInnings: 0,
     benchInnings: 0,
+    // Store historical totals separately for balancing decisions
+    _historicalInfield: historicalStats[player.name]?.totalInfield || 0,
+    _historicalOutfield: historicalStats[player.name]?.totalOutfield || 0,
+    _historicalBench: historicalStats[player.name]?.totalBench || 0,
   }));
 
   const positions = getPositionsForGame(numOutfielders, hasCatcher);
@@ -91,14 +229,16 @@ function generateInningPositions(playerStats, positions) {
   const inningAssignments = {};
   const availablePlayers = [...playerStats];
 
-  // Sort players by total active innings, then by balance between infield/outfield
+  // Sort players by total active innings (including historical), then by balance between infield/outfield
   availablePlayers.sort((a, b) => {
-    const aActive = a.infieldInnings + a.outfieldInnings;
-    const bActive = b.infieldInnings + b.outfieldInnings;
+    // Total innings including history
+    const aActive = a.infieldInnings + a.outfieldInnings + (a._historicalInfield || 0) + (a._historicalOutfield || 0);
+    const bActive = b.infieldInnings + b.outfieldInnings + (b._historicalInfield || 0) + (b._historicalOutfield || 0);
     if (aActive !== bActive) return aActive - bActive;
 
-    const aBalance = Math.abs(a.infieldInnings - a.outfieldInnings);
-    const bBalance = Math.abs(b.infieldInnings - b.outfieldInnings);
+    // Balance between infield/outfield including history
+    const aBalance = Math.abs((a.infieldInnings + (a._historicalInfield || 0)) - (a.outfieldInnings + (a._historicalOutfield || 0)));
+    const bBalance = Math.abs((b.infieldInnings + (b._historicalInfield || 0)) - (b.outfieldInnings + (b._historicalOutfield || 0)));
     return aBalance - bBalance;
   });
 
@@ -119,14 +259,18 @@ function generateInningPositions(playerStats, positions) {
         bestPlayer = player;
         bestPlayerIndex = i;
       } else {
-        // Prefer players who need more of this position type
+        // Prefer players who need more of this position type (including historical stats)
         if (positionType === POSITION_TYPES.INFIELD) {
-          if (player.infieldInnings < bestPlayer.infieldInnings) {
+          const playerTotal = player.infieldInnings + (player._historicalInfield || 0);
+          const bestTotal = bestPlayer.infieldInnings + (bestPlayer._historicalInfield || 0);
+          if (playerTotal < bestTotal) {
             bestPlayer = player;
             bestPlayerIndex = i;
           }
         } else if (positionType === POSITION_TYPES.OUTFIELD) {
-          if (player.outfieldInnings < bestPlayer.outfieldInnings) {
+          const playerTotal = player.outfieldInnings + (player._historicalOutfield || 0);
+          const bestTotal = bestPlayer.outfieldInnings + (bestPlayer._historicalOutfield || 0);
+          if (playerTotal < bestTotal) {
             bestPlayer = player;
             bestPlayerIndex = i;
           }
@@ -138,7 +282,7 @@ function generateInningPositions(playerStats, positions) {
       inningAssignments[position.name] = bestPlayer;
       assignedPlayers.push(bestPlayer);
 
-      // Update player stats
+      // Update player stats (only current game stats)
       if (positionType === POSITION_TYPES.INFIELD) {
         bestPlayer.infieldInnings++;
       } else if (positionType === POSITION_TYPES.OUTFIELD) {
