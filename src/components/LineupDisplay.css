@@ -18,6 +18,10 @@
   margin: 0;
 }
 
+.screen-only {
+  /* Visible on screen, hidden on print */
+}
+
 .innings-section {
   margin-top: 2rem;
 }
@@ -38,5 +42,12 @@
 
   .lineup-header h2 {
     font-size: 1.5rem;
+  }
+}
+
+@media print {
+  .lineup-header,
+  .screen-only {
+    display: none !important;
   }
 }
