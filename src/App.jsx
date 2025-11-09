@@ -206,7 +206,7 @@ function App() {
             rel="noopener noreferrer"
             className="donate-link"
           >
-            ☕ Donate to the developer
+            ☕ Buy me a coffee
           </a>
         </p>
       </footer>
