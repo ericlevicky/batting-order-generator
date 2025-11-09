@@ -31,7 +31,7 @@ function GameHistory({ history, onDeleteGame }) {
   return (
     <div className="game-history">
       <h3>Game History ({history.length})</h3>
-      <p className="history-hint">Click on a game to see the batting order used</p>
+      <p className="history-hint">Click on a game to see the full lineup used</p>
       
       <div className="history-list">
         {history.map((game, index) => (
@@ -79,18 +79,48 @@ function GameHistory({ history, onDeleteGame }) {
             
             {expandedGame === game.id && (
               <div className="history-details">
-                <h4>Batting Order</h4>
-                <div className="batting-order-list">
-                  {game.battingOrder.map((player, idx) => (
-                    <div key={idx} className="batting-order-item">
-                      <span className="order-number">{idx + 1}</span>
-                      <span className="player-name">{player.name}</span>
-                      {player.number && (
-                        <span className="player-number">#{player.number}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <h4>Game Lineup</h4>
+                {game.lineup ? (
+                  <div className="game-lineup-container">
+                    {game.lineup.innings.map((inning, inningIndex) => (
+                      <div key={inningIndex} className="history-inning">
+                        <div className="history-inning-header">
+                          Inning {inningIndex + 1}
+                        </div>
+                        <div className="history-positions">
+                          {Object.entries(inning)
+                            .filter(([pos]) => pos !== 'Bench')
+                            .map(([position, player]) => (
+                              <div key={position} className="history-position-item">
+                                <span className="history-position-label">{position}</span>
+                                <span className="history-player-name">
+                                  {player.name} {player.number && `#${player.number}`}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                        {inning.Bench && inning.Bench.length > 0 && (
+                          <div className="history-bench">
+                            <strong>Bench:</strong>{' '}
+                            {inning.Bench.map((p) => `${p.name} ${p.number ? `#${p.number}` : ''}`).join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="batting-order-list">
+                    {game.battingOrder.map((player, idx) => (
+                      <div key={idx} className="batting-order-item">
+                        <span className="order-number">{idx + 1}</span>
+                        <span className="player-name">{player.name}</span>
+                        {player.number && (
+                          <span className="player-number">#{player.number}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
