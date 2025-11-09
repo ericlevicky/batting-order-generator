@@ -166,7 +166,17 @@ export function generateLineup(players, numInnings, numOutfielders, hasCatcher, 
     _historicalBench: historicalStats[player.name]?.totalBench || 0,
   }));
 
-  const positions = getPositionsForGame(numOutfielders, hasCatcher);
+  // Calculate actual number of outfielders
+  // If 'all', calculate how many outfielders needed to field everyone (no bench)
+  let actualNumOutfielders = numOutfielders;
+  if (numOutfielders === 'all') {
+    // Total positions = players.length
+    // Infield positions = 5 (P, 1B, 2B, 3B, SS) + 1 if catcher
+    const infieldPositions = hasCatcher ? 6 : 5;
+    actualNumOutfielders = Math.max(0, players.length - infieldPositions);
+  }
+
+  const positions = getPositionsForGame(actualNumOutfielders, hasCatcher);
   const innings = [];
 
   for (let inning = 0; inning < numInnings; inning++) {
@@ -201,8 +211,15 @@ function getPositionsForGame(numOutfielders, hasCatcher) {
     POSITIONS.RIGHT_CENTER,
   ];
 
-  for (let i = 0; i < numOutfielders && i < outfieldPositions.length; i++) {
-    positions.push(outfieldPositions[i]);
+  // Add outfield positions up to the requested number
+  // If more than 4 are needed, create additional generic outfield positions
+  for (let i = 0; i < numOutfielders; i++) {
+    if (i < outfieldPositions.length) {
+      positions.push(outfieldPositions[i]);
+    } else {
+      // Create additional generic outfield positions for larger teams
+      positions.push({ name: `Outfield ${i + 1}`, number: 10 + i });
+    }
   }
 
   return positions;
