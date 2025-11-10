@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { exportAllData, importAllData } from '../utils/storage';
 import './TeamManager.css';
 
 function TeamManager({ 
@@ -7,12 +8,14 @@ function TeamManager({
   onSelectTeam, 
   onCreateTeam, 
   onRenameTeam, 
-  onDeleteTeam 
+  onDeleteTeam,
+  onDataImported
 }) {
   const [isCreating, setIsCreating] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [isRenaming, setIsRenaming] = useState(null);
   const [renameValue, setRenameValue] = useState('');
+  const fileInputRef = useRef(null);
 
   const handleCreate = () => {
     if (newTeamName.trim()) {
@@ -31,7 +34,8 @@ function TeamManager({
   };
 
   const handleDelete = (teamId) => {
-    const team = teams.find(t => t.id === teamId);
+    const teamList = Object.values(teams);
+    const team = teamList.find(t => t.id === teamId);
     if (window.confirm(`Delete team "${team.name}"? This will also delete all game history for this team.`)) {
       onDeleteTeam(teamId);
     }
@@ -40,6 +44,52 @@ function TeamManager({
   const startRename = (team) => {
     setIsRenaming(team.id);
     setRenameValue(team.name);
+  };
+
+  const handleExport = () => {
+    try {
+      const csv = exportAllData();
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `batting-order-backup-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      alert('Error exporting data: ' + error.message);
+    }
+  };
+
+  const handleImport = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result;
+      if (typeof content === 'string') {
+        const confirmMsg = 'Importing will replace all current teams and data. Are you sure you want to continue?';
+        if (window.confirm(confirmMsg)) {
+          const result = importAllData(content);
+          if (result.success) {
+            alert(`Successfully imported ${result.teamsCount} team(s)`);
+            onDataImported?.();
+          } else {
+            alert('Error importing data: ' + result.error);
+          }
+        }
+      }
+      // Reset file input
+      event.target.value = '';
+    };
+    reader.readAsText(file);
   };
 
   const teamList = Object.values(teams);
@@ -169,6 +219,24 @@ function TeamManager({
           </div>
         ))}
       </div>
+
+      {teamList.length > 0 && (
+        <div className="import-export-section">
+          <button className="btn-export" onClick={handleExport} title="Export all teams and data">
+            📥 Export Data
+          </button>
+          <button className="btn-import" onClick={handleImport} title="Import teams and data from file">
+            📤 Import Data
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+          />
+        </div>
+      )}
     </div>
   );
 }

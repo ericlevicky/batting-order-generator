@@ -125,6 +125,22 @@ function App() {
     }
   };
 
+  const handleDataImported = () => {
+    // Reload all data after import
+    const loadedTeams = getTeams();
+    setTeams(loadedTeams);
+    const currentId = getCurrentTeamId();
+    if (currentId && loadedTeams[currentId]) {
+      setCurrentTeamIdState(currentId);
+      loadTeamData(currentId);
+    } else {
+      setCurrentTeamIdState(null);
+      setPlayers([]);
+      setLineup(null);
+      setGameHistory([]);
+    }
+  };
+
   const currentTeam = currentTeamId ? teams[currentTeamId] : null;
 
   return (
@@ -143,6 +159,7 @@ function App() {
             onCreateTeam={handleCreateTeam}
             onRenameTeam={handleRenameTeam}
             onDeleteTeam={handleDeleteTeam}
+            onDataImported={handleDataImported}
           />
 
           {currentTeam && (

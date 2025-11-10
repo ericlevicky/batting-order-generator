@@ -139,3 +139,145 @@ export const shuffleArray = (array) => {
   }
   return shuffled;
 };
+
+// Import/Export functionality
+const escapeCSV = (value) => {
+  if (value === null || value === undefined) return '';
+  const str = String(value);
+  // Escape double quotes and wrap in quotes if contains comma, newline, or quote
+  if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+};
+
+const unescapeCSV = (value) => {
+  if (!value) return '';
+  let str = value.trim();
+  // Remove surrounding quotes and unescape double quotes
+  if (str.startsWith('"') && str.endsWith('"')) {
+    str = str.slice(1, -1).replace(/""/g, '"');
+  }
+  return str;
+};
+
+export const exportAllData = () => {
+  const teams = getTeams();
+  const currentTeamId = getCurrentTeamId();
+  const history = getTeamHistory();
+  
+  const data = {
+    teams,
+    currentTeamId,
+    history,
+    exportedAt: new Date().toISOString()
+  };
+  
+  // Convert to CSV format
+  const rows = [];
+  
+  // Header
+  rows.push('Type,Key,Value');
+  
+  // Metadata
+  rows.push(`Metadata,ExportedAt,${escapeCSV(data.exportedAt)}`);
+  rows.push(`Metadata,CurrentTeamId,${escapeCSV(currentTeamId || '')}`);
+  
+  // Teams data
+  rows.push(`Data,Teams,${escapeCSV(JSON.stringify(teams))}`);
+  
+  // History data
+  rows.push(`Data,History,${escapeCSV(JSON.stringify(history))}`);
+  
+  return rows.join('\n');
+};
+
+export const importAllData = (csvContent) => {
+  try {
+    const lines = csvContent.split('\n').filter(line => line.trim());
+    
+    if (lines.length === 0) {
+      throw new Error('CSV file is empty');
+    }
+    
+    // Skip header
+    const header = lines[0];
+    if (!header.includes('Type') || !header.includes('Key') || !header.includes('Value')) {
+      throw new Error('Invalid CSV format - missing required headers');
+    }
+    
+    let teams = null;
+    let history = null;
+    let currentTeamId = null;
+    
+    // Parse data rows
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      // Simple CSV parsing - split on comma, handling quoted values
+      const parts = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        
+        if (char === '"') {
+          if (inQuotes && line[j + 1] === '"') {
+            // Escaped quote
+            current += '"';
+            j++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          parts.push(current);
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      parts.push(current);
+      
+      if (parts.length < 3) continue;
+      
+      const type = unescapeCSV(parts[0]);
+      const key = unescapeCSV(parts[1]);
+      const value = unescapeCSV(parts[2]);
+      
+      if (type === 'Metadata' && key === 'CurrentTeamId') {
+        currentTeamId = value || null;
+      } else if (type === 'Data' && key === 'Teams') {
+        teams = JSON.parse(value);
+      } else if (type === 'Data' && key === 'History') {
+        history = JSON.parse(value);
+      }
+    }
+    
+    // Validate required data
+    if (teams === null) {
+      throw new Error('Invalid data - Teams information is missing');
+    }
+    
+    if (history === null) {
+      throw new Error('Invalid data - History information is missing');
+    }
+    
+    // Import data to localStorage
+    saveTeams(teams);
+    saveTeamHistory(history);
+    if (currentTeamId && teams[currentTeamId]) {
+      setCurrentTeamId(currentTeamId);
+    }
+    
+    return {
+      success: true,
+      teamsCount: Object.keys(teams).length,
+      currentTeamId
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
