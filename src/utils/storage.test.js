@@ -12,6 +12,8 @@ import {
   saveLineupToHistory,
   getTeamGameHistory,
   deleteGameFromHistory,
+  exportAllData,
+  importAllData,
 } from '../utils/storage';
 
 // Mock localStorage
@@ -313,6 +315,167 @@ describe('storage utilities', () => {
       expect(updatedTeam.updatedAt).toBeDefined();
       expect(updatedTeam.updatedAt >= before).toBe(true);
       expect(updatedTeam.updatedAt >= originalTeam.updatedAt).toBe(true);
+    });
+  });
+
+  describe('Import/Export functionality', () => {
+    it('should export all data to CSV format', () => {
+      // Clear first to ensure clean state
+      localStorage.clear();
+      
+      // Create test data with a delay to ensure unique IDs
+      const teamId1 = createTeam('Team 1', [{ name: 'Player 1', number: '1' }]);
+      
+      const csv = exportAllData();
+
+      expect(csv).toBeDefined();
+      expect(csv).toContain('Type,Key,Value');
+      expect(csv).toContain('Metadata,ExportedAt');
+      expect(csv).toContain('Metadata,CurrentTeamId');
+      expect(csv).toContain('Data,Teams');
+      expect(csv).toContain('Data,History');
+      // Check that team name is in the JSON data (it'll be escaped in JSON)
+      expect(csv).toContain('Team 1');
+    });
+
+    it('should handle CSV escaping for special characters', () => {
+      localStorage.clear();
+      createTeam('Team "With Quotes"', [{ name: 'Player, With Comma', number: '1' }]);
+      
+      const csv = exportAllData();
+      
+      // Check that special characters are properly included (they'll be JSON-escaped)
+      expect(csv).toContain('With Quotes');
+      expect(csv).toContain('Player, With Comma');
+    });
+
+    it('should import valid CSV data', () => {
+      // Create and export data
+      const teamId = createTeam('Test Team', [{ name: 'Player 1', number: '1' }]);
+      setCurrentTeamId(teamId);
+      const csv = exportAllData();
+
+      // Clear storage
+      localStorage.clear();
+
+      // Import data
+      const result = importAllData(csv);
+
+      expect(result.success).toBe(true);
+      expect(result.teamsCount).toBe(1);
+      
+      const teams = getTeams();
+      expect(Object.keys(teams).length).toBe(1);
+      expect(Object.values(teams)[0].name).toBe('Test Team');
+    });
+
+    it('should restore current team selection on import', () => {
+      const teamId = createTeam('Current Team', []);
+      setCurrentTeamId(teamId);
+      const csv = exportAllData();
+
+      // Clear storage
+      localStorage.clear();
+
+      // Import data
+      importAllData(csv);
+
+      const restoredTeamId = getCurrentTeamId();
+      expect(restoredTeamId).toBe(teamId);
+    });
+
+    it('should import game history', () => {
+      const teamId = createTeam('Team with History', []);
+      const mockLineup = {
+        battingOrder: [{ name: 'Player 1', number: '1', battingOrder: 1 }],
+        innings: [],
+        positions: [],
+      };
+      saveLineupToHistory(teamId, mockLineup, { numInnings: 6 });
+      
+      const csv = exportAllData();
+
+      // Clear storage
+      localStorage.clear();
+
+      // Import data
+      importAllData(csv);
+
+      const history = getTeamGameHistory(teamId);
+      expect(history.length).toBe(1);
+      expect(history[0].lineup).toBeDefined();
+    });
+
+    it('should handle empty CSV gracefully', () => {
+      const result = importAllData('');
+      
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('empty');
+    });
+
+    it('should handle invalid CSV format', () => {
+      const result = importAllData('Invalid,CSV,Data\nSome,Random,Stuff');
+      
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+
+    it('should handle CSV with missing Teams data', () => {
+      const invalidCSV = 'Type,Key,Value\nMetadata,ExportedAt,2024-01-01\nData,History,{}';
+      const result = importAllData(invalidCSV);
+      
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Teams');
+    });
+
+    it('should handle CSV with missing History data', () => {
+      const invalidCSV = 'Type,Key,Value\nMetadata,ExportedAt,2024-01-01\nData,Teams,{}';
+      const result = importAllData(invalidCSV);
+      
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('History');
+    });
+
+    it('should export and import multiple teams with complex data', () => {
+      // Clear first to ensure clean state
+      localStorage.clear();
+      
+      // Create a team with data
+      const team1Id = createTeam('Team A', [
+        { name: 'Alice', number: '10' },
+        { name: 'Bob', number: '20' }
+      ]);
+      
+      setCurrentTeamId(team1Id);
+
+      const mockLineup1 = {
+        battingOrder: [{ name: 'Alice', number: '10', battingOrder: 1 }],
+        innings: [],
+        positions: [],
+      };
+      saveLineupToHistory(team1Id, mockLineup1, { numInnings: 6 });
+
+      const csv = exportAllData();
+      
+      // Verify we have the team before import
+      const teamsBefore = getTeams();
+      expect(Object.keys(teamsBefore).length).toBe(1);
+      expect(teamsBefore[team1Id].name).toBe('Team A');
+      
+      // Clear and reimport
+      localStorage.clear();
+      const result = importAllData(csv);
+
+      expect(result.success).toBe(true);
+      expect(result.teamsCount).toBe(1);
+      expect(result.currentTeamId).toBe(team1Id);
+      
+      const teams = getTeams();
+      expect(teams[team1Id].name).toBe('Team A');
+      expect(teams[team1Id].players.length).toBe(2);
+      
+      const history = getTeamGameHistory(team1Id);
+      expect(history.length).toBe(1);
     });
   });
 });
