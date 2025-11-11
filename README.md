@@ -2,7 +2,12 @@
 
 [![Tests](https://github.com/ericlevicky/batting-order-generator/actions/workflows/test.yml/badge.svg)](https://github.com/ericlevicky/batting-order-generator/actions/workflows/test.yml)
 
-A modern React web application for generating batting orders and field position rotations for little league baseball games.
+A modern React web application for generating batting orders and field position rotations for little league baseball games. **Now available as a native iOS app!** 📱
+
+## Platforms
+
+- **Web App**: Use in any browser at your deployed URL
+- **iOS App**: Deploy as a native iPhone/iPad app - see [iOS Deployment Guide](./IOS_DEPLOYMENT.md)
 
 ## Features
 
@@ -105,12 +110,15 @@ After generating a lineup, you can view:
 - React 19.2
 - Vite 5.4 (fast build tool)
 - Vanilla CSS (no external styling dependencies)
+- Capacitor 7.4 (for iOS native app wrapper)
 
 ## Deployment
 
+### Web Deployment (Netlify)
+
 This project is configured to automatically deploy to Netlify when a pull request is merged to the `main` branch.
 
-### Setup Netlify Deployment
+#### Setup Netlify Deployment
 
 1. **Create a Netlify Account**: Sign up for a free account at [netlify.com](https://www.netlify.com/)
 
@@ -128,12 +136,28 @@ This project is configured to automatically deploy to Netlify when a pull reques
 
 5. **Automatic Deployment**: Once configured, the site will automatically deploy when PRs are merged to `main`
 
-### Manual Deployment
+#### Manual Deployment
 
 You can also trigger a deployment manually:
 - Go to Actions tab in GitHub
 - Select "Deploy to Netlify" workflow
 - Click "Run workflow"
+
+### iOS App Deployment
+
+This app can be deployed as a native iOS app to the Apple App Store! 
+
+**📱 See the complete [iOS Deployment Guide](./IOS_DEPLOYMENT.md) for detailed instructions.**
+
+Quick overview:
+1. You'll need a Mac with Xcode installed
+2. An Apple Developer Account ($99/year)
+3. Run `npm run ios:open` to open the project in Xcode
+4. Build and test on iOS Simulator or your iPhone
+5. Archive and upload to App Store Connect
+
+The iOS native project files are already set up in the `ios/` directory.
+
 
 ## License
 

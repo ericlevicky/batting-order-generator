@@ -1,0 +1,12 @@
+{
+  "appId": "com.battingorder.app",
+  "appName": "Batting Order Generator",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "cleartext": true
+  },
+  "ios": {
+    "contentInset": "always"
+  }
+}
