@@ -16,6 +16,9 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Temporary files
+tmp/
+
 # Generated assets (optional - can commit these if you want)
 # generate-icons.js
 # generate-screenshot.js
