@@ -2,12 +2,23 @@
 
 [![Tests](https://github.com/ericlevicky/batting-order-generator/actions/workflows/test.yml/badge.svg)](https://github.com/ericlevicky/batting-order-generator/actions/workflows/test.yml)
 
-A modern React web application for generating batting orders and field position rotations for little league baseball games. **Now available as a native iOS app!** 📱
+A modern React web application for generating batting orders and field position rotations for little league baseball games. **Installable as a Progressive Web App (PWA) on any device!** 📱
+
+## 🎉 New: Install as an App!
+
+You can now install this on your iPhone, Android, or computer - **completely FREE!**
+
+- 📱 **Add to home screen** on iOS/Android
+- 💻 **Install on desktop** - Chrome, Edge, Safari
+- ⚡ **Works offline** after installation
+- 🚫 **No App Store fees** - Deploy and share instantly!
+
+**👉 See the [PWA Installation Guide](./PWA_GUIDE.md) for details**
 
 ## Platforms
 
 - **Web App**: Use in any browser at your deployed URL
-- **iOS App**: Deploy as a native iPhone/iPad app - see [iOS Deployment Guide](./IOS_DEPLOYMENT.md)
+- **PWA**: Install on home screen (iPhone, Android, desktop) - FREE!
 
 ## Features
 
@@ -110,7 +121,7 @@ After generating a lineup, you can view:
 - React 19.2
 - Vite 5.4 (fast build tool)
 - Vanilla CSS (no external styling dependencies)
-- Capacitor 7.4 (for iOS native app wrapper)
+- PWA (Progressive Web App) - installable on all devices
 
 ## Deployment
 
@@ -143,20 +154,25 @@ You can also trigger a deployment manually:
 - Select "Deploy to Netlify" workflow
 - Click "Run workflow"
 
-### iOS App Deployment
+### Progressive Web App (PWA)
 
-This app can be deployed as a native iOS app to the Apple App Store! 
+This app is a PWA and can be installed on any device!
 
-**📱 See the complete [iOS Deployment Guide](./IOS_DEPLOYMENT.md) for detailed instructions.**
+**📱 See the complete [PWA Guide](./PWA_GUIDE.md) for installation instructions.**
 
-Quick overview:
-1. You'll need a Mac with Xcode installed
-2. An Apple Developer Account ($99/year)
-3. Run `npm run ios:open` to open the project in Xcode
-4. Build and test on iOS Simulator or your iPhone
-5. Archive and upload to App Store Connect
+**Quick Install:**
+- **iPhone/iPad**: Open in Safari → Share → Add to Home Screen
+- **Android**: Open in Chrome → Tap "Install" prompt or Menu → Install app
+- **Desktop**: Click install icon in browser address bar
 
-The iOS native project files are already set up in the `ios/` directory.
+**Benefits:**
+- ✅ FREE - No app store fees
+- ✅ Works offline after installation
+- ✅ Looks like a native app
+- ✅ Works on ALL devices (iOS, Android, desktop)
+- ✅ Updates automatically when you deploy
+
+Once deployed to Netlify, anyone can install your app on their device instantly!
 
 
 ## License

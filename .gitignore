@@ -16,9 +16,6 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# iOS
-ios/App/Pods/
-ios/App/build/
-ios/App/*.xcworkspace/xcuserdata/
-ios/App/*.xcodeproj/xcuserdata/
-ios/App/App/public/
+# Generated assets (optional - can commit these if you want)
+# generate-icons.js
+# generate-screenshot.js
