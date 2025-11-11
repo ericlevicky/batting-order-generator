@@ -4,6 +4,7 @@ import GameSettings from './components/GameSettings';
 import LineupDisplay from './components/LineupDisplay';
 import TeamManager from './components/TeamManager';
 import GameHistory from './components/GameHistory';
+import InstallPrompt from './components/InstallPrompt';
 import { generateLineup } from './utils/lineupGenerator';
 import {
   getTeams,
@@ -227,6 +228,8 @@ function App() {
           </a>
         </p>
       </footer>
+
+      <InstallPrompt />
     </div>
   );
 }

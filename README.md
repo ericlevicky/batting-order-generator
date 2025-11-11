@@ -2,7 +2,23 @@
 
 [![Tests](https://github.com/ericlevicky/batting-order-generator/actions/workflows/test.yml/badge.svg)](https://github.com/ericlevicky/batting-order-generator/actions/workflows/test.yml)
 
-A modern React web application for generating batting orders and field position rotations for little league baseball games.
+A modern React web application for generating batting orders and field position rotations for little league baseball games. **Installable as a Progressive Web App (PWA) on any device!** 📱
+
+## 🎉 New: Install as an App!
+
+You can now install this on your iPhone, Android, or computer - **completely FREE!**
+
+- 📱 **Add to home screen** on iOS/Android
+- 💻 **Install on desktop** - Chrome, Edge, Safari
+- ⚡ **Works offline** after installation
+- 🚫 **No App Store fees** - Deploy and share instantly!
+
+**👉 See the [PWA Installation Guide](./PWA_GUIDE.md) for details**
+
+## Platforms
+
+- **Web App**: Use in any browser at your deployed URL
+- **PWA**: Install on home screen (iPhone, Android, desktop) - FREE!
 
 ## Features
 
@@ -105,12 +121,15 @@ After generating a lineup, you can view:
 - React 19.2
 - Vite 5.4 (fast build tool)
 - Vanilla CSS (no external styling dependencies)
+- PWA (Progressive Web App) - installable on all devices
 
 ## Deployment
 
+### Web Deployment (Netlify)
+
 This project is configured to automatically deploy to Netlify when a pull request is merged to the `main` branch.
 
-### Setup Netlify Deployment
+#### Setup Netlify Deployment
 
 1. **Create a Netlify Account**: Sign up for a free account at [netlify.com](https://www.netlify.com/)
 
@@ -128,12 +147,33 @@ This project is configured to automatically deploy to Netlify when a pull reques
 
 5. **Automatic Deployment**: Once configured, the site will automatically deploy when PRs are merged to `main`
 
-### Manual Deployment
+#### Manual Deployment
 
 You can also trigger a deployment manually:
 - Go to Actions tab in GitHub
 - Select "Deploy to Netlify" workflow
 - Click "Run workflow"
+
+### Progressive Web App (PWA)
+
+This app is a PWA and can be installed on any device!
+
+**📱 See the complete [PWA Guide](./PWA_GUIDE.md) for installation instructions.**
+
+**Quick Install:**
+- **iPhone/iPad**: Open in Safari → Share → Add to Home Screen
+- **Android**: Open in Chrome → Tap "Install" prompt or Menu → Install app
+- **Desktop**: Click install icon in browser address bar
+
+**Benefits:**
+- ✅ FREE - No app store fees
+- ✅ Works offline after installation
+- ✅ Looks like a native app
+- ✅ Works on ALL devices (iOS, Android, desktop)
+- ✅ Updates automatically when you deploy
+
+Once deployed to Netlify, anyone can install your app on their device instantly!
+
 
 ## License
 
