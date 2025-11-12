@@ -342,4 +342,51 @@ describe('lineupGenerator', () => {
       expect(POSITIONS.BENCH.number).toBe(0);
     });
   });
+
+  describe('generateLineup - Extended outfield positions (5+)', () => {
+    it('should correctly count outfield innings for positions beyond 4 outfielders', () => {
+      const players = createPlayers(12);
+      // Create a game with 6 outfielders (more than the 4 predefined positions)
+      const lineup = generateLineup(players, 6, 6, true);
+
+      // With 6 outfielders + 6 infield positions (P, C, 1B, 2B, 3B, SS) = 12 total positions
+      expect(lineup.positions).toHaveLength(12);
+
+      // Verify positions include extended outfield positions
+      const positionNames = lineup.positions.map(p => p.name);
+      expect(positionNames).toContain('Outfield 5');
+      expect(positionNames).toContain('Outfield 6');
+
+      // Calculate total outfield innings across all players
+      const totalOutfieldInnings = lineup.battingOrder.reduce((sum, p) => sum + p.outfieldInnings, 0);
+      
+      // With 6 outfielders and 6 innings, should have 36 total outfield innings
+      expect(totalOutfieldInnings).toBe(36);
+
+      // Calculate total infield innings
+      const totalInfieldInnings = lineup.battingOrder.reduce((sum, p) => sum + p.infieldInnings, 0);
+      
+      // With 6 infield positions and 6 innings, should have 36 total infield innings
+      expect(totalInfieldInnings).toBe(36);
+    });
+
+    it('should balance outfield time for all outfield positions including 5+', () => {
+      const players = createPlayers(11);
+      // 5 outfielders + 6 infield = 11 positions, no bench
+      const lineup = generateLineup(players, 6, 5, true);
+
+      expect(lineup.positions).toHaveLength(11);
+
+      // Every player should get some field time
+      lineup.battingOrder.forEach((player) => {
+        const fieldTime = player.infieldInnings + player.outfieldInnings;
+        expect(fieldTime).toBe(6); // All 6 innings on field
+        expect(player.benchInnings).toBe(0); // No bench time
+      });
+
+      // Total outfield innings should be 5 positions * 6 innings = 30
+      const totalOutfieldInnings = lineup.battingOrder.reduce((sum, p) => sum + p.outfieldInnings, 0);
+      expect(totalOutfieldInnings).toBe(30);
+    });
+  });
 });
