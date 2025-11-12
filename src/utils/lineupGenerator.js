@@ -226,16 +226,11 @@ function getPositionsForGame(numOutfielders, hasCatcher) {
 }
 
 function getPositionType(position) {
-  const outfieldPositions = [
-    POSITIONS.LEFT_FIELD,
-    POSITIONS.CENTER_FIELD,
-    POSITIONS.RIGHT_FIELD,
-    POSITIONS.RIGHT_CENTER,
-  ];
-
   if (position.number === 0) {
     return POSITION_TYPES.BENCH;
-  } else if (outfieldPositions.includes(position)) {
+  } else if (position.number >= 7) {
+    // Outfield positions start at 7 (Left Field) and include all positions >= 7
+    // This covers: LF (7), CF (8), RF (9), Right Center (10), and any extended positions (11+)
     return POSITION_TYPES.OUTFIELD;
   } else {
     return POSITION_TYPES.INFIELD;
