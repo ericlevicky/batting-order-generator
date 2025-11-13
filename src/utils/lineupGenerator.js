@@ -218,7 +218,7 @@ function getPositionsForGame(numOutfielders, hasCatcher) {
       positions.push(outfieldPositions[i]);
     } else {
       // Create additional generic outfield positions for larger teams
-      positions.push({ name: `Outfield ${i + 1}`, number: 10 + i });
+      positions.push({ name: `Outfield ${i + 1}`, number: 7 + i });
     }
   }
 
