@@ -4,6 +4,7 @@ import GameSettings from './components/GameSettings';
 import LineupDisplay from './components/LineupDisplay';
 import TeamManager from './components/TeamManager';
 import GameHistory from './components/GameHistory';
+import CumulativeStats from './components/CumulativeStats';
 import InstallPrompt from './components/InstallPrompt';
 import { generateLineup } from './utils/lineupGenerator';
 import {
@@ -207,6 +208,7 @@ function App() {
 
         {currentTeam && gameHistory.length > 0 && (
           <div className="config-section">
+            <CumulativeStats history={gameHistory} />
             <GameHistory
               history={gameHistory}
               onDeleteGame={handleDeleteGame}
