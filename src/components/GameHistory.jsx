@@ -149,7 +149,7 @@ function GameHistory({ history, onDeleteGame, onDeleteAllGames, onShowToast, onR
                   className="btn-delete-game"
                   onClick={(e) => {
                     e.stopPropagation();
-                    const gameNumber = history.length - index;
+                    const gameNumber = game.gameNumber || (history.length - index);
                     onRequestConfirm?.({
                       title: `Delete Game ${gameNumber}`,
                       message: `This will permanently remove Game ${gameNumber} from history. Continue?`,
