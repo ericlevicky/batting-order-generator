@@ -75,7 +75,7 @@ function TeamManager({
     reader.onload = (e) => {
       const content = e.target?.result;
       if (typeof content === 'string') {
-        const confirmMsg = 'Importing will replace all current teams and data. Are you sure you want to continue?';
+        const confirmMsg = 'Import teams from backup file? Teams will be merged with your existing teams. If team names conflict, a number will be added to make them unique.';
         if (window.confirm(confirmMsg)) {
           const result = importAllData(content);
           if (result.success) {
