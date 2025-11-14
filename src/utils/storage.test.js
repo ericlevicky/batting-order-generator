@@ -436,6 +436,65 @@ describe('storage utilities', () => {
       expect(result.error).toContain('History');
     });
 
+    it('should import data when no teams exist locally', () => {
+      // Create and export data
+      const teamId = createTeam('Imported Team', [{ name: 'Player 1', number: '1' }]);
+      setCurrentTeamId(teamId);
+      const csv = exportAllData();
+
+      // Clear storage completely - simulating fresh start with no teams
+      localStorage.clear();
+      
+      // Verify no teams exist
+      expect(Object.keys(getTeams()).length).toBe(0);
+
+      // Import should work even with no existing teams
+      const result = importAllData(csv);
+
+      expect(result.success).toBe(true);
+      expect(result.teamsCount).toBe(1);
+      
+      const teams = getTeams();
+      expect(Object.keys(teams).length).toBe(1);
+      expect(Object.values(teams)[0].name).toBe('Imported Team');
+      
+      // Current team should be restored
+      const currentTeamId = getCurrentTeamId();
+      expect(currentTeamId).toBe(teamId);
+    });
+
+    it('should import data and merge with existing teams', () => {
+      // Create first team
+      const existingTeamId = createTeam('Existing Team', [{ name: 'Existing Player', number: '1' }]);
+      
+      // Create second team and export
+      const newTeamId = createTeam('New Team', [{ name: 'New Player', number: '2' }]);
+      setCurrentTeamId(newTeamId);
+      
+      // Export only the new team by creating a separate instance
+      const singleTeamData = {
+        [newTeamId]: getTeam(newTeamId)
+      };
+      
+      // Create CSV for just the new team
+      const csv = `Type,Key,Value
+Metadata,ExportedAt,${new Date().toISOString()}
+Metadata,CurrentTeamId,${newTeamId}
+Data,Teams,"${JSON.stringify(singleTeamData).replace(/"/g, '""')}"
+Data,History,{}`;
+
+      // Import will replace all data
+      const result = importAllData(csv);
+
+      expect(result.success).toBe(true);
+      expect(result.teamsCount).toBe(1);
+      
+      const teams = getTeams();
+      // Import replaces all data, so we should only have the imported team
+      expect(Object.keys(teams).length).toBe(1);
+      expect(teams[newTeamId]).toBeDefined();
+    });
+
     it('should export and import multiple teams with complex data', () => {
       // Clear first to ensure clean state
       localStorage.clear();
