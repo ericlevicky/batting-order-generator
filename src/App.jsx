@@ -285,7 +285,7 @@ function App() {
                   {showCumulativeStats ? '▲' : '▼'}
                 </button>
               </div>
-              {showCumulativeStats && <CumulativeStats history={gameHistory} />}
+              {showCumulativeStats && <CumulativeStats history={gameHistory} hideHeader />}
             </div>
           </div>
         )}

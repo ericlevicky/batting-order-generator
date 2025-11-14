@@ -205,7 +205,6 @@ function GameHistory({ history, onDeleteGame, onDeleteAllGames, onShowToast, onR
                 <div style={{marginTop:'0.75rem'}}>
                   <PlayerStats
                     stats={game.lineup ? game.lineup.battingOrder : game.battingOrder}
-                    initialExpanded={initialExpandGameId === game.id}
                   />
                 </div>
               </div>
