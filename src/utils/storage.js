@@ -296,6 +296,22 @@ export const importAllData = (csvContent) => {
       throw new Error('Invalid data - History information is missing');
     }
     
+    // Normalize players: if no active flag, assume true
+    Object.values(teams).forEach(team => {
+      if (team && Array.isArray(team.players)) {
+        team.players = team.players.map(function(p) {
+          if (p && typeof p === 'object') {
+            var clone = Object.assign({}, p);
+            if (clone.active === undefined) {
+              clone.active = true;
+            }
+            return clone;
+          }
+          return p;
+        });
+      }
+    });
+    
     // Merge with existing teams instead of replacing
     const existingTeams = getTeams();
     const existingHistory = getTeamHistory();
