@@ -33,6 +33,7 @@ function calculateHistoricalStats(players, gameHistory) {
       totalOutfield: 0,
       totalBench: 0,
       battingPositions: {}, // Maps batting position (1-9) to count
+      fieldingPositions: {}, // Maps fielding position name to innings count
       gamesPlayed: 0
     };
   });
@@ -58,6 +59,32 @@ function calculateHistoricalStats(players, gameHistory) {
         stats[playerData.name].gamesPlayed++;
       }
     });
+    
+    // Track fielding positions from innings data
+    if (game.lineup.innings) {
+      game.lineup.innings.forEach(inning => {
+        // Iterate through each position in the inning
+        Object.entries(inning).forEach(([positionName, playerOrPlayers]) => {
+          // Handle bench (array of players) vs field positions (single player)
+          if (positionName === 'Bench') {
+            if (Array.isArray(playerOrPlayers)) {
+              playerOrPlayers.forEach(player => {
+                if (stats[player.name]) {
+                  stats[player.name].fieldingPositions[positionName] = 
+                    (stats[player.name].fieldingPositions[positionName] || 0) + 1;
+                }
+              });
+            }
+          } else {
+            // Single player in a field position
+            if (playerOrPlayers && playerOrPlayers.name && stats[playerOrPlayers.name]) {
+              stats[playerOrPlayers.name].fieldingPositions[positionName] = 
+                (stats[playerOrPlayers.name].fieldingPositions[positionName] || 0) + 1;
+            }
+          }
+        });
+      });
+    }
   });
   
   return stats;
@@ -164,6 +191,8 @@ export function generateLineup(players, numInnings, numOutfielders, hasCatcher, 
     _historicalInfield: historicalStats[player.name]?.totalInfield || 0,
     _historicalOutfield: historicalStats[player.name]?.totalOutfield || 0,
     _historicalBench: historicalStats[player.name]?.totalBench || 0,
+    _historicalFieldingPositions: historicalStats[player.name]?.fieldingPositions || {},
+    _currentGameFieldingPositions: {}, // Track positions played in current game
   }));
 
   // Calculate actual number of outfielders
@@ -271,20 +300,31 @@ function generateInningPositions(playerStats, positions) {
         bestPlayer = player;
         bestPlayerIndex = i;
       } else {
-        // Prefer players who need more of this position type (including historical stats)
-        if (positionType === POSITION_TYPES.INFIELD) {
-          const playerTotal = player.infieldInnings + (player._historicalInfield || 0);
-          const bestTotal = bestPlayer.infieldInnings + (bestPlayer._historicalInfield || 0);
-          if (playerTotal < bestTotal) {
-            bestPlayer = player;
-            bestPlayerIndex = i;
-          }
-        } else if (positionType === POSITION_TYPES.OUTFIELD) {
-          const playerTotal = player.outfieldInnings + (player._historicalOutfield || 0);
-          const bestTotal = bestPlayer.outfieldInnings + (bestPlayer._historicalOutfield || 0);
-          if (playerTotal < bestTotal) {
-            bestPlayer = player;
-            bestPlayerIndex = i;
+        // Prefer players who need more time at this SPECIFIC position (including historical stats)
+        const playerPositionCount = (player._currentGameFieldingPositions[position.name] || 0) + 
+                                     (player._historicalFieldingPositions[position.name] || 0);
+        const bestPositionCount = (bestPlayer._currentGameFieldingPositions[position.name] || 0) + 
+                                   (bestPlayer._historicalFieldingPositions[position.name] || 0);
+        
+        if (playerPositionCount < bestPositionCount) {
+          bestPlayer = player;
+          bestPlayerIndex = i;
+        } else if (playerPositionCount === bestPositionCount) {
+          // If equal at this position, fallback to balancing position type (infield vs outfield)
+          if (positionType === POSITION_TYPES.INFIELD) {
+            const playerTotal = player.infieldInnings + (player._historicalInfield || 0);
+            const bestTotal = bestPlayer.infieldInnings + (bestPlayer._historicalInfield || 0);
+            if (playerTotal < bestTotal) {
+              bestPlayer = player;
+              bestPlayerIndex = i;
+            }
+          } else if (positionType === POSITION_TYPES.OUTFIELD) {
+            const playerTotal = player.outfieldInnings + (player._historicalOutfield || 0);
+            const bestTotal = bestPlayer.outfieldInnings + (bestPlayer._historicalOutfield || 0);
+            if (playerTotal < bestTotal) {
+              bestPlayer = player;
+              bestPlayerIndex = i;
+            }
           }
         }
       }
@@ -300,6 +340,10 @@ function generateInningPositions(playerStats, positions) {
       } else if (positionType === POSITION_TYPES.OUTFIELD) {
         bestPlayer.outfieldInnings++;
       }
+      
+      // Track this specific position for balancing within the current game
+      bestPlayer._currentGameFieldingPositions[position.name] = 
+        (bestPlayer._currentGameFieldingPositions[position.name] || 0) + 1;
     }
   }
 
