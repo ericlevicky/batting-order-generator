@@ -127,10 +127,14 @@ export const saveLineupToHistory = (teamId, lineup, settings) => {
     date: new Date().toISOString(),
     gameNumber: nextNumber,
     lineup: lineup,
-    // settings intentionally omitted per new requirements
+    settings: settings,
     battingOrder: lineup.battingOrder.map(p => ({ name: p.name, number: p.number }))
   };
-  history[teamId].unshift(gameRecord); // keep all games now
+  history[teamId].unshift(gameRecord);
+  // Limit history to 20 games
+  if (history[teamId].length > 20) {
+    history[teamId] = history[teamId].slice(0, 20);
+  }
   saveTeamHistory(history);
   return gameRecord;
 };
