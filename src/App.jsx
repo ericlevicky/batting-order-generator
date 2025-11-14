@@ -6,6 +6,7 @@ import TeamManager from './components/TeamManager';
 import GameHistory from './components/GameHistory';
 import CumulativeStats from './components/CumulativeStats';
 import InstallPrompt from './components/InstallPrompt';
+import Instructions from './components/Instructions';
 import { generateLineup } from './utils/lineupGenerator';
 import {
   getTeams,
@@ -30,6 +31,7 @@ function App() {
   const [hasCatcher, setHasCatcher] = useState(true);
   const [lineup, setLineup] = useState(null);
   const [gameHistory, setGameHistory] = useState([]);
+  const [showInstructions, setShowInstructions] = useState(false);
 
   // Load teams and current team on mount
   useEffect(() => {
@@ -148,8 +150,19 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>⚾ Little League Batting Order Generator</h1>
-        <p>Generate batting orders and field positions for your game</p>
+        <div className="header-content">
+          <div className="header-title">
+            <h1>⚾ Little League Batting Order Generator</h1>
+            <p>Generate batting orders and field positions for your game</p>
+          </div>
+          <button 
+            className="btn-help"
+            onClick={() => setShowInstructions(true)}
+            title="How to use this app"
+          >
+            ❓ Help
+          </button>
+        </div>
       </header>
 
       <div className="app-content">
@@ -232,6 +245,10 @@ function App() {
       </footer>
 
       <InstallPrompt />
+      
+      {showInstructions && (
+        <Instructions onClose={() => setShowInstructions(false)} />
+      )}
     </div>
   );
 }
