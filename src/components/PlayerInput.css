@@ -148,7 +148,7 @@
 }
 
 .players-items {
-  /* No max-height - list expands to show all players */
+  /* container for player items */
 }
 
 .player-item {
@@ -166,6 +166,15 @@
 
 .player-item:hover {
   background: #f8fafc;
+}
+
+.player-item.inactive {
+  opacity: 0.5;
+  background: #fff1f2;
+}
+
+.player-item.inactive .player-name {
+  text-decoration: line-through;
 }
 
 .player-order {
@@ -242,6 +251,34 @@
 .btn-remove:hover {
   background: #fee2e2;
   color: #dc2626;
+}
+
+.btn-active-toggle {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-active-toggle.active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.btn-active-toggle.inactive {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-active-toggle:hover {
+  transform: translateY(-2px);
 }
 
 @media (max-width: 768px) {

@@ -9,15 +9,15 @@ function PlayerInput({ players, setPlayers }) {
 
   const loadExamplePlayers = () => {
     const examplePlayers = [
-      { id: Date.now() + 1, name: 'Johnny Smith', number: '7' },
-      { id: Date.now() + 2, name: 'Sarah Johnson', number: '12' },
-      { id: Date.now() + 3, name: 'Mike Davis', number: '3' },
-      { id: Date.now() + 4, name: 'Emma Wilson', number: '9' },
-      { id: Date.now() + 5, name: 'Alex Martinez', number: '15' },
-      { id: Date.now() + 6, name: 'Olivia Brown', number: '21' },
-      { id: Date.now() + 7, name: 'Liam Taylor', number: '8' },
-      { id: Date.now() + 8, name: 'Sophia Anderson', number: '11' },
-      { id: Date.now() + 9, name: 'Noah Thomas', number: '5' },
+      { id: Date.now() + 1, name: 'Johnny Smith', number: '7', active: true },
+      { id: Date.now() + 2, name: 'Sarah Johnson', number: '12', active: true },
+      { id: Date.now() + 3, name: 'Mike Davis', number: '3', active: true },
+      { id: Date.now() + 4, name: 'Emma Wilson', number: '9', active: true },
+      { id: Date.now() + 5, name: 'Alex Martinez', number: '15', active: true },
+      { id: Date.now() + 6, name: 'Olivia Brown', number: '21', active: true },
+      { id: Date.now() + 7, name: 'Liam Taylor', number: '8', active: true },
+      { id: Date.now() + 8, name: 'Sophia Anderson', number: '11', active: true },
+      { id: Date.now() + 9, name: 'Noah Thomas', number: '5', active: true },
     ];
     setPlayers(examplePlayers);
   };
@@ -34,6 +34,7 @@ function PlayerInput({ players, setPlayers }) {
         id: Date.now(),
         name: currentName.trim(),
         number: currentNumber.trim() || (players.length + 1).toString(),
+        active: true,
       };
       setPlayers([...players, newPlayer]);
       setCurrentName('');
@@ -69,6 +70,10 @@ function PlayerInput({ players, setPlayers }) {
       [newPlayers[index], newPlayers[newIndex]] = [newPlayers[newIndex], newPlayers[index]];
       setPlayers(newPlayers);
     }
+  };
+
+  const toggleActive = (id) => {
+    setPlayers(players.map(p => p.id === id ? { ...p, active: p.active === false ? true : false } : p));
   };
 
   return (
@@ -140,14 +145,21 @@ function PlayerInput({ players, setPlayers }) {
               >
                 🔀 Shuffle
               </button>
-              <span>{players.length} Player{players.length !== 1 ? 's' : ''}</span>
+              <span>{players.filter(p => p.active !== false).length} Active / {players.length} Total</span>
             </div>
           </div>
           <div className="players-items">
             {players.map((player, index) => (
-              <div key={player.id} className="player-item">
+              <div key={player.id} className={`player-item ${player.active === false ? 'inactive' : ''}`}>
                 <div className="player-order">{index + 1}</div>
                 <div className="player-info">
+                  <button
+                    className={`btn-active-toggle ${player.active === false ? 'inactive' : 'active'}`}
+                    onClick={() => toggleActive(player.id)}
+                    title={player.active === false ? 'Activate player for next game' : 'Deactivate player for next game'}
+                  >
+                    {player.active === false ? '🚫' : '✅'}
+                  </button>
                   <span className="player-name">{player.name}</span>
                   <span className="player-number">#{player.number}</span>
                 </div>

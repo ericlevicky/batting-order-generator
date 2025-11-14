@@ -174,49 +174,37 @@ function rotateBattingOrder(players, historicalStats) {
 }
 
 export function generateLineup(players, numInnings, numOutfielders, hasCatcher, gameHistory = []) {
-  // Calculate historical stats for each player across all previous games
-  const historicalStats = calculateHistoricalStats(players, gameHistory);
-  
-  // Rotate batting order based on historical positions
-  const rotatedPlayers = rotateBattingOrder(players, historicalStats);
-  
-  // Initialize player stats for THIS game, but include historical data for balancing
-  const playerStats = rotatedPlayers.map((player, index) => ({
-    ...player,
-    battingOrder: index + 1,
-    infieldInnings: 0,
-    outfieldInnings: 0,
-    benchInnings: 0,
-    // Store historical totals separately for balancing decisions
-    _historicalInfield: historicalStats[player.name]?.totalInfield || 0,
-    _historicalOutfield: historicalStats[player.name]?.totalOutfield || 0,
-    _historicalBench: historicalStats[player.name]?.totalBench || 0,
-    _historicalFieldingPositions: historicalStats[player.name]?.fieldingPositions || {},
-    _currentGameFieldingPositions: {}, // Track positions played in current game
-  }));
-
-  // Calculate actual number of outfielders
-  // If 'all', calculate how many outfielders needed to field everyone (no bench)
+  const activePlayers = players.filter(p => p.active !== false);
+  const historicalStats = calculateHistoricalStats(activePlayers, gameHistory);
+  const rotatedPlayers = rotateBattingOrder(activePlayers, historicalStats);
+  const playerStats = rotatedPlayers.map((player, index) => {
+    const h = historicalStats[player.name] || {};
+    return {
+      id: player.id,
+      name: player.name,
+      number: player.number,
+      battingOrder: index + 1,
+      infieldInnings: 0,
+      outfieldInnings: 0,
+      benchInnings: 0,
+      _historicalInfield: h.totalInfield || 0,
+      _historicalOutfield: h.totalOutfield || 0,
+      _historicalBench: h.totalBench || 0,
+      _historicalFieldingPositions: h.fieldingPositions || {},
+      _currentGameFieldingPositions: {},
+    };
+  });
   let actualNumOutfielders = numOutfielders;
   if (numOutfielders === 'all') {
-    // Total positions = players.length
-    // Infield positions = 5 (P, 1B, 2B, 3B, SS) + 1 if catcher
     const infieldPositions = hasCatcher ? 6 : 5;
-    actualNumOutfielders = Math.max(0, players.length - infieldPositions);
+    actualNumOutfielders = Math.max(0, activePlayers.length - infieldPositions);
   }
-
   const positions = getPositionsForGame(actualNumOutfielders, hasCatcher);
   const innings = [];
-
   for (let inning = 0; inning < numInnings; inning++) {
     innings.push(generateInningPositions(playerStats, positions));
   }
-
-  return {
-    battingOrder: playerStats,
-    innings,
-    positions,
-  };
+  return { battingOrder: playerStats, innings, positions };
 }
 
 function getPositionsForGame(numOutfielders, hasCatcher) {
