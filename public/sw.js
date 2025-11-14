@@ -20,8 +20,14 @@ self.addEventListener('install', (event) => {
         console.log('Cache install failed:', error);
       })
   );
-  // Force the waiting service worker to become the active service worker
-  self.skipWaiting();
+  // Don't force activate immediately - let the update notification handle it
+});
+
+// Listen for SKIP_WAITING message
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // Activate event - clean up old caches

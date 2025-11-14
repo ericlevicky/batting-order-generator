@@ -436,6 +436,168 @@ describe('storage utilities', () => {
       expect(result.error).toContain('History');
     });
 
+    it('should import data when no teams exist locally', () => {
+      // Create and export data
+      const teamId = createTeam('Imported Team', [{ name: 'Player 1', number: '1' }]);
+      setCurrentTeamId(teamId);
+      const csv = exportAllData();
+
+      // Clear storage completely - simulating fresh start with no teams
+      localStorage.clear();
+      
+      // Verify no teams exist
+      expect(Object.keys(getTeams()).length).toBe(0);
+
+      // Import should work even with no existing teams
+      const result = importAllData(csv);
+
+      expect(result.success).toBe(true);
+      expect(result.teamsCount).toBe(1);
+      
+      const teams = getTeams();
+      expect(Object.keys(teams).length).toBe(1);
+      expect(Object.values(teams)[0].name).toBe('Imported Team');
+      
+      // Current team should be restored
+      const currentTeamId = getCurrentTeamId();
+      expect(currentTeamId).toBe(teamId);
+    });
+
+    it('should import data and merge with existing teams', () => {
+      // Clear first
+      localStorage.clear();
+      
+      // Create first team locally
+      const existingTeamId = createTeam('Existing Team', [{ name: 'Existing Player', number: '1' }]);
+      
+      // Create a completely separate team to import (different ID that doesn't exist yet)
+      const newTeamId = 'imported-team-999';
+      const importTeamData = {
+        [newTeamId]: {
+          id: newTeamId,
+          name: 'New Team',
+          players: [{ name: 'New Player', number: '2' }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      };
+      
+      // Create CSV for the new team
+      const csv = `Type,Key,Value
+Metadata,ExportedAt,${new Date().toISOString()}
+Metadata,CurrentTeamId,${newTeamId}
+Data,Teams,"${JSON.stringify(importTeamData).replace(/"/g, '""')}"
+Data,History,{}`;
+
+      // Now import - should merge with existing team
+      const result = importAllData(csv);
+
+      expect(result.success).toBe(true);
+      expect(result.teamsCount).toBe(1);
+      
+      const teams = getTeams();
+      // Import merges data, so we should have both teams
+      expect(Object.keys(teams).length).toBe(2);
+      expect(teams[existingTeamId]).toBeDefined();
+      expect(teams[existingTeamId].name).toBe('Existing Team');
+      expect(teams[newTeamId]).toBeDefined();
+      expect(teams[newTeamId].name).toBe('New Team');
+    });
+
+    it('should handle team name conflicts during import', () => {
+      // Clear first
+      localStorage.clear();
+      
+      // Create a team with a specific name
+      const existingTeamId = createTeam('My Team', [{ name: 'Player 1', number: '1' }]);
+      
+      // Create another team with the same name to import (but different ID)
+      const importTeamId = 'imported-team-888';
+      const importTeamData = {
+        [importTeamId]: {
+          id: importTeamId,
+          name: 'My Team',  // Same name as existing
+          players: [{ name: 'Player 2', number: '2' }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      };
+      
+      const csv = `Type,Key,Value
+Metadata,ExportedAt,${new Date().toISOString()}
+Metadata,CurrentTeamId,${importTeamId}
+Data,Teams,"${JSON.stringify(importTeamData).replace(/"/g, '""')}"
+Data,History,{}`;
+
+      // Import the team with conflicting name
+      const result = importAllData(csv);
+
+      expect(result.success).toBe(true);
+      
+      const teams = getTeams();
+      expect(Object.keys(teams).length).toBe(2);
+      
+      // Original team should keep its name
+      expect(teams[existingTeamId].name).toBe('My Team');
+      
+      // Imported team should have a modified name
+      expect(teams[importTeamId].name).toContain('My Team');
+      expect(teams[importTeamId].name).not.toBe('My Team');  // Should be "My Team (1)" or similar
+      expect(teams[importTeamId].name).toBe('My Team (1)');
+    });
+
+    it('should handle team ID conflicts during import', () => {
+      // Create a team with specific ID
+      const sharedTeamId = '12345';
+      localStorage.clear();
+      
+      const teams1 = {
+        [sharedTeamId]: {
+          id: sharedTeamId,
+          name: 'Team A',
+          players: [{ name: 'Player 1', number: '1' }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      };
+      saveTeams(teams1);
+      
+      // Try to import a different team with the same ID
+      const importTeamData = {
+        [sharedTeamId]: {
+          id: sharedTeamId,
+          name: 'Team B',  // Different name, same ID
+          players: [{ name: 'Player 2', number: '2' }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      };
+      
+      const csv = `Type,Key,Value
+Metadata,ExportedAt,${new Date().toISOString()}
+Metadata,CurrentTeamId,${sharedTeamId}
+Data,Teams,"${JSON.stringify(importTeamData).replace(/"/g, '""')}"
+Data,History,{}`;
+
+      // Import the team with conflicting ID
+      const result = importAllData(csv);
+
+      expect(result.success).toBe(true);
+      
+      const teams = getTeams();
+      expect(Object.keys(teams).length).toBe(2);  // Should have both teams
+      
+      // Original team should still exist with its name
+      expect(teams[sharedTeamId].name).toBe('Team A');
+      
+      // Imported team should have a new ID and possibly modified name
+      const teamNames = Object.values(teams).map(t => t.name);
+      expect(teamNames).toContain('Team A');
+      // Team B should be imported with modified name or be exactly "Team B"
+      const hasTeamB = teamNames.some(name => name.includes('Team B'));
+      expect(hasTeamB).toBe(true);
+    });
+
     it('should export and import multiple teams with complex data', () => {
       // Clear first to ensure clean state
       localStorage.clear();

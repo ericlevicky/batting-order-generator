@@ -262,17 +262,77 @@ export const importAllData = (csvContent) => {
       throw new Error('Invalid data - History information is missing');
     }
     
-    // Import data to localStorage
-    saveTeams(teams);
-    saveTeamHistory(history);
-    if (currentTeamId && teams[currentTeamId]) {
-      setCurrentTeamId(currentTeamId);
+    // Merge with existing teams instead of replacing
+    const existingTeams = getTeams();
+    const existingHistory = getTeamHistory();
+    
+    // Helper to generate unique team name
+    const getUniqueTeamName = (baseName, existingTeamsObj) => {
+      const existingNames = Object.values(existingTeamsObj).map(t => t.name.toLowerCase());
+      let name = baseName;
+      let counter = 1;
+      
+      while (existingNames.includes(name.toLowerCase())) {
+        name = `${baseName} (${counter})`;
+        counter++;
+      }
+      
+      return name;
+    };
+    
+    // Merge teams, handling name conflicts
+    const mergedTeams = { ...existingTeams };
+    const teamIdMapping = {}; // Map old IDs to new IDs in case of conflicts
+    
+    Object.entries(teams).forEach(([teamId, team]) => {
+      if (mergedTeams[teamId]) {
+        // Team ID conflict - create new ID and unique name
+        const newTeamId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+        const uniqueName = getUniqueTeamName(team.name, mergedTeams);
+        mergedTeams[newTeamId] = {
+          ...team,
+          id: newTeamId,
+          name: uniqueName,
+          updatedAt: new Date().toISOString()
+        };
+        teamIdMapping[teamId] = newTeamId;
+      } else {
+        // No ID conflict - check if name conflicts with existing team
+        const uniqueName = getUniqueTeamName(team.name, mergedTeams);
+        mergedTeams[teamId] = {
+          ...team,
+          name: uniqueName,
+          updatedAt: new Date().toISOString()
+        };
+      }
+    });
+    
+    // Merge history, updating team IDs if necessary
+    const mergedHistory = { ...existingHistory };
+    Object.entries(history).forEach(([teamId, games]) => {
+      const newTeamId = teamIdMapping[teamId] || teamId;
+      if (mergedHistory[newTeamId]) {
+        // Merge game histories, keeping both
+        mergedHistory[newTeamId] = [...mergedHistory[newTeamId], ...games];
+      } else {
+        mergedHistory[newTeamId] = games;
+      }
+    });
+    
+    // Save merged data to localStorage
+    saveTeams(mergedTeams);
+    saveTeamHistory(mergedHistory);
+    
+    // Set current team ID if it exists in merged teams
+    const newCurrentTeamId = teamIdMapping[currentTeamId] || currentTeamId;
+    if (newCurrentTeamId && mergedTeams[newCurrentTeamId]) {
+      setCurrentTeamId(newCurrentTeamId);
     }
     
     return {
       success: true,
       teamsCount: Object.keys(teams).length,
-      currentTeamId
+      currentTeamId: newCurrentTeamId
     };
   } catch (error) {
     return {

@@ -7,6 +7,7 @@ import GameHistory from './components/GameHistory';
 import CumulativeStats from './components/CumulativeStats';
 import InstallPrompt from './components/InstallPrompt';
 import Instructions from './components/Instructions';
+import UpdateNotification from './components/UpdateNotification';
 import { generateLineup } from './utils/lineupGenerator';
 import {
   getTeams,
@@ -245,6 +246,7 @@ function App() {
       </footer>
 
       <InstallPrompt />
+      <UpdateNotification />
       
       {showInstructions && (
         <Instructions onClose={() => setShowInstructions(false)} />
