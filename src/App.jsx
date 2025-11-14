@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PlayerInput from './components/PlayerInput';
 import GameSettings from './components/GameSettings';
-import LineupDisplay from './components/LineupDisplay';
 import TeamManager from './components/TeamManager';
 import GameHistory from './components/GameHistory';
 import CumulativeStats from './components/CumulativeStats';
 import InstallPrompt from './components/InstallPrompt';
 import Instructions from './components/Instructions';
 import UpdateNotification from './components/UpdateNotification';
+import ToastContainer from './components/ToastContainer';
+import ConfirmDialog from './components/ConfirmDialog';
 import { generateLineup } from './utils/lineupGenerator';
 import {
   getTeams,
@@ -19,7 +20,10 @@ import {
   setCurrentTeamId,
   saveLineupToHistory,
   getTeamGameHistory,
-  deleteGameFromHistory
+  deleteGameFromHistory,
+  updateTeamLastSettings,
+  getNextGameNumber,
+  deleteAllGamesFromHistory
 } from './utils/storage';
 import './App.css';
 
@@ -33,6 +37,11 @@ function App() {
   const [lineup, setLineup] = useState(null);
   const [gameHistory, setGameHistory] = useState([]);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [toasts, setToasts] = useState([]);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+  const [showCumulativeStats, setShowCumulativeStats] = useState(false);
+  const [lastGeneratedGameId, setLastGeneratedGameId] = useState(null);
+  const initialSelectRef = useRef(true);
 
   // Load teams and current team on mount
   useEffect(() => {
@@ -49,7 +58,13 @@ function App() {
     const team = getTeams()[teamId];
     if (team) {
       setPlayers(team.players || []);
-      setLineup(null); // Clear lineup when switching teams
+      // Load last saved settings if present
+      if (team.lastSettings) {
+        setNumInnings(team.lastSettings.numInnings ?? 6);
+        setNumOutfielders(team.lastSettings.numOutfielders ?? 3);
+        setHasCatcher(team.lastSettings.hasCatcher ?? true);
+      }
+      setLineup(null);
       const history = getTeamGameHistory(teamId);
       setGameHistory(history);
     }
@@ -59,6 +74,15 @@ function App() {
     setCurrentTeamIdState(teamId);
     setCurrentTeamId(teamId);
     loadTeamData(teamId);
+    const selectedTeam = getTeams()[teamId] || teams[teamId];
+    if (initialSelectRef.current) {
+      // first programmatic selection; suppress toast
+      initialSelectRef.current = false;
+      return;
+    }
+    if (selectedTeam?.name) {
+      showToast(`Now viewing team ${selectedTeam.name}`, 'info');
+    }
   };
 
   const handleCreateTeam = (teamName) => {
@@ -93,14 +117,26 @@ function App() {
     }
   }, [players, currentTeamId]);
 
+  const showToast = (message, type = 'info') => {
+    const id = Date.now().toString() + Math.random().toString(36).slice(2);
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
+  };
+
+  const requestConfirm = ({ title = 'Confirm', message, confirmLabel = 'OK', cancelLabel = 'Cancel', destructive = false, onConfirm }) => {
+    setConfirmDialog({ title, message, confirmLabel, cancelLabel, destructive, onConfirm });
+  };
+
   const handleGenerateLineup = () => {
     if (players.length < 9) {
-      alert('Please add at least 9 players');
+      showToast('Please add at least 9 players', 'error');
       return;
     }
 
     if (!currentTeamId) {
-      alert('Please create or select a team first');
+      showToast('Please create or select a team first', 'error');
       return;
     }
 
@@ -115,11 +151,16 @@ function App() {
 
     // Save to history
     const settings = { numInnings, numOutfielders, hasCatcher };
-    saveLineupToHistory(currentTeamId, generatedLineup, settings);
-    
+    const upcomingGameNumber = getNextGameNumber(currentTeamId);
+    const gameRecord = saveLineupToHistory(currentTeamId, generatedLineup, settings);
+    updateTeamLastSettings(currentTeamId, settings);
+
+    setLastGeneratedGameId(gameRecord.id);
+
     // Reload history
     const history = getTeamGameHistory(currentTeamId);
     setGameHistory(history);
+    showToast(`Game ${upcomingGameNumber} generated`, 'success');
   };
 
   const handleDeleteGame = (gameId) => {
@@ -127,6 +168,15 @@ function App() {
       deleteGameFromHistory(currentTeamId, gameId);
       const history = getTeamGameHistory(currentTeamId);
       setGameHistory(history);
+    }
+  };
+
+  const handleDeleteAllGames = () => {
+    if (currentTeamId) {
+      deleteAllGamesFromHistory(currentTeamId);
+      const history = getTeamGameHistory(currentTeamId);
+      setGameHistory(history);
+      setLastGeneratedGameId(null);
     }
   };
 
@@ -176,6 +226,8 @@ function App() {
             onRenameTeam={handleRenameTeam}
             onDeleteTeam={handleDeleteTeam}
             onDataImported={handleDataImported}
+            onShowToast={showToast}
+            onRequestConfirm={requestConfirm}
           />
 
           {currentTeam && (
@@ -211,22 +263,30 @@ function App() {
           )}
         </div>
 
-        {lineup && (
-          <LineupDisplay
-            lineup={lineup}
-            players={players}
-            numInnings={numInnings}
-            hasCatcher={hasCatcher}
-          />
-        )}
-
         {currentTeam && gameHistory.length > 0 && (
           <div className="config-section">
-            <CumulativeStats history={gameHistory} />
             <GameHistory
               history={gameHistory}
               onDeleteGame={handleDeleteGame}
+              onDeleteAllGames={handleDeleteAllGames}
+              onShowToast={showToast}
+              onRequestConfirm={requestConfirm}
+              initialExpandGameId={lastGeneratedGameId}
             />
+            <div className="card cumulative-stats-wrapper">
+              <div className="cumulative-stats-header" onClick={() => setShowCumulativeStats(v => !v)} style={{cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <h3 style={{margin:0}}>Cumulative Statistics</h3>
+                <button 
+                  className="btn-expand" 
+                  style={{marginLeft:'auto'}}
+                  onClick={(e) => { e.stopPropagation(); setShowCumulativeStats(v => !v); }}
+                  title={showCumulativeStats ? 'Collapse cumulative statistics' : 'Expand cumulative statistics'}
+                >
+                  {showCumulativeStats ? '▲' : '▼'}
+                </button>
+              </div>
+              {showCumulativeStats && <CumulativeStats history={gameHistory} hideHeader />}
+            </div>
           </div>
         )}
       </div>
@@ -247,6 +307,17 @@ function App() {
 
       <InstallPrompt />
       <UpdateNotification />
+      <ToastContainer toasts={toasts} onDismiss={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
+      {confirmDialog && (
+        <ConfirmDialog
+          {...confirmDialog}
+          onCancel={() => setConfirmDialog(null)}
+          onConfirmAction={() => {
+            confirmDialog.onConfirm?.();
+            setConfirmDialog(null);
+          }}
+        />
+      )}
       
       {showInstructions && (
         <Instructions onClose={() => setShowInstructions(false)} />

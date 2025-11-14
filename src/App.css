@@ -63,8 +63,14 @@
   gap: 2rem;
 }
 
-.config-section {
-  width: 100%;
+.app-content, .config-section {
+  gap: 2rem;
+}
+
+.stack-gap {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 .card {
@@ -72,6 +78,10 @@
   padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card + .card {
+  margin-top: 2rem;
 }
 
 .card h2 {
@@ -152,6 +162,10 @@
   background: #334155;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.cumulative-stats-wrapper {
+  margin-top: 2rem;
 }
 
 @media (max-width: 768px) {

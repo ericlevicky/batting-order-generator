@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { exportAllData, importAllData } from '../utils/storage';
+import { exportAllData, importAllData, getTeams } from '../utils/storage';
 import './TeamManager.css';
 
 function TeamManager({ 
@@ -9,7 +9,9 @@ function TeamManager({
   onCreateTeam, 
   onRenameTeam, 
   onDeleteTeam,
-  onDataImported
+  onDataImported,
+  onShowToast,
+  onRequestConfirm
 }) {
   const [isCreating, setIsCreating] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
@@ -36,9 +38,17 @@ function TeamManager({
   const handleDelete = (teamId) => {
     const teamList = Object.values(teams);
     const team = teamList.find(t => t.id === teamId);
-    if (window.confirm(`Delete team "${team.name}"? This will also delete all game history for this team.`)) {
-      onDeleteTeam(teamId);
-    }
+    onRequestConfirm?.({
+      title: 'Delete Team',
+      message: `Delete team "${team.name}"? This will also delete all game history for this team.`,
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
+      destructive: true,
+      onConfirm: () => {
+        onDeleteTeam(teamId);
+        onShowToast?.(`Team ${team.name} deleted`, 'error');
+      }
+    });
   };
 
   const startRename = (team) => {
@@ -58,8 +68,9 @@ function TeamManager({
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      onShowToast?.('Data exported successfully', 'success');
     } catch (error) {
-      alert('Error exporting data: ' + error.message);
+      onShowToast?.('Error exporting data: ' + error.message, 'error');
     }
   };
 
@@ -76,15 +87,26 @@ function TeamManager({
       const content = e.target?.result;
       if (typeof content === 'string') {
         const confirmMsg = 'Import teams from backup file? Teams will be merged with your existing teams. If team names conflict, a number will be added to make them unique.';
-        if (window.confirm(confirmMsg)) {
-          const result = importAllData(content);
-          if (result.success) {
-            alert(`Successfully imported ${result.teamsCount} team(s)`);
-            onDataImported?.();
-          } else {
-            alert('Error importing data: ' + result.error);
+        onRequestConfirm?.({
+          title: 'Import Data',
+          message: confirmMsg,
+          confirmLabel: 'Import',
+          cancelLabel: 'Cancel',
+          destructive: false,
+          onConfirm: () => {
+            const result = importAllData(content);
+            if (result.success) {
+              const importedNames = Object.values(getTeams())
+                .slice(-result.teamsCount)
+                .map(t => t.name)
+                .join(', ');
+              onShowToast?.(`Imported ${result.teamsCount} team(s): ${importedNames}`, 'success');
+              onDataImported?.();
+            } else {
+              onShowToast?.('Error importing data: ' + result.error, 'error');
+            }
           }
-        }
+        });
       }
       // Reset file input
       event.target.value = '';

@@ -1,10 +1,17 @@
 import React, { useState, useRef } from 'react';
 import LineupGrid from './LineupGrid';
+import PlayerStats from './PlayerStats';
 import './GameHistory.css';
 
-function GameHistory({ history, onDeleteGame }) {
-  const [expandedGame, setExpandedGame] = useState(null);
+function GameHistory({ history, onDeleteGame, onDeleteAllGames, onShowToast, onRequestConfirm, initialExpandGameId }) {
+  const [expandedGame, setExpandedGame] = useState(initialExpandGameId || null);
   const printRef = useRef({});
+
+  React.useEffect(() => {
+    if (initialExpandGameId) {
+      setExpandedGame(initialExpandGameId);
+    }
+  }, [initialExpandGameId]);
 
   if (!history || history.length === 0) {
     return (
@@ -87,7 +94,28 @@ function GameHistory({ history, onDeleteGame }) {
     <div className="game-history">
       <h3>Game History ({history.length})</h3>
       <p className="history-hint">Click on a game to see the full lineup used</p>
-      
+      {history.length > 1 && (
+        <div style={{marginBottom:'0.75rem', textAlign:'right'}}>
+          <button
+            className="btn-delete-all-games"
+            onClick={() => {
+              onRequestConfirm?.({
+                title: 'Delete All Games',
+                message: 'Delete ALL games for this team? This action cannot be undone.',
+                confirmLabel: 'Delete All',
+                cancelLabel: 'Cancel',
+                destructive: true,
+                onConfirm: () => {
+                  onDeleteAllGames?.();
+                  onShowToast?.('All games deleted', 'error');
+                }
+              });
+            }}
+          >
+            🗑️ Delete All Games
+          </button>
+        </div>
+      )}
       <div className="history-list">
         {history.map((game, index) => (
           <div key={game.id} className="history-item">
@@ -97,7 +125,7 @@ function GameHistory({ history, onDeleteGame }) {
             >
               <div className="history-info">
                 <div className="history-title">
-                  Game #{history.length - index}
+                  {game.gameNumber ? `Game #${game.gameNumber}` : `Game #${history.length - index}`}
                 </div>
                 <div className="history-date">
                   {formatDate(game.date)}
@@ -121,9 +149,18 @@ function GameHistory({ history, onDeleteGame }) {
                   className="btn-delete-game"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (window.confirm('Delete this game from history?')) {
-                      onDeleteGame(game.id);
-                    }
+                    const gameNumber = game.gameNumber || (history.length - index);
+                    onRequestConfirm?.({
+                      title: `Delete Game ${gameNumber}`,
+                      message: `This will permanently remove Game ${gameNumber} from history. Continue?`,
+                      confirmLabel: 'Delete',
+                      cancelLabel: 'Cancel',
+                      destructive: true,
+                      onConfirm: () => {
+                        onDeleteGame(game.id);
+                        onShowToast?.(`Game ${gameNumber} deleted`, 'error');
+                      }
+                    });
                   }}
                   title="Delete game"
                 >
@@ -134,8 +171,8 @@ function GameHistory({ history, onDeleteGame }) {
             
             {expandedGame === game.id && (
               <div className="history-details">
-                <div className="history-details-header">
-                  <h4>Game Lineup</h4>
+                <div className="history-details-header" style={{display:'flex', gap:'0.75rem', flexWrap:'wrap', alignItems:'center'}}>
+                  <h4 style={{marginRight:'auto'}}>Game Lineup</h4>
                   <button
                     className="btn-print-game"
                     onClick={() => handlePrintGame(game.id)}
@@ -165,6 +202,11 @@ function GameHistory({ history, onDeleteGame }) {
                     ))}
                   </div>
                 )}
+                <div style={{marginTop:'0.75rem'}}>
+                  <PlayerStats
+                    stats={game.lineup ? game.lineup.battingOrder : game.battingOrder}
+                  />
+                </div>
               </div>
             )}
           </div>

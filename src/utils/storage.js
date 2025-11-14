@@ -16,13 +16,14 @@ export const getTeams = () => {
   return teams ? JSON.parse(teams) : {};
 };
 
-export const createTeam = (teamName, players = []) => {
+export const createTeam = (teamName, players = [], lastSettings = { numInnings: 6, numOutfielders: 3, hasCatcher: true }) => {
   const teams = getTeams();
   const teamId = Date.now().toString();
   teams[teamId] = {
     id: teamId,
     name: teamName,
     players: players,
+    lastSettings: lastSettings,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -33,11 +34,7 @@ export const createTeam = (teamName, players = []) => {
 export const updateTeam = (teamId, updates) => {
   const teams = getTeams();
   if (teams[teamId]) {
-    teams[teamId] = {
-      ...teams[teamId],
-      ...updates,
-      updatedAt: new Date().toISOString()
-    };
+    teams[teamId] = Object.assign({}, teams[teamId], updates, { updatedAt: new Date().toISOString() });
     saveTeams(teams);
     return true;
   }
@@ -63,6 +60,21 @@ export const deleteTeam = (teamId) => {
 export const getTeam = (teamId) => {
   const teams = getTeams();
   return teams[teamId] || null;
+};
+
+export const updateTeamLastSettings = (teamId, settings) => {
+  const teams = getTeams();
+  if (teams[teamId]) {
+    teams[teamId].lastSettings = {
+      numInnings: settings.numInnings,
+      numOutfielders: settings.numOutfielders,
+      hasCatcher: settings.hasCatcher
+    };
+    teams[teamId].updatedAt = new Date().toISOString();
+    saveTeams(teams);
+    return true;
+  }
+  return false;
 };
 
 // Current Team Selection
@@ -93,26 +105,36 @@ export const getTeamHistory = () => {
   return history ? JSON.parse(history) : {};
 };
 
+export const getNextGameNumber = (teamId) => {
+  const history = getTeamHistory();
+  const games = history[teamId] || [];
+  let max = 0;
+  for (let i = 0; i < games.length; i++) {
+    const n = games[i].gameNumber;
+    if (typeof n === 'number' && n > max) max = n;
+  }
+  return max + 1;
+};
+
 export const saveLineupToHistory = (teamId, lineup, settings) => {
   const history = getTeamHistory();
   if (!history[teamId]) {
     history[teamId] = [];
   }
-  
+  const nextNumber = getNextGameNumber(teamId);
   const gameRecord = {
     id: Date.now().toString(),
     date: new Date().toISOString(),
+    gameNumber: nextNumber,
     lineup: lineup,
     settings: settings,
     battingOrder: lineup.battingOrder.map(p => ({ name: p.name, number: p.number }))
   };
-  
-  // Keep only last 20 games per team
   history[teamId].unshift(gameRecord);
+  // Limit history to 20 games
   if (history[teamId].length > 20) {
     history[teamId] = history[teamId].slice(0, 20);
   }
-  
   saveTeamHistory(history);
   return gameRecord;
 };
@@ -130,12 +152,24 @@ export const deleteGameFromHistory = (teamId, gameId) => {
   }
 };
 
+export const deleteAllGamesFromHistory = (teamId) => {
+  const history = getTeamHistory();
+  if (history[teamId]) {
+    history[teamId] = [];
+    saveTeamHistory(history);
+    return true;
+  }
+  return false;
+};
+
 // Utility to shuffle array (Fisher-Yates algorithm)
 export const shuffleArray = (array) => {
-  const shuffled = [...array];
+  const shuffled = array.slice();
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    const temp = shuffled[i];
+    shuffled[i] = shuffled[j];
+    shuffled[j] = temp;
   }
   return shuffled;
 };
@@ -281,39 +315,37 @@ export const importAllData = (csvContent) => {
     };
     
     // Merge teams, handling name conflicts
-    const mergedTeams = { ...existingTeams };
+    const mergedTeams = Object.assign({}, existingTeams);
     const teamIdMapping = {}; // Map old IDs to new IDs in case of conflicts
-    
+
     Object.entries(teams).forEach(([teamId, team]) => {
       if (mergedTeams[teamId]) {
         // Team ID conflict - create new ID and unique name
         const newTeamId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
         const uniqueName = getUniqueTeamName(team.name, mergedTeams);
-        mergedTeams[newTeamId] = {
-          ...team,
+        mergedTeams[newTeamId] = Object.assign({}, team, {
           id: newTeamId,
           name: uniqueName,
           updatedAt: new Date().toISOString()
-        };
+        });
         teamIdMapping[teamId] = newTeamId;
       } else {
         // No ID conflict - check if name conflicts with existing team
         const uniqueName = getUniqueTeamName(team.name, mergedTeams);
-        mergedTeams[teamId] = {
-          ...team,
+        mergedTeams[teamId] = Object.assign({}, team, {
           name: uniqueName,
           updatedAt: new Date().toISOString()
-        };
+        });
       }
     });
-    
+
     // Merge history, updating team IDs if necessary
-    const mergedHistory = { ...existingHistory };
+    const mergedHistory = Object.assign({}, existingHistory);
     Object.entries(history).forEach(([teamId, games]) => {
       const newTeamId = teamIdMapping[teamId] || teamId;
       if (mergedHistory[newTeamId]) {
         // Merge game histories, keeping both
-        mergedHistory[newTeamId] = [...mergedHistory[newTeamId], ...games];
+        mergedHistory[newTeamId] = mergedHistory[newTeamId].concat(games);
       } else {
         mergedHistory[newTeamId] = games;
       }

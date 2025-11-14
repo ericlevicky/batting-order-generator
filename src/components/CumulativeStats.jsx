@@ -92,7 +92,7 @@ function calculateCumulativeStats(gameHistory) {
   }).sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function CumulativeStats({ history }) {
+function CumulativeStats({ history, hideHeader = false }) {
   if (!history || history.length === 0) {
     return null;
   }
@@ -148,10 +148,19 @@ function CumulativeStats({ history }) {
 
   return (
     <div className="cumulative-stats-card card">
-      <h3>Cumulative Statistics</h3>
-      <p className="stats-description">
-        Total innings across all {history.length} game{history.length !== 1 ? 's' : ''}
-      </p>
+      {!hideHeader && (
+        <>
+          <h3>Cumulative Statistics</h3>
+          <p className="stats-description">
+            Total innings across all {history.length} game{history.length !== 1 ? 's' : ''}
+          </p>
+        </>
+      )}
+      {hideHeader && (
+        <p className="stats-description" style={{marginTop:0}}>
+          Total innings across all {history.length} game{history.length !== 1 ? 's' : ''}
+        </p>
+      )}
       <div className="stats-table-container">
         <table className="stats-table">
           <thead>
