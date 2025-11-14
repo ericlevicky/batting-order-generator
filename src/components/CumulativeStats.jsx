@@ -103,6 +103,49 @@ function CumulativeStats({ history }) {
     return null;
   }
 
+  // Collect all unique fielding positions used across all games
+  const allFieldingPositions = new Set();
+  stats.forEach(player => {
+    Object.keys(player.fieldingPositions).forEach(pos => allFieldingPositions.add(pos));
+  });
+
+  // Define position order for display
+  const positionOrder = [
+    'Pitcher', 'Catcher', '1st Base', '2nd Base', '3rd Base', 'Shortstop',
+    'Left Field', 'Center Field', 'Right Field', 'Right Center',
+    'Left Center', // Additional outfield positions that might be used
+    'Bench'
+  ];
+
+  // Filter and sort positions that actually exist in the data
+  const displayPositions = positionOrder.filter(pos => allFieldingPositions.has(pos));
+  
+  // Add any positions not in our predefined order (for future-proofing)
+  allFieldingPositions.forEach(pos => {
+    if (!positionOrder.includes(pos)) {
+      displayPositions.push(pos);
+    }
+  });
+
+  // Helper function to get short abbreviation for position
+  const getPositionAbbr = (position) => {
+    const abbrevMap = {
+      'Pitcher': 'P',
+      'Catcher': 'C',
+      '1st Base': '1B',
+      '2nd Base': '2B',
+      '3rd Base': '3B',
+      'Shortstop': 'SS',
+      'Left Field': 'LF',
+      'Center Field': 'CF',
+      'Right Field': 'RF',
+      'Right Center': 'RC',
+      'Left Center': 'LC',
+      'Bench': 'Bench'
+    };
+    return abbrevMap[position] || position;
+  };
+
   return (
     <div className="cumulative-stats-card card">
       <h3>Cumulative Statistics</h3>
@@ -150,34 +193,20 @@ function CumulativeStats({ history }) {
             <thead>
               <tr>
                 <th>Player</th>
-                <th>P</th>
-                <th>C</th>
-                <th>1B</th>
-                <th>2B</th>
-                <th>3B</th>
-                <th>SS</th>
-                <th>LF</th>
-                <th>CF</th>
-                <th>RF</th>
-                <th>RC</th>
-                <th>Bench</th>
+                {displayPositions.map(position => (
+                  <th key={position}>{getPositionAbbr(position)}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {stats.map((player) => (
                 <tr key={player.name}>
                   <td className="player-name-cell">{player.name}</td>
-                  <td className="stat-cell">{player.fieldingPositions['Pitcher'] || 0}</td>
-                  <td className="stat-cell">{player.fieldingPositions['Catcher'] || 0}</td>
-                  <td className="stat-cell">{player.fieldingPositions['1st Base'] || 0}</td>
-                  <td className="stat-cell">{player.fieldingPositions['2nd Base'] || 0}</td>
-                  <td className="stat-cell">{player.fieldingPositions['3rd Base'] || 0}</td>
-                  <td className="stat-cell">{player.fieldingPositions['Shortstop'] || 0}</td>
-                  <td className="stat-cell">{player.fieldingPositions['Left Field'] || 0}</td>
-                  <td className="stat-cell">{player.fieldingPositions['Center Field'] || 0}</td>
-                  <td className="stat-cell">{player.fieldingPositions['Right Field'] || 0}</td>
-                  <td className="stat-cell">{player.fieldingPositions['Right Center'] || 0}</td>
-                  <td className="stat-cell">{player.fieldingPositions['Bench'] || 0}</td>
+                  {displayPositions.map(position => (
+                    <td key={position} className="stat-cell">
+                      {player.fieldingPositions[position] || 0}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
