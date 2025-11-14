@@ -26,6 +26,9 @@ describe('calculateCumulativeStats', () => {
           battingOrder: [
             { name: 'Alice', number: '5', battingOrder: 1, infieldInnings: 3, outfieldInnings: 2, benchInnings: 1 },
             { name: 'Bob', number: '10', battingOrder: 2, infieldInnings: 2, outfieldInnings: 3, benchInnings: 1 }
+          ],
+          innings: [
+            { 'Pitcher': { name: 'Alice' }, 'Catcher': { name: 'Bob' } }
           ]
         }
       }
@@ -42,8 +45,8 @@ describe('calculateCumulativeStats', () => {
       totalOutfield: 2,
       totalBench: 1,
       battingPositions: { 1: 1 },
-      avgBattingPosition: '1.0',
-      uniqueBattingPositions: 1
+      fieldingPositions: { 'Pitcher': 1 },
+      avgBattingPosition: '1.0'
     });
     expect(result[1]).toEqual({
       name: 'Bob',
@@ -53,8 +56,8 @@ describe('calculateCumulativeStats', () => {
       totalOutfield: 3,
       totalBench: 1,
       battingPositions: { 2: 1 },
-      avgBattingPosition: '2.0',
-      uniqueBattingPositions: 1
+      fieldingPositions: { 'Catcher': 1 },
+      avgBattingPosition: '2.0'
     });
   });
 
@@ -67,6 +70,9 @@ describe('calculateCumulativeStats', () => {
           battingOrder: [
             { name: 'Alice', number: '5', battingOrder: 1, infieldInnings: 3, outfieldInnings: 2, benchInnings: 1 },
             { name: 'Bob', number: '10', battingOrder: 2, infieldInnings: 2, outfieldInnings: 3, benchInnings: 1 }
+          ],
+          innings: [
+            { 'Pitcher': { name: 'Alice' }, '1st Base': { name: 'Bob' } }
           ]
         }
       },
@@ -77,6 +83,9 @@ describe('calculateCumulativeStats', () => {
           battingOrder: [
             { name: 'Alice', number: '5', battingOrder: 3, infieldInnings: 4, outfieldInnings: 1, benchInnings: 1 },
             { name: 'Bob', number: '10', battingOrder: 4, infieldInnings: 3, outfieldInnings: 2, benchInnings: 1 }
+          ],
+          innings: [
+            { 'Catcher': { name: 'Alice' }, '2nd Base': { name: 'Bob' } }
           ]
         }
       }
@@ -93,8 +102,8 @@ describe('calculateCumulativeStats', () => {
       totalOutfield: 3,
       totalBench: 2,
       battingPositions: { 1: 1, 3: 1 },
-      avgBattingPosition: '2.0',
-      uniqueBattingPositions: 2
+      fieldingPositions: { 'Pitcher': 1, 'Catcher': 1 },
+      avgBattingPosition: '2.0'
     });
     expect(result[1]).toEqual({
       name: 'Bob',
@@ -104,8 +113,8 @@ describe('calculateCumulativeStats', () => {
       totalOutfield: 5,
       totalBench: 2,
       battingPositions: { 2: 1, 4: 1 },
-      avgBattingPosition: '3.0',
-      uniqueBattingPositions: 2
+      fieldingPositions: { '1st Base': 1, '2nd Base': 1 },
+      avgBattingPosition: '3.0'
     });
   });
 
@@ -118,7 +127,8 @@ describe('calculateCumulativeStats', () => {
           battingOrder: [
             { name: 'Alice', number: '5', battingOrder: 1, infieldInnings: 3 },
             { name: 'Bob', battingOrder: 2, outfieldInnings: 2 }
-          ]
+          ],
+          innings: []
         }
       }
     ];
@@ -134,8 +144,8 @@ describe('calculateCumulativeStats', () => {
       totalOutfield: 0,
       totalBench: 0,
       battingPositions: { 1: 1 },
-      avgBattingPosition: '1.0',
-      uniqueBattingPositions: 1
+      fieldingPositions: {},
+      avgBattingPosition: '1.0'
     });
     expect(result[1]).toEqual({
       name: 'Bob',
@@ -145,8 +155,8 @@ describe('calculateCumulativeStats', () => {
       totalOutfield: 2,
       totalBench: 0,
       battingPositions: { 2: 1 },
-      avgBattingPosition: '2.0',
-      uniqueBattingPositions: 1
+      fieldingPositions: {},
+      avgBattingPosition: '2.0'
     });
   });
 
@@ -179,7 +189,8 @@ describe('calculateCumulativeStats', () => {
           battingOrder: [
             { name: 'Alice', battingOrder: 1, infieldInnings: 3 },
             { name: 'Bob', battingOrder: 2, infieldInnings: 2 }
-          ]
+          ],
+          innings: []
         }
       },
       {
@@ -189,7 +200,8 @@ describe('calculateCumulativeStats', () => {
           battingOrder: [
             { name: 'Alice', battingOrder: 3, infieldInnings: 2 },
             { name: 'Charlie', battingOrder: 1, infieldInnings: 3 }
-          ]
+          ],
+          innings: []
         }
       }
     ];
@@ -205,8 +217,8 @@ describe('calculateCumulativeStats', () => {
       totalOutfield: 0,
       totalBench: 0,
       battingPositions: { 1: 1, 3: 1 },
-      avgBattingPosition: '2.0',
-      uniqueBattingPositions: 2
+      fieldingPositions: {},
+      avgBattingPosition: '2.0'
     });
     expect(result.find(p => p.name === 'Bob')).toEqual({
       name: 'Bob',
@@ -216,8 +228,8 @@ describe('calculateCumulativeStats', () => {
       totalOutfield: 0,
       totalBench: 0,
       battingPositions: { 2: 1 },
-      avgBattingPosition: '2.0',
-      uniqueBattingPositions: 1
+      fieldingPositions: {},
+      avgBattingPosition: '2.0'
     });
     expect(result.find(p => p.name === 'Charlie')).toEqual({
       name: 'Charlie',
@@ -227,8 +239,8 @@ describe('calculateCumulativeStats', () => {
       totalOutfield: 0,
       totalBench: 0,
       battingPositions: { 1: 1 },
-      avgBattingPosition: '1.0',
-      uniqueBattingPositions: 1
+      fieldingPositions: {},
+      avgBattingPosition: '1.0'
     });
   });
 
@@ -240,7 +252,8 @@ describe('calculateCumulativeStats', () => {
         lineup: {
           battingOrder: [
             { name: 'Alice', battingOrder: 1, infieldInnings: 3 }
-          ]
+          ],
+          innings: []
         }
       },
       {
@@ -249,7 +262,8 @@ describe('calculateCumulativeStats', () => {
         lineup: {
           battingOrder: [
             { name: 'Alice', battingOrder: 5, infieldInnings: 3 }
-          ]
+          ],
+          innings: []
         }
       },
       {
@@ -258,7 +272,8 @@ describe('calculateCumulativeStats', () => {
         lineup: {
           battingOrder: [
             { name: 'Alice', battingOrder: 3, infieldInnings: 3 }
-          ]
+          ],
+          innings: []
         }
       }
     ];
@@ -267,7 +282,6 @@ describe('calculateCumulativeStats', () => {
     
     expect(result).toHaveLength(1);
     expect(result[0].avgBattingPosition).toBe('3.0'); // (1 + 5 + 3) / 3 = 3.0
-    expect(result[0].uniqueBattingPositions).toBe(3);
     expect(result[0].battingPositions).toEqual({ 1: 1, 3: 1, 5: 1 });
   });
 
@@ -279,7 +293,8 @@ describe('calculateCumulativeStats', () => {
         lineup: {
           battingOrder: [
             { name: 'Alice', battingOrder: 2, infieldInnings: 3 }
-          ]
+          ],
+          innings: []
         }
       },
       {
@@ -288,7 +303,8 @@ describe('calculateCumulativeStats', () => {
         lineup: {
           battingOrder: [
             { name: 'Alice', battingOrder: 2, infieldInnings: 3 }
-          ]
+          ],
+          innings: []
         }
       },
       {
@@ -297,7 +313,8 @@ describe('calculateCumulativeStats', () => {
         lineup: {
           battingOrder: [
             { name: 'Alice', battingOrder: 4, infieldInnings: 3 }
-          ]
+          ],
+          innings: []
         }
       }
     ];
@@ -306,7 +323,6 @@ describe('calculateCumulativeStats', () => {
     
     expect(result).toHaveLength(1);
     expect(result[0].avgBattingPosition).toBe('2.7'); // (2 + 2 + 4) / 3 = 2.666... ≈ 2.7
-    expect(result[0].uniqueBattingPositions).toBe(2); // Only positions 2 and 4
     expect(result[0].battingPositions).toEqual({ 2: 2, 4: 1 });
   });
 
@@ -318,7 +334,8 @@ describe('calculateCumulativeStats', () => {
         lineup: {
           battingOrder: [
             { name: 'Alice', infieldInnings: 3 }
-          ]
+          ],
+          innings: []
         }
       }
     ];
@@ -327,8 +344,73 @@ describe('calculateCumulativeStats', () => {
     
     expect(result).toHaveLength(1);
     expect(result[0].avgBattingPosition).toBe('-');
-    expect(result[0].uniqueBattingPositions).toBe(0);
     expect(result[0].battingPositions).toEqual({});
+  });
+
+  it('should track fielding positions correctly', () => {
+    const history = [
+      {
+        id: '1',
+        date: '2024-01-01',
+        lineup: {
+          battingOrder: [
+            { name: 'Alice', battingOrder: 1, infieldInnings: 3 },
+            { name: 'Bob', battingOrder: 2, outfieldInnings: 2 }
+          ],
+          innings: [
+            { 'Pitcher': { name: 'Alice' }, 'Left Field': { name: 'Bob' } },
+            { 'Catcher': { name: 'Alice' }, 'Center Field': { name: 'Bob' } },
+            { '1st Base': { name: 'Alice' }, 'Right Field': { name: 'Bob' } }
+          ]
+        }
+      }
+    ];
+
+    const result = calculateCumulativeStats(history);
+    
+    expect(result).toHaveLength(2);
+    expect(result[0].fieldingPositions).toEqual({
+      'Pitcher': 1,
+      'Catcher': 1,
+      '1st Base': 1
+    });
+    expect(result[1].fieldingPositions).toEqual({
+      'Left Field': 1,
+      'Center Field': 1,
+      'Right Field': 1
+    });
+  });
+
+  it('should track bench innings correctly', () => {
+    const history = [
+      {
+        id: '1',
+        date: '2024-01-01',
+        lineup: {
+          battingOrder: [
+            { name: 'Alice', battingOrder: 1, infieldInnings: 2, benchInnings: 1 },
+            { name: 'Bob', battingOrder: 2, infieldInnings: 3 }
+          ],
+          innings: [
+            { 'Pitcher': { name: 'Bob' }, 'Bench': [{ name: 'Alice' }] },
+            { 'Catcher': { name: 'Alice' } },
+            { '1st Base': { name: 'Alice' } }
+          ]
+        }
+      }
+    ];
+
+    const result = calculateCumulativeStats(history);
+    
+    expect(result).toHaveLength(2);
+    expect(result[0].fieldingPositions).toEqual({
+      'Bench': 1,
+      'Catcher': 1,
+      '1st Base': 1
+    });
+    expect(result[1].fieldingPositions).toEqual({
+      'Pitcher': 1
+    });
   });
 });
 
@@ -352,7 +434,8 @@ describe('CumulativeStats component', () => {
           battingOrder: [
             { name: 'Alice', number: '5', battingOrder: 1, infieldInnings: 3, outfieldInnings: 2, benchInnings: 1 },
             { name: 'Bob', number: '10', battingOrder: 2, infieldInnings: 2, outfieldInnings: 3, benchInnings: 1 }
-          ]
+          ],
+          innings: []
         }
       }
     ];
@@ -365,7 +448,7 @@ describe('CumulativeStats component', () => {
     expect(screen.getAllByText('Bob')).toHaveLength(2); // Appears in both tables
     expect(screen.getByText('#5')).toBeInTheDocument();
     expect(screen.getByText('#10')).toBeInTheDocument();
-    expect(screen.getByText('Batting Position Breakdown')).toBeInTheDocument();
+    expect(screen.getByText('Fielding Position Breakdown')).toBeInTheDocument();
   });
 
   it('should display correct game count in description', () => {
@@ -376,7 +459,8 @@ describe('CumulativeStats component', () => {
         lineup: {
           battingOrder: [
             { name: 'Alice', battingOrder: 1, infieldInnings: 3 }
-          ]
+          ],
+          innings: []
         }
       },
       {
@@ -385,7 +469,8 @@ describe('CumulativeStats component', () => {
         lineup: {
           battingOrder: [
             { name: 'Alice', battingOrder: 2, infieldInnings: 2 }
-          ]
+          ],
+          innings: []
         }
       }
     ];
@@ -403,7 +488,8 @@ describe('CumulativeStats component', () => {
         lineup: {
           battingOrder: [
             { name: 'Alice', number: '5', battingOrder: 1, infieldInnings: 3, outfieldInnings: 2, benchInnings: 1 }
-          ]
+          ],
+          innings: []
         }
       }
     ];
@@ -412,12 +498,12 @@ describe('CumulativeStats component', () => {
     
     // Total Active = Infield (3) + Outfield (2) = 5
     const rows = screen.getAllByRole('row');
-    // Now we have 2 tables: main stats table (header + 1 data) + batting position breakdown table (header + 1 data) = 4 rows
+    // Now we have 2 tables: main stats table (header + 1 data) + fielding position breakdown table (header + 1 data) = 4 rows
     expect(rows).toHaveLength(4);
     
-    // Check that the table has the Total Active column header
+    // Check that the table has the correct column headers
     expect(screen.getByText('Total Active')).toBeInTheDocument();
     expect(screen.getByText('Avg Position')).toBeInTheDocument();
-    expect(screen.getByText('Unique Positions')).toBeInTheDocument();
+    expect(screen.queryByText('Unique Positions')).not.toBeInTheDocument();
   });
 });

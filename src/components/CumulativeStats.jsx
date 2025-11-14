@@ -20,7 +20,8 @@ function calculateCumulativeStats(gameHistory) {
           totalInfield: 0,
           totalOutfield: 0,
           totalBench: 0,
-          battingPositions: {}, // Track count of innings in each batting position
+          battingPositions: {}, // Track count of games in each batting position (for average)
+          fieldingPositions: {}, // Track count of innings in each fielding position
         };
       }
 
@@ -29,7 +30,7 @@ function calculateCumulativeStats(gameHistory) {
       playerStats[player.name].totalOutfield += player.outfieldInnings || 0;
       playerStats[player.name].totalBench += player.benchInnings || 0;
       
-      // Track batting order position
+      // Track batting order position for average calculation
       const battingPos = player.battingOrder;
       if (battingPos) {
         playerStats[player.name].battingPositions[battingPos] = 
@@ -41,6 +42,32 @@ function calculateCumulativeStats(gameHistory) {
         playerStats[player.name].number = player.number;
       }
     });
+
+    // Track fielding positions from innings data
+    if (game.lineup.innings) {
+      game.lineup.innings.forEach(inning => {
+        // Iterate through each position in the inning
+        Object.entries(inning).forEach(([positionName, playerOrPlayers]) => {
+          // Handle bench (array of players) vs field positions (single player)
+          if (positionName === 'Bench') {
+            if (Array.isArray(playerOrPlayers)) {
+              playerOrPlayers.forEach(player => {
+                if (playerStats[player.name]) {
+                  playerStats[player.name].fieldingPositions[positionName] = 
+                    (playerStats[player.name].fieldingPositions[positionName] || 0) + 1;
+                }
+              });
+            }
+          } else {
+            // Single player in a field position
+            if (playerOrPlayers && playerOrPlayers.name && playerStats[playerOrPlayers.name]) {
+              playerStats[playerOrPlayers.name].fieldingPositions[positionName] = 
+                (playerStats[playerOrPlayers.name].fieldingPositions[positionName] || 0) + 1;
+            }
+          }
+        });
+      });
+    }
   });
 
   // Convert to array, calculate batting position stats, and sort by name
@@ -48,7 +75,6 @@ function calculateCumulativeStats(gameHistory) {
     // Calculate average batting position
     let totalPositionWeight = 0;
     let totalGamesWithPosition = 0;
-    const uniquePositions = Object.keys(player.battingPositions).length;
     
     for (const [position, count] of Object.entries(player.battingPositions)) {
       totalPositionWeight += parseInt(position) * count;
@@ -62,7 +88,6 @@ function calculateCumulativeStats(gameHistory) {
     return {
       ...player,
       avgBattingPosition,
-      uniqueBattingPositions: uniquePositions,
     };
   }).sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -92,7 +117,6 @@ function CumulativeStats({ history }) {
               <th>Number</th>
               <th>Games</th>
               <th>Avg Position</th>
-              <th>Unique Positions</th>
               <th>Infield</th>
               <th>Outfield</th>
               <th>Bench</th>
@@ -106,7 +130,6 @@ function CumulativeStats({ history }) {
                 <td className="number-cell">{player.number ? `#${player.number}` : '-'}</td>
                 <td className="stat-cell">{player.totalGames}</td>
                 <td className="stat-cell">{player.avgBattingPosition}</td>
-                <td className="stat-cell">{player.uniqueBattingPositions}</td>
                 <td className="stat-cell">{player.totalInfield}</td>
                 <td className="stat-cell">{player.totalOutfield}</td>
                 <td className="stat-cell">{player.totalBench}</td>
@@ -120,37 +143,41 @@ function CumulativeStats({ history }) {
       </div>
       
       <div className="batting-position-breakdown">
-        <h4>Batting Position Breakdown</h4>
-        <p className="stats-description">Number of games in each batting order position (1-9)</p>
+        <h4>Fielding Position Breakdown</h4>
+        <p className="stats-description">Number of innings in each fielding position</p>
         <div className="stats-table-container">
           <table className="stats-table">
             <thead>
               <tr>
                 <th>Player</th>
-                <th>Pos 1</th>
-                <th>Pos 2</th>
-                <th>Pos 3</th>
-                <th>Pos 4</th>
-                <th>Pos 5</th>
-                <th>Pos 6</th>
-                <th>Pos 7</th>
-                <th>Pos 8</th>
-                <th>Pos 9</th>
+                <th>P</th>
+                <th>C</th>
+                <th>1B</th>
+                <th>2B</th>
+                <th>3B</th>
+                <th>SS</th>
+                <th>LF</th>
+                <th>CF</th>
+                <th>RF</th>
+                <th>RC</th>
+                <th>Bench</th>
               </tr>
             </thead>
             <tbody>
               {stats.map((player) => (
                 <tr key={player.name}>
                   <td className="player-name-cell">{player.name}</td>
-                  <td className="stat-cell">{player.battingPositions[1] || 0}</td>
-                  <td className="stat-cell">{player.battingPositions[2] || 0}</td>
-                  <td className="stat-cell">{player.battingPositions[3] || 0}</td>
-                  <td className="stat-cell">{player.battingPositions[4] || 0}</td>
-                  <td className="stat-cell">{player.battingPositions[5] || 0}</td>
-                  <td className="stat-cell">{player.battingPositions[6] || 0}</td>
-                  <td className="stat-cell">{player.battingPositions[7] || 0}</td>
-                  <td className="stat-cell">{player.battingPositions[8] || 0}</td>
-                  <td className="stat-cell">{player.battingPositions[9] || 0}</td>
+                  <td className="stat-cell">{player.fieldingPositions['Pitcher'] || 0}</td>
+                  <td className="stat-cell">{player.fieldingPositions['Catcher'] || 0}</td>
+                  <td className="stat-cell">{player.fieldingPositions['1st Base'] || 0}</td>
+                  <td className="stat-cell">{player.fieldingPositions['2nd Base'] || 0}</td>
+                  <td className="stat-cell">{player.fieldingPositions['3rd Base'] || 0}</td>
+                  <td className="stat-cell">{player.fieldingPositions['Shortstop'] || 0}</td>
+                  <td className="stat-cell">{player.fieldingPositions['Left Field'] || 0}</td>
+                  <td className="stat-cell">{player.fieldingPositions['Center Field'] || 0}</td>
+                  <td className="stat-cell">{player.fieldingPositions['Right Field'] || 0}</td>
+                  <td className="stat-cell">{player.fieldingPositions['Right Center'] || 0}</td>
+                  <td className="stat-cell">{player.fieldingPositions['Bench'] || 0}</td>
                 </tr>
               ))}
             </tbody>
