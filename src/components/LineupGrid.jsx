@@ -19,22 +19,24 @@ const POSITION_ABBREV = {
 function LineupGrid({ lineup, numInnings, showHeader = true }) {
   // Create a matrix: players x innings with their positions
   const getPlayerPosition = (playerId, inningIndex) => {
+    if (!lineup || !Array.isArray(lineup.innings)) return '-';
     const inning = lineup.innings[inningIndex];
-    
-    // Check each position in this inning
-    for (const [positionName, assignedPlayer] of Object.entries(inning)) {
-      if (positionName === 'Bench') {
-        // Bench can have multiple players
-        if (Array.isArray(assignedPlayer)) {
-          const found = assignedPlayer.find(p => p.id === playerId);
-          if (found) return POSITION_ABBREV['Bench'];
-        }
-      } else {
-        // Regular position has one player
-        if (assignedPlayer && assignedPlayer.id === playerId) {
-          return POSITION_ABBREV[positionName] || positionName;
+    if (!inning) return '-';
+    try {
+      for (const [positionName, assignedPlayer] of Object.entries(inning)) {
+        if (positionName === 'Bench') {
+          if (Array.isArray(assignedPlayer)) {
+            const found = assignedPlayer.find(p => (p.id || p.name) === playerId || p.name === playerId);
+            if (found) return POSITION_ABBREV['Bench'];
+          }
+        } else {
+          if (assignedPlayer && ((assignedPlayer.id || assignedPlayer.name) === playerId)) {
+            return POSITION_ABBREV[positionName] || positionName;
+          }
         }
       }
+    } catch (e) {
+      return '-';
     }
     return '-';
   };
@@ -66,14 +68,14 @@ function LineupGrid({ lineup, numInnings, showHeader = true }) {
             </tr>
           </thead>
           <tbody>
-            {lineup.battingOrder.map((player, index) => (
-              <tr key={player.id}>
+            {lineup?.battingOrder?.map((player, index) => (
+              <tr key={player.id || player.name}>
                 <td className="grid-order-col">{index + 1}</td>
                 <td className="grid-player-col">{player.name}</td>
                 <td className="grid-number-col">{player.number || '-'}</td>
                 {Array.from({ length: numInnings }, (_, inningIndex) => (
                   <td key={inningIndex} className="grid-inning-col">
-                    {getPlayerPosition(player.id, inningIndex)}
+                    {getPlayerPosition(player.id || player.name, inningIndex)}
                   </td>
                 ))}
               </tr>

@@ -122,6 +122,26 @@
   background: #fee2e2;
 }
 
+.btn-delete-all-games {
+  padding: 0.5rem 0.75rem;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #475569;
+}
+
+.btn-delete-all-games:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 .history-details {
   padding: 1rem;
   background: #f8fafc;

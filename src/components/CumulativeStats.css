@@ -1,5 +1,5 @@
 .cumulative-stats-card {
-  margin-top: 2rem;
+  padding-top: 0; /* removed original top margin for consistent spacing handled externally */
 }
 
 .cumulative-stats-card h3 {
