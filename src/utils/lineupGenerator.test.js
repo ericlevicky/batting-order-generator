@@ -9,6 +9,24 @@ describe('lineupGenerator', () => {
     }));
   };
 
+  const buildHistoryGame = (lineup, settings = { numInnings: 6, numOutfielders: 3, hasCatcher: true, rotatingBattingOrder: false }) => ({
+    id: `${Date.now()}-${Math.random()}`,
+    date: new Date().toISOString(),
+    lineup: {
+      battingOrder: lineup.battingOrder.map(p => ({
+        name: p.name,
+        number: p.number,
+        battingOrder: p.battingOrder,
+        infieldInnings: p.infieldInnings,
+        outfieldInnings: p.outfieldInnings,
+        benchInnings: p.benchInnings,
+      })),
+      innings: lineup.innings,
+      positions: lineup.positions,
+    },
+    settings,
+  });
+
   describe('generateLineup - Basic functionality', () => {
     it('should generate lineup with correct number of players', () => {
       const players = createPlayers(9);
@@ -492,6 +510,59 @@ describe('lineupGenerator', () => {
         const unique = new Set(names);
         expect(unique.size).toBe(players.length);
       });
+    });
+  });
+
+  describe('generateLineup - Balancing consistency (rotating on/off)', () => {
+    it('should preserve game-to-game batting order balancing regardless of rotating mode', () => {
+      const players = createPlayers(10);
+
+      const previousGame = generateLineup(players, 6, 3, true, [], false);
+      const history = [buildHistoryGame(previousGame)];
+
+      const lineupWithoutRotating = generateLineup(players, 6, 3, true, history, false);
+      const lineupWithRotating = generateLineup(players, 6, 3, true, history, true);
+
+      const withoutRotatingNames = lineupWithoutRotating.battingOrder.map(p => p.name);
+      const withRotatingNames = lineupWithRotating.battingOrder.map(p => p.name);
+
+      expect(withRotatingNames).toEqual(withoutRotatingNames);
+    });
+
+    it('should preserve position balancing totals regardless of rotating mode', () => {
+      const players = createPlayers(12);
+
+      const lineupWithoutRotating = generateLineup(players, 6, 3, true, [], false);
+      const lineupWithRotating = generateLineup(players, 6, 3, true, [], true);
+
+      const byNameWithout = Object.fromEntries(lineupWithoutRotating.battingOrder.map(p => [p.name, p]));
+      const byNameWith = Object.fromEntries(lineupWithRotating.battingOrder.map(p => [p.name, p]));
+
+      lineupWithoutRotating.battingOrder.forEach(player => {
+        const other = byNameWith[player.name];
+        expect(other).toBeDefined();
+        expect(other.infieldInnings).toBe(player.infieldInnings);
+        expect(other.outfieldInnings).toBe(player.outfieldInnings);
+        expect(other.benchInnings).toBe(player.benchInnings);
+      });
+    });
+
+    it('should rotate first batter through every player when innings equal roster size', () => {
+      const players = createPlayers(9);
+      const lineup = generateLineup(players, 9, 3, true, [], true);
+
+      const firstBatters = lineup.inningBattingOrders.map(order => order[0].name);
+      const uniqueFirstBatters = new Set(firstBatters);
+
+      expect(uniqueFirstBatters.size).toBe(players.length);
+    });
+
+    it('should keep batting order fixed per game when rotating mode is disabled', () => {
+      const players = createPlayers(9);
+      const lineup = generateLineup(players, 9, 3, true, [], false);
+
+      expect(lineup.inningBattingOrders).toBeUndefined();
+      expect(lineup.battingOrder.map(p => p.battingOrder)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     });
   });
 });
