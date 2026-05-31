@@ -196,6 +196,55 @@ const unescapeCSV = (value) => {
   return str;
 };
 
+const parseCSV = (csvContent) => {
+  const rows = [];
+  let currentRow = [];
+  let currentValue = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < csvContent.length; i++) {
+    const char = csvContent[i];
+
+    if (char === '"') {
+      if (inQuotes && csvContent[i + 1] === '"') {
+        currentValue += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === ',' && !inQuotes) {
+      currentRow.push(currentValue);
+      currentValue = '';
+      continue;
+    }
+
+    if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && csvContent[i + 1] === '\n') {
+        i++;
+      }
+      currentRow.push(currentValue);
+      if (currentRow.some(value => value.trim() !== '')) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentValue = '';
+      continue;
+    }
+
+    currentValue += char;
+  }
+
+  currentRow.push(currentValue);
+  if (currentRow.some(value => value.trim() !== '')) {
+    rows.push(currentRow);
+  }
+
+  return rows;
+};
+
 export const exportAllData = () => {
   const teams = getTeams();
   const currentTeamId = getCurrentTeamId();
@@ -229,15 +278,15 @@ export const exportAllData = () => {
 
 export const importAllData = (csvContent) => {
   try {
-    const lines = csvContent.split('\n').filter(line => line.trim());
-    
-    if (lines.length === 0) {
+    const rows = parseCSV(csvContent);
+
+    if (rows.length === 0) {
       throw new Error('CSV file is empty');
     }
     
     // Skip header
-    const header = lines[0];
-    if (!header.includes('Type') || !header.includes('Key') || !header.includes('Value')) {
+    const header = rows[0];
+    if (!Array.isArray(header) || header.length < 3 || header[0] !== 'Type' || header[1] !== 'Key' || header[2] !== 'Value') {
       throw new Error('Invalid CSV format - missing required headers');
     }
     
@@ -246,33 +295,8 @@ export const importAllData = (csvContent) => {
     let currentTeamId = null;
     
     // Parse data rows
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i];
-      // Simple CSV parsing - split on comma, handling quoted values
-      const parts = [];
-      let current = '';
-      let inQuotes = false;
-      
-      for (let j = 0; j < line.length; j++) {
-        const char = line[j];
-        
-        if (char === '"') {
-          if (inQuotes && line[j + 1] === '"') {
-            // Escaped quote
-            current += '"';
-            j++;
-          } else {
-            inQuotes = !inQuotes;
-          }
-        } else if (char === ',' && !inQuotes) {
-          parts.push(current);
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      parts.push(current);
-      
+    for (let i = 1; i < rows.length; i++) {
+      const parts = rows[i];
       if (parts.length < 3) continue;
       
       const type = unescapeCSV(parts[0]);
