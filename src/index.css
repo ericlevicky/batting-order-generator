@@ -18,12 +18,12 @@
   --text-muted: #475569;
   --text-on-dark: #ffffff;
   --text-on-dark-muted: rgba(255, 255, 255, 0.85);
-  /* Accent */
-  --accent: #667eea;
-  --accent-hover: #5568d3;
-  --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* Accent (gold) */
+  --accent: #C9A227;
+  --accent-hover: #b89220;
+  --accent-gradient: linear-gradient(135deg, #C9A227 0%, #7b4dbd 100%);
   /* Focus ring (high contrast for accessibility) */
-  --focus-ring: 0 0 0 3px rgba(102, 126, 234, 0.5), 0 0 0 5px rgba(102, 126, 234, 0.2);
+  --focus-ring: 0 0 0 3px rgba(201, 162, 39, 0.5), 0 0 0 5px rgba(201, 162, 39, 0.2);
   /* Transition defaults */
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s ease;
@@ -42,7 +42,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #4a3f8a 0%, #2d1b69 40%, #1a1145 100%);
+  background: linear-gradient(135deg, #3d2b6b 0%, #2a1854 40%, #1a0f3d 100%);
   background-attachment: fixed;
   min-height: 100vh;
   padding: 20px;

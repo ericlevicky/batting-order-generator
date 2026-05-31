@@ -66,7 +66,7 @@ function GameHistory({ history, onDeleteGame, onDeleteAllGames, onShowToast, onR
             .grid-inning-number { font-size: 1rem; font-weight: 700; }
             .grid-table td { padding: 0.35rem 0.3rem; text-align: center; border: 1px solid #e2e8f0; }
             .grid-table tbody tr:nth-child(even) { background: #f8fafc; }
-            .grid-order-col { width: 40px; font-weight: 700; color: #667eea; }
+            .grid-order-col { width: 40px; font-weight: 700; color: #C9A227; }
             .grid-player-col { text-align: left; padding-left: 0.5rem !important; font-weight: 600; min-width: 120px; }
             .grid-number-col { width: 50px; color: #64748b; font-weight: 600; }
             .grid-inning-col { width: 50px; font-weight: 600; color: #1e293b; }

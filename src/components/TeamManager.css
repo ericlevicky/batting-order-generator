@@ -141,9 +141,9 @@
 }
 
 .team-item.active {
-  border-color: rgba(102, 126, 234, 0.6);
-  background: rgba(102, 126, 234, 0.15);
-  box-shadow: 0 0 20px rgba(102, 126, 234, 0.15);
+  border-color: rgba(201, 162, 39, 0.6);
+  background: rgba(201, 162, 39, 0.15);
+  box-shadow: 0 0 20px rgba(201, 162, 39, 0.15);
 }
 
 .team-info {
