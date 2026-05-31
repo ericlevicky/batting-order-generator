@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatPlayerName } from '../utils/formatPlayerName';
 import './BaseballField.css';
 
 function BaseballField({ assignments, hasCatcher }) {
@@ -7,8 +8,8 @@ function BaseballField({ assignments, hasCatcher }) {
     if (!player) return null;
     return (
       <div className="player-badge">
-        <div className="player-name">{player.name}</div>
-        <div className="player-num">#{player.number}</div>
+        <div className="player-name">{formatPlayerName(player)}</div>
+        {player.isAutoNumbered && <div className="player-num">#{player.number}</div>}
       </div>
     );
   };

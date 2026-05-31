@@ -1,5 +1,6 @@
 import React from 'react';
 import BaseballField from './BaseballField';
+import { formatPlayerName } from '../utils/formatPlayerName';
 import './InningDisplay.css';
 
 function InningDisplay({ inningNumber, assignments, positions, hasCatcher }) {
@@ -25,7 +26,7 @@ function InningDisplay({ inningNumber, assignments, positions, hasCatcher }) {
               <div key={position} className="position-assignment">
                 <span className="position-label">{position}</span>
                 <span className="player-assigned">
-                  {player.name} #{player.number}
+                  {formatPlayerName(player)}{player.isAutoNumbered ? ` #${player.number}` : ''}
                 </span>
               </div>
             ))}
@@ -35,7 +36,7 @@ function InningDisplay({ inningNumber, assignments, positions, hasCatcher }) {
         {benchPlayers.length > 0 && (
           <div className="bench-section">
             <strong>Bench:</strong>{' '}
-            {benchPlayers.map((p) => `${p.name} #${p.number}`).join(', ')}
+            {benchPlayers.map((p) => `${formatPlayerName(p)}${p.isAutoNumbered ? ` #${p.number}` : ''}`).join(', ')}
           </div>
         )}
       </div>

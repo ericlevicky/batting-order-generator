@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import LineupGrid from './LineupGrid';
 import PlayerStats from './PlayerStats';
+import { formatPlayerName } from '../utils/formatPlayerName';
 import './GameHistory.css';
 
 function GameHistory({ history, onDeleteGame, onDeleteAllGames, onShowToast, onRequestConfirm, initialExpandGameId }) {
@@ -194,8 +195,8 @@ function GameHistory({ history, onDeleteGame, onDeleteAllGames, onShowToast, onR
                     {game.battingOrder.map((player, idx) => (
                       <div key={idx} className="batting-order-item">
                         <span className="order-number">{idx + 1}</span>
-                        <span className="player-name">{player.name}</span>
-                        {player.number && (
+                        <span className="player-name">{formatPlayerName(player)}</span>
+                        {(player.isAutoNumbered && player.number) && (
                           <span className="player-number">#{player.number}</span>
                         )}
                       </div>

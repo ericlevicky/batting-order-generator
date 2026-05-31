@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatPlayerName } from '../utils/formatPlayerName';
 import './LineupGrid.css';
 
 // Position abbreviations mapping
@@ -62,7 +63,7 @@ function LineupGrid({ lineup, numInnings, showHeader = true }) {
         {lineup?.battingOrder?.map((player, index) => (
           <tr key={player.id || player.name}>
             <td className="grid-order-col">{index + 1}</td>
-            <td className="grid-player-col">{player.name}</td>
+            <td className="grid-player-col">{formatPlayerName(player)}</td>
             <td className="grid-number-col">{player.number || '-'}</td>
             {Array.from({ length: numInnings }, (_, inningIndex) => (
               <td key={inningIndex} className="grid-inning-col">
@@ -112,7 +113,7 @@ function LineupGrid({ lineup, numInnings, showHeader = true }) {
                   : '-';
                 return (
                   <React.Fragment key={inningIndex}>
-                    <td className="grid-player-col grid-rotating-player">{player?.name || '-'}</td>
+                    <td className="grid-player-col grid-rotating-player">{player ? formatPlayerName(player) : '-'}</td>
                     <td className="grid-inning-col">{pos}</td>
                   </React.Fragment>
                 );
