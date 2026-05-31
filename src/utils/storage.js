@@ -68,7 +68,8 @@ export const updateTeamLastSettings = (teamId, settings) => {
     teams[teamId].lastSettings = {
       numInnings: settings.numInnings,
       numOutfielders: settings.numOutfielders,
-      hasCatcher: settings.hasCatcher
+      hasCatcher: settings.hasCatcher,
+      rotatingBattingOrder: settings.rotatingBattingOrder ?? false
     };
     teams[teamId].updatedAt = new Date().toISOString();
     saveTeams(teams);

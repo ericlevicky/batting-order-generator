@@ -34,6 +34,7 @@ function App() {
   const [numInnings, setNumInnings] = useState(6);
   const [numOutfielders, setNumOutfielders] = useState(3);
   const [hasCatcher, setHasCatcher] = useState(true);
+  const [rotatingBattingOrder, setRotatingBattingOrder] = useState(false);
   const [lineup, setLineup] = useState(null);
   const [gameHistory, setGameHistory] = useState([]);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -63,6 +64,7 @@ function App() {
         setNumInnings(team.lastSettings.numInnings ?? 6);
         setNumOutfielders(team.lastSettings.numOutfielders ?? 3);
         setHasCatcher(team.lastSettings.hasCatcher ?? true);
+        setRotatingBattingOrder(team.lastSettings.rotatingBattingOrder ?? false);
       }
       setLineup(null);
       const history = getTeamGameHistory(teamId);
@@ -145,12 +147,13 @@ function App() {
       numInnings,
       numOutfielders,
       hasCatcher,
-      gameHistory  // Pass game history to balance across games
+      gameHistory,  // Pass game history to balance across games
+      rotatingBattingOrder
     );
     setLineup(generatedLineup);
 
     // Save to history
-    const settings = { numInnings, numOutfielders, hasCatcher };
+    const settings = { numInnings, numOutfielders, hasCatcher, rotatingBattingOrder };
     const upcomingGameNumber = getNextGameNumber(currentTeamId);
     const gameRecord = saveLineupToHistory(currentTeamId, generatedLineup, settings);
     updateTeamLastSettings(currentTeamId, settings);
@@ -248,6 +251,8 @@ function App() {
                 setNumOutfielders={setNumOutfielders}
                 hasCatcher={hasCatcher}
                 setHasCatcher={setHasCatcher}
+                rotatingBattingOrder={rotatingBattingOrder}
+                setRotatingBattingOrder={setRotatingBattingOrder}
               />
 
               <button className="btn-primary" onClick={handleGenerateLineup}>

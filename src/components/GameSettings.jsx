@@ -8,6 +8,8 @@ function GameSettings({
   setNumOutfielders,
   hasCatcher,
   setHasCatcher,
+  rotatingBattingOrder,
+  setRotatingBattingOrder,
 }) {
   return (
     <div className="game-settings">
@@ -62,6 +64,16 @@ function GameSettings({
           onChange={(e) => setHasCatcher(e.target.checked)}
         />
         <label htmlFor="catcher">Include Catcher Position</label>
+      </div>
+
+      <div className="checkbox-item">
+        <input
+          id="rotatingBattingOrder"
+          type="checkbox"
+          checked={rotatingBattingOrder}
+          onChange={(e) => setRotatingBattingOrder(e.target.checked)}
+        />
+        <label htmlFor="rotatingBattingOrder">Different batting order every inning</label>
       </div>
     </div>
   );
