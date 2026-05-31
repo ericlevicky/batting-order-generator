@@ -173,10 +173,14 @@ function rotateBattingOrder(players, historicalStats) {
   return playersWithScores.map(item => item.player);
 }
 
-export function generateLineup(players, numInnings, numOutfielders, hasCatcher, gameHistory = [], rotatingBattingOrder = false) {
+export function generateLineup(players, numInnings, numOutfielders, hasCatcher, gameHistory = [], rotatingBattingOrder = false, presetOrder = null) {
   const activePlayers = players.filter(p => p.active !== false);
   const historicalStats = calculateHistoricalStats(activePlayers, gameHistory);
-  const rotatedPlayers = rotateBattingOrder(activePlayers, historicalStats);
+  // If a preset order has been manually set (shuffle or move), honour it for this game.
+  // Otherwise fall back to the automatic rotation algorithm.
+  const rotatedPlayers = presetOrder
+    ? presetOrder.filter(p => p.active !== false)
+    : rotateBattingOrder(activePlayers, historicalStats);
   const playerStats = rotatedPlayers.map((player, index) => {
     const h = historicalStats[player.name] || {};
     return {

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { shuffleArray } from '../utils/storage';
 import './PlayerInput.css';
 
-function PlayerInput({ players, setPlayers }) {
+function PlayerInput({ players, setPlayers, onOrderTouched }) {
   const [currentName, setCurrentName] = useState('');
   const [currentNumber, setCurrentNumber] = useState('');
   const nameInputRef = useRef(null);
@@ -25,6 +25,7 @@ function PlayerInput({ players, setPlayers }) {
   const shufflePlayers = () => {
     if (players.length > 0) {
       setPlayers(shuffleArray(players));
+      onOrderTouched?.();
     }
   };
 
@@ -69,6 +70,7 @@ function PlayerInput({ players, setPlayers }) {
     if (newIndex >= 0 && newIndex < players.length) {
       [newPlayers[index], newPlayers[newIndex]] = [newPlayers[newIndex], newPlayers[index]];
       setPlayers(newPlayers);
+      onOrderTouched?.();
     }
   };
 

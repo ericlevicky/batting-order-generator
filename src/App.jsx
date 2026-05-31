@@ -42,6 +42,7 @@ function App() {
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showCumulativeStats, setShowCumulativeStats] = useState(false);
   const [lastGeneratedGameId, setLastGeneratedGameId] = useState(null);
+  const [presetTouched, setPresetTouched] = useState(false);
   const initialSelectRef = useRef(true);
 
   // Load teams and current team on mount
@@ -69,6 +70,7 @@ function App() {
       setLineup(null);
       const history = getTeamGameHistory(teamId);
       setGameHistory(history);
+      setPresetTouched(false);
     }
   };
 
@@ -148,9 +150,11 @@ function App() {
       numOutfielders,
       hasCatcher,
       gameHistory,  // Pass game history to balance across games
-      rotatingBattingOrder
+      rotatingBattingOrder,
+      presetTouched ? players : null  // Honour manually set order when touched
     );
     setLineup(generatedLineup);
+    setPresetTouched(false);
 
     // Save to history
     const settings = { numInnings, numOutfielders, hasCatcher, rotatingBattingOrder };
@@ -242,7 +246,7 @@ function App() {
                 </div>
               </div>
 
-              <PlayerInput players={players} setPlayers={setPlayers} />
+              <PlayerInput players={players} setPlayers={setPlayers} onOrderTouched={() => setPresetTouched(true)} />
 
               <GameSettings
                 numInnings={numInnings}
