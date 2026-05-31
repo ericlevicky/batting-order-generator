@@ -1,5 +1,6 @@
 .lineup-display {
   margin-top: 2rem;
+  animation: cardFadeIn 0.5s ease-out;
 }
 
 .lineup-header {
@@ -16,6 +17,7 @@
   font-size: 2rem;
   font-weight: 700;
   margin: 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .screen-only {
@@ -32,6 +34,7 @@
   font-weight: 600;
   margin-bottom: 1.5rem;
   text-align: center;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 @media (max-width: 768px) {

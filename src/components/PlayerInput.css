@@ -12,7 +12,7 @@
 }
 
 .player-input-section h3 {
-  color: #1e293b;
+  color: var(--text-on-dark);
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
@@ -20,24 +20,26 @@
 
 .btn-example {
   padding: 0.5rem 1rem;
-  background: #3b82f6;
+  background: rgba(59, 130, 246, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: white;
-  border: none;
-  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .btn-example:hover {
-  background: #2563eb;
+  background: rgba(37, 99, 235, 0.85);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
 }
 
 .input-hint {
-  color: #64748b;
+  color: var(--text-on-dark-muted);
   font-size: 0.875rem;
   margin-bottom: 1rem;
 }
@@ -58,21 +60,24 @@
 .input-group label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #475569;
+  color: var(--text-on-dark-muted);
 }
 
 .input-group input {
   padding: 0.75rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
   font-size: 1rem;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--text-primary);
 }
 
 .input-group input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .input-number {
@@ -82,30 +87,33 @@
 .btn-add {
   align-self: flex-end;
   padding: 0.75rem 1.5rem;
-  background: #10b981;
+  background: rgba(16, 185, 129, 0.85);
   color: white;
-  border: none;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
   font-weight: 600;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   white-space: nowrap;
 }
 
 .btn-add:hover:not(:disabled) {
-  background: #059669;
+  background: rgba(5, 150, 105, 0.9);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
 }
 
 .btn-add:disabled {
-  background: #cbd5e1;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.4);
   cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .players-list {
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
   overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .players-list-header {
@@ -113,12 +121,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  background: #f1f5f9;
-  color: #475569;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-on-dark-muted);
   font-weight: 600;
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .header-right {
@@ -129,20 +138,20 @@
 
 .btn-shuffle {
   padding: 0.375rem 0.75rem;
-  background: #f59e0b;
+  background: rgba(245, 158, 11, 0.8);
   color: white;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   text-transform: none;
   letter-spacing: normal;
 }
 
 .btn-shuffle:hover {
-  background: #d97706;
+  background: rgba(217, 119, 6, 0.9);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
@@ -156,8 +165,8 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #e2e8f0;
-  transition: background 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background var(--transition-fast);
 }
 
 .player-item:last-child {
@@ -165,12 +174,12 @@
 }
 
 .player-item:hover {
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .player-item.inactive {
   opacity: 0.5;
-  background: #fff1f2;
+  background: rgba(239, 68, 68, 0.08);
 }
 
 .player-item.inactive .player-name {
@@ -183,12 +192,13 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   color: white;
   border-radius: 50%;
   font-weight: 700;
   font-size: 0.875rem;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .player-info {
@@ -200,27 +210,27 @@
 
 .player-name {
   font-weight: 500;
-  color: #1e293b;
+  color: var(--text-on-dark);
 }
 
 .player-number {
-  color: #64748b;
+  color: var(--text-on-dark-muted);
   font-size: 0.875rem;
   font-weight: 600;
-  background: #f1f5f9;
+  background: rgba(255, 255, 255, 0.12);
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 .player-number-editable {
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   border: 1px solid transparent;
 }
 
 .player-number-editable:hover {
-  background: #e2e8f0;
-  border-color: #667eea;
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(102, 126, 234, 0.4);
 }
 
 .player-number-input {
@@ -228,12 +238,13 @@
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #1e293b;
-  border: 2px solid #667eea;
-  border-radius: 4px;
+  color: var(--text-primary);
+  border: 2px solid var(--accent);
+  border-radius: 6px;
   outline: none;
   text-align: center;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: var(--focus-ring);
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .player-actions {
@@ -247,18 +258,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f1f5f9;
-  border: none;
-  border-radius: 6px;
-  color: #475569;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-on-dark-muted);
   font-size: 1.25rem;
   font-weight: bold;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .btn-icon:hover:not(:disabled) {
-  background: #e2e8f0;
-  color: #1e293b;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-on-dark);
 }
 
 .btn-icon:disabled {
@@ -267,14 +278,14 @@
 }
 
 .btn-remove {
-  color: #ef4444;
+  color: #fca5a5;
   font-size: 1.75rem;
   line-height: 1;
 }
 
 .btn-remove:hover {
-  background: #fee2e2;
-  color: #dc2626;
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
 }
 
 .btn-active-toggle {
@@ -283,22 +294,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
-  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .btn-active-toggle.active {
-  background: #dcfce7;
-  color: #16a34a;
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 .btn-active-toggle.inactive {
-  background: #fee2e2;
-  color: #dc2626;
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 .btn-active-toggle:hover {

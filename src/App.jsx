@@ -43,6 +43,7 @@ function App() {
   const [showCumulativeStats, setShowCumulativeStats] = useState(false);
   const [lastGeneratedGameId, setLastGeneratedGameId] = useState(null);
   const [presetTouched, setPresetTouched] = useState(false);
+  const [showFlash, setShowFlash] = useState(false);
   const initialSelectRef = useRef(true);
 
   // Load teams and current team on mount
@@ -155,6 +156,10 @@ function App() {
     );
     setLineup(generatedLineup);
     setPresetTouched(false);
+
+    // Trigger full-screen flash animation
+    setShowFlash(true);
+    setTimeout(() => setShowFlash(false), 950);
 
     // Save to history
     const settings = { numInnings, numOutfielders, hasCatcher, rotatingBattingOrder };
@@ -316,6 +321,12 @@ function App() {
       
       {showInstructions && (
         <Instructions onClose={() => setShowInstructions(false)} />
+      )}
+
+      {showFlash && (
+        <div className="lineup-flash-overlay" role="status" aria-live="polite" aria-label="Lineup generated">
+          <span className="lineup-flash-text">⚾ Lineup Set!</span>
+        </div>
       )}
     </div>
   );

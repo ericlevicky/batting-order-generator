@@ -3,12 +3,21 @@
 }
 
 .app-header {
-  background: linear-gradient(135deg, #1e3a8a 0%, #1e293b 100%);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-strong));
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong));
   color: white;
   padding: 2rem;
-  border-radius: 12px;
+  border-radius: 16px;
   margin-bottom: 2rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--glass-shadow-lg);
+  border: 1px solid var(--glass-border);
+  animation: headerSlideIn 0.6s ease-out;
+}
+
+@keyframes headerSlideIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .header-content {
@@ -27,6 +36,7 @@
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
   font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .app-header p {
@@ -40,21 +50,24 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.75rem 1.25rem;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   white-space: nowrap;
 }
 
 .btn-help:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.45);
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .app-content {
@@ -74,10 +87,19 @@
 }
 
 .card {
-  background: white;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+  border: 1px solid var(--glass-border);
+  animation: cardFadeIn 0.4s ease-out;
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .card + .card {
@@ -85,10 +107,11 @@
 }
 
 .card h2 {
-  color: #1e293b;
+  color: var(--text-on-dark);
   margin-bottom: 1.5rem;
   font-size: 1.75rem;
   font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 .team-header-badge {
@@ -105,12 +128,12 @@
 }
 
 .current-team-label {
-  color: #64748b;
+  color: var(--text-on-dark-muted);
   font-size: 0.875rem;
 }
 
 .current-team-label strong {
-  color: #667eea;
+  color: #a5b4fc;
   font-size: 1rem;
 }
 
@@ -120,7 +143,7 @@
 }
 
 .no-team-message p {
-  color: #64748b;
+  color: var(--text-on-dark-muted);
   font-size: 1.125rem;
   margin: 0;
 }
@@ -128,19 +151,38 @@
 .btn-primary {
   width: 100%;
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   color: white;
-  border: none;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
   font-size: 1.125rem;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: all var(--transition-normal);
   margin-top: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 28px rgba(102, 126, 234, 0.45);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.btn-primary:hover::after {
+  transform: translateX(100%);
 }
 
 .btn-primary:active {
@@ -149,23 +191,74 @@
 
 .btn-secondary {
   padding: 0.75rem 1.5rem;
-  background: #1e293b;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: white;
-  border: none;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
   font-size: 1rem;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: all var(--transition-normal);
 }
 
 .btn-secondary:hover {
-  background: #334155;
+  background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .cumulative-stats-wrapper {
   margin-top: 2rem;
+}
+
+/* Lineup generation animation overlay */
+.lineup-flash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: lineupFlash 0.9s ease-out forwards;
+}
+
+.lineup-flash-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(102, 126, 234, 0.35) 0%, transparent 70%);
+  animation: flashPulse 0.9s ease-out forwards;
+}
+
+.lineup-flash-text {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 2px 20px rgba(102, 126, 234, 0.8);
+  animation: flashTextPop 0.9s ease-out forwards;
+  z-index: 1;
+}
+
+@keyframes lineupFlash {
+  0% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes flashPulse {
+  0% { transform: scale(0.3); opacity: 0; }
+  30% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes flashTextPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  20% { transform: scale(1.15); opacity: 1; }
+  40% { transform: scale(1); }
+  70% { opacity: 1; }
+  100% { transform: scale(1.1); opacity: 0; }
 }
 
 @media (max-width: 768px) {
@@ -197,13 +290,18 @@
   .card {
     padding: 1.5rem;
   }
+
+  .lineup-flash-text {
+    font-size: 1.75rem;
+  }
 }
 
 @media print {
   .app-header,
   .config-section,
   .btn-primary,
-  .btn-secondary {
+  .btn-secondary,
+  .lineup-flash-overlay {
     display: none;
   }
 }
