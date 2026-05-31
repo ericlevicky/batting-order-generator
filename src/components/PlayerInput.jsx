@@ -5,6 +5,8 @@ import './PlayerInput.css';
 function PlayerInput({ players, setPlayers, onOrderTouched }) {
   const [currentName, setCurrentName] = useState('');
   const [currentNumber, setCurrentNumber] = useState('');
+  const [editingNumberId, setEditingNumberId] = useState(null);
+  const [editingNumberValue, setEditingNumberValue] = useState('');
   const nameInputRef = useRef(null);
 
   const loadExamplePlayers = () => {
@@ -76,6 +78,24 @@ function PlayerInput({ players, setPlayers, onOrderTouched }) {
 
   const toggleActive = (id) => {
     setPlayers(players.map(p => p.id === id ? { ...p, active: p.active === false ? true : false } : p));
+  };
+
+  const startEditingNumber = (player) => {
+    setEditingNumberId(player.id);
+    setEditingNumberValue(player.number);
+  };
+
+  const saveNumber = (id) => {
+    if (editingNumberValue.trim()) {
+      setPlayers(players.map(p => p.id === id ? { ...p, number: editingNumberValue.trim() } : p));
+    }
+    setEditingNumberId(null);
+    setEditingNumberValue('');
+  };
+
+  const cancelEditingNumber = () => {
+    setEditingNumberId(null);
+    setEditingNumberValue('');
   };
 
   return (
@@ -163,7 +183,29 @@ function PlayerInput({ players, setPlayers, onOrderTouched }) {
                     {player.active === false ? '🚫' : '✅'}
                   </button>
                   <span className="player-name">{player.name}</span>
-                  <span className="player-number">#{player.number}</span>
+                  {editingNumberId === player.id ? (
+                    <input
+                      className="player-number-input"
+                      type="text"
+                      value={editingNumberValue}
+                      onChange={(e) => setEditingNumberValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveNumber(player.id);
+                        if (e.key === 'Escape') cancelEditingNumber();
+                      }}
+                      onBlur={() => saveNumber(player.id)}
+                      maxLength="3"
+                      autoFocus
+                    />
+                  ) : (
+                    <span
+                      className="player-number player-number-editable"
+                      onClick={() => startEditingNumber(player)}
+                      title="Click to edit number"
+                    >
+                      #{player.number}
+                    </span>
+                  )}
                 </div>
                 <div className="player-actions">
                   <button
