@@ -16,29 +16,112 @@ const POSITION_ABBREV = {
   'Bench': 'Bench'
 };
 
-function LineupGrid({ lineup, numInnings, showHeader = true }) {
-  // Create a matrix: players x innings with their positions
-  const getPlayerPosition = (playerId, inningIndex) => {
-    if (!lineup || !Array.isArray(lineup.innings)) return '-';
-    const inning = lineup.innings[inningIndex];
-    if (!inning) return '-';
-    try {
-      for (const [positionName, assignedPlayer] of Object.entries(inning)) {
-        if (positionName === 'Bench') {
-          if (Array.isArray(assignedPlayer)) {
-            const found = assignedPlayer.find(p => (p.id || p.name) === playerId || p.name === playerId);
-            if (found) return POSITION_ABBREV['Bench'];
-          }
-        } else {
-          if (assignedPlayer && ((assignedPlayer.id || assignedPlayer.name) === playerId)) {
-            return POSITION_ABBREV[positionName] || positionName;
-          }
+function getPlayerPositionInInning(playerId, inning) {
+  if (!inning) return '-';
+  try {
+    for (const [positionName, assignedPlayer] of Object.entries(inning)) {
+      if (positionName === 'Bench') {
+        if (Array.isArray(assignedPlayer)) {
+          const found = assignedPlayer.find(p => (p.id || p.name) === playerId || p.name === playerId);
+          if (found) return POSITION_ABBREV['Bench'];
+        }
+      } else {
+        if (assignedPlayer && ((assignedPlayer.id || assignedPlayer.name) === playerId)) {
+          return POSITION_ABBREV[positionName] || positionName;
         }
       }
-    } catch (e) {
-      return '-';
     }
+  } catch (e) {
     return '-';
+  }
+  return '-';
+}
+
+function LineupGrid({ lineup, numInnings, showHeader = true }) {
+  const isRotating = Array.isArray(lineup?.inningBattingOrders);
+
+  // Standard layout: one row per player, one column per inning showing position
+  const renderStandardGrid = () => (
+    <table className="grid-table">
+      <thead>
+        <tr>
+          <th className="grid-order-col">#</th>
+          <th className="grid-player-col">Player</th>
+          <th className="grid-number-col">No.</th>
+          {Array.from({ length: numInnings }, (_, i) => (
+            <th key={i} className="grid-inning-col">
+              <div className="grid-inning-header">
+                <span className="grid-inning-label">Inning</span>
+                <span className="grid-inning-number">{i + 1}</span>
+              </div>
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {lineup?.battingOrder?.map((player, index) => (
+          <tr key={player.id || player.name}>
+            <td className="grid-order-col">{index + 1}</td>
+            <td className="grid-player-col">{player.name}</td>
+            <td className="grid-number-col">{player.number || '-'}</td>
+            {Array.from({ length: numInnings }, (_, inningIndex) => (
+              <td key={inningIndex} className="grid-inning-col">
+                {getPlayerPositionInInning(player.id || player.name, lineup.innings?.[inningIndex])}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+
+  // Rotating layout: one row per batting slot, two columns per inning (name + position)
+  const renderRotatingGrid = () => {
+    const numPlayers = lineup.battingOrder.length;
+    return (
+      <table className="grid-table">
+        <thead>
+          <tr>
+            <th className="grid-order-col" rowSpan={2}>#</th>
+            {Array.from({ length: numInnings }, (_, i) => (
+              <th key={i} className="grid-inning-group-header" colSpan={2}>
+                <div className="grid-inning-header">
+                  <span className="grid-inning-label">Inning</span>
+                  <span className="grid-inning-number">{i + 1}</span>
+                </div>
+              </th>
+            ))}
+          </tr>
+          <tr>
+            {Array.from({ length: numInnings }, (_, i) => (
+              <React.Fragment key={i}>
+                <th className="grid-rotating-sub-col grid-player-col">Player</th>
+                <th className="grid-rotating-sub-col grid-inning-col">Pos</th>
+              </React.Fragment>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: numPlayers }, (_, slot) => (
+            <tr key={slot}>
+              <td className="grid-order-col">{slot + 1}</td>
+              {Array.from({ length: numInnings }, (_, inningIndex) => {
+                const player = lineup.inningBattingOrders[inningIndex]?.[slot];
+                const pos = player
+                  ? getPlayerPositionInInning(player.id || player.name, lineup.innings?.[inningIndex])
+                  : '-';
+                return (
+                  <React.Fragment key={inningIndex}>
+                    <td className="grid-player-col grid-rotating-player">{player?.name || '-'}</td>
+                    <td className="grid-inning-col">{pos}</td>
+                  </React.Fragment>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
   };
 
   return (
@@ -51,37 +134,7 @@ function LineupGrid({ lineup, numInnings, showHeader = true }) {
       )}
 
       <div className="grid-table-container">
-        <table className="grid-table">
-          <thead>
-            <tr>
-              <th className="grid-order-col">#</th>
-              <th className="grid-player-col">Player</th>
-              <th className="grid-number-col">No.</th>
-              {Array.from({ length: numInnings }, (_, i) => (
-                <th key={i} className="grid-inning-col">
-                  <div className="grid-inning-header">
-                    <span className="grid-inning-label">Inning</span>
-                    <span className="grid-inning-number">{i + 1}</span>
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {lineup?.battingOrder?.map((player, index) => (
-              <tr key={player.id || player.name}>
-                <td className="grid-order-col">{index + 1}</td>
-                <td className="grid-player-col">{player.name}</td>
-                <td className="grid-number-col">{player.number || '-'}</td>
-                {Array.from({ length: numInnings }, (_, inningIndex) => (
-                  <td key={inningIndex} className="grid-inning-col">
-                    {getPlayerPosition(player.id || player.name, inningIndex)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {isRotating ? renderRotatingGrid() : renderStandardGrid()}
       </div>
 
       <div className="grid-footer">

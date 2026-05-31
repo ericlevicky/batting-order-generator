@@ -34,6 +34,7 @@ function App() {
   const [numInnings, setNumInnings] = useState(6);
   const [numOutfielders, setNumOutfielders] = useState(3);
   const [hasCatcher, setHasCatcher] = useState(true);
+  const [rotatingBattingOrder, setRotatingBattingOrder] = useState(false);
   const [lineup, setLineup] = useState(null);
   const [gameHistory, setGameHistory] = useState([]);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -41,6 +42,7 @@ function App() {
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showCumulativeStats, setShowCumulativeStats] = useState(false);
   const [lastGeneratedGameId, setLastGeneratedGameId] = useState(null);
+  const [presetTouched, setPresetTouched] = useState(false);
   const initialSelectRef = useRef(true);
 
   // Load teams and current team on mount
@@ -63,10 +65,12 @@ function App() {
         setNumInnings(team.lastSettings.numInnings ?? 6);
         setNumOutfielders(team.lastSettings.numOutfielders ?? 3);
         setHasCatcher(team.lastSettings.hasCatcher ?? true);
+        setRotatingBattingOrder(team.lastSettings.rotatingBattingOrder ?? false);
       }
       setLineup(null);
       const history = getTeamGameHistory(teamId);
       setGameHistory(history);
+      setPresetTouched(false);
     }
   };
 
@@ -145,12 +149,15 @@ function App() {
       numInnings,
       numOutfielders,
       hasCatcher,
-      gameHistory  // Pass game history to balance across games
+      gameHistory,  // Pass game history to balance across games
+      rotatingBattingOrder,
+      presetTouched ? players : null  // Honour manually set order when touched
     );
     setLineup(generatedLineup);
+    setPresetTouched(false);
 
     // Save to history
-    const settings = { numInnings, numOutfielders, hasCatcher };
+    const settings = { numInnings, numOutfielders, hasCatcher, rotatingBattingOrder };
     const upcomingGameNumber = getNextGameNumber(currentTeamId);
     const gameRecord = saveLineupToHistory(currentTeamId, generatedLineup, settings);
     updateTeamLastSettings(currentTeamId, settings);
@@ -239,7 +246,7 @@ function App() {
                 </div>
               </div>
 
-              <PlayerInput players={players} setPlayers={setPlayers} />
+              <PlayerInput players={players} setPlayers={setPlayers} onOrderTouched={() => setPresetTouched(true)} />
 
               <GameSettings
                 numInnings={numInnings}
@@ -248,6 +255,8 @@ function App() {
                 setNumOutfielders={setNumOutfielders}
                 hasCatcher={hasCatcher}
                 setHasCatcher={setHasCatcher}
+                rotatingBattingOrder={rotatingBattingOrder}
+                setRotatingBattingOrder={setRotatingBattingOrder}
               />
 
               <button className="btn-primary" onClick={handleGenerateLineup}>
@@ -290,20 +299,6 @@ function App() {
           </div>
         )}
       </div>
-
-      <footer className="app-footer">
-        <p>
-          Enjoying this app? 
-          <a 
-            href="https://venmo.com/u/Eric-Levicky" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="donate-link"
-          >
-            ☕ Buy me a coffee
-          </a>
-        </p>
-      </footer>
 
       <InstallPrompt />
       <UpdateNotification />

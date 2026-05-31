@@ -9,6 +9,24 @@ describe('lineupGenerator', () => {
     }));
   };
 
+  const buildHistoryGame = (lineup, settings = { numInnings: 6, numOutfielders: 3, hasCatcher: true, rotatingBattingOrder: false }) => ({
+    id: `${Date.now()}-${Math.random()}`,
+    date: new Date().toISOString(),
+    lineup: {
+      battingOrder: lineup.battingOrder.map(p => ({
+        name: p.name,
+        number: p.number,
+        battingOrder: p.battingOrder,
+        infieldInnings: p.infieldInnings,
+        outfieldInnings: p.outfieldInnings,
+        benchInnings: p.benchInnings,
+      })),
+      innings: lineup.innings,
+      positions: lineup.positions,
+    },
+    settings,
+  });
+
   describe('generateLineup - Basic functionality', () => {
     it('should generate lineup with correct number of players', () => {
       const players = createPlayers(9);
@@ -387,6 +405,291 @@ describe('lineupGenerator', () => {
       // Total outfield innings should be 5 positions * 6 innings = 30
       const totalOutfieldInnings = lineup.battingOrder.reduce((sum, p) => sum + p.outfieldInnings, 0);
       expect(totalOutfieldInnings).toBe(30);
+    });
+  });
+
+  describe('generateLineup - Rotating batting order', () => {
+    it('should not include inningBattingOrders when rotatingBattingOrder is false', () => {
+      const players = createPlayers(9);
+      const lineup = generateLineup(players, 6, 3, true, [], false);
+      expect(lineup.inningBattingOrders).toBeUndefined();
+    });
+
+    it('should include inningBattingOrders when rotatingBattingOrder is true', () => {
+      const players = createPlayers(9);
+      const lineup = generateLineup(players, 6, 3, true, [], true);
+      expect(lineup.inningBattingOrders).toBeDefined();
+      expect(Array.isArray(lineup.inningBattingOrders)).toBe(true);
+    });
+
+    it('should generate one batting order per inning', () => {
+      const players = createPlayers(9);
+      const numInnings = 6;
+      const lineup = generateLineup(players, numInnings, 3, true, [], true);
+      expect(lineup.inningBattingOrders).toHaveLength(numInnings);
+    });
+
+    it('each inning batting order should contain all players', () => {
+      const players = createPlayers(9);
+      const lineup = generateLineup(players, 6, 3, true, [], true);
+      const playerNames = lineup.battingOrder.map(p => p.name);
+      lineup.inningBattingOrders.forEach((order, inningIdx) => {
+        expect(order).toHaveLength(players.length);
+        const orderNames = order.map(p => p.name);
+        playerNames.forEach(name => {
+          expect(orderNames).toContain(name);
+        });
+      });
+    });
+
+    it('should rotate batting order by one slot each inning', () => {
+      const players = createPlayers(9);
+      const lineup = generateLineup(players, 6, 3, true, [], true);
+      const n = players.length;
+
+      // For each inning, the order should be the base order shifted by inningIndex
+      lineup.inningBattingOrders.forEach((order, inningIndex) => {
+        const baseOrder = lineup.battingOrder;
+        for (let slot = 0; slot < n; slot++) {
+          const expectedPlayer = baseOrder[(slot + inningIndex) % n];
+          expect(order[slot].name).toBe(expectedPlayer.name);
+        }
+      });
+    });
+
+    it('inning 0 batting order should match the base batting order', () => {
+      const players = createPlayers(9);
+      const lineup = generateLineup(players, 6, 3, true, [], true);
+      const inning0Order = lineup.inningBattingOrders[0];
+      lineup.battingOrder.forEach((player, index) => {
+        expect(inning0Order[index].name).toBe(player.name);
+      });
+    });
+
+    it('should still generate correct innings (positions) when rotating is enabled', () => {
+      const players = createPlayers(9);
+      const lineup = generateLineup(players, 6, 3, true, [], true);
+      expect(lineup.innings).toHaveLength(6);
+      lineup.innings.forEach(inning => {
+        expect(Object.keys(inning)).toContain('Pitcher');
+      });
+    });
+
+    it('should default rotatingBattingOrder to false when not provided', () => {
+      const players = createPlayers(9);
+      const lineup = generateLineup(players, 6, 3, true);
+      expect(lineup.inningBattingOrders).toBeUndefined();
+    });
+
+    it('should work with different team sizes when rotating', () => {
+      [9, 10, 12, 15].forEach(count => {
+        const players = createPlayers(count);
+        const lineup = generateLineup(players, 6, 3, true, [], true);
+        expect(lineup.inningBattingOrders).toHaveLength(6);
+        lineup.inningBattingOrders.forEach(order => {
+          expect(order).toHaveLength(count);
+        });
+      });
+    });
+
+    it('should preserve position balancing logic when rotating is enabled', () => {
+      const players = createPlayers(12);
+      const lineup = generateLineup(players, 6, 3, true, [], true);
+      // Each player should still accumulate field time across innings
+      lineup.battingOrder.forEach(player => {
+        const totalInnings = player.infieldInnings + player.outfieldInnings + player.benchInnings;
+        expect(totalInnings).toBe(6);
+      });
+    });
+
+    it('each player appears exactly once per inning batting order', () => {
+      const players = createPlayers(11);
+      const lineup = generateLineup(players, 6, 3, true, [], true);
+      lineup.inningBattingOrders.forEach(order => {
+        const names = order.map(p => p.name);
+        const unique = new Set(names);
+        expect(unique.size).toBe(players.length);
+      });
+    });
+  });
+
+  describe('generateLineup - Balancing consistency (rotating on/off)', () => {
+    it('should preserve game-to-game batting order balancing regardless of rotating mode', () => {
+      const players = createPlayers(10);
+
+      const previousGame = generateLineup(players, 6, 3, true, [], false);
+      const history = [buildHistoryGame(previousGame)];
+
+      const lineupWithoutRotating = generateLineup(players, 6, 3, true, history, false);
+      const lineupWithRotating = generateLineup(players, 6, 3, true, history, true);
+
+      const withoutRotatingNames = lineupWithoutRotating.battingOrder.map(p => p.name);
+      const withRotatingNames = lineupWithRotating.battingOrder.map(p => p.name);
+
+      expect(withRotatingNames).toEqual(withoutRotatingNames);
+    });
+
+    it('should preserve position balancing totals regardless of rotating mode', () => {
+      const players = createPlayers(12);
+
+      const lineupWithoutRotating = generateLineup(players, 6, 3, true, [], false);
+      const lineupWithRotating = generateLineup(players, 6, 3, true, [], true);
+
+      const byNameWithout = Object.fromEntries(lineupWithoutRotating.battingOrder.map(p => [p.name, p]));
+      const byNameWith = Object.fromEntries(lineupWithRotating.battingOrder.map(p => [p.name, p]));
+
+      lineupWithoutRotating.battingOrder.forEach(player => {
+        const other = byNameWith[player.name];
+        expect(other).toBeDefined();
+        expect(other.infieldInnings).toBe(player.infieldInnings);
+        expect(other.outfieldInnings).toBe(player.outfieldInnings);
+        expect(other.benchInnings).toBe(player.benchInnings);
+      });
+    });
+
+    it('should rotate first batter through every player when innings equal roster size', () => {
+      const players = createPlayers(9);
+      const lineup = generateLineup(players, 9, 3, true, [], true);
+
+      const firstBatters = lineup.inningBattingOrders.map(order => order[0].name);
+      const uniqueFirstBatters = new Set(firstBatters);
+
+      expect(uniqueFirstBatters.size).toBe(players.length);
+    });
+
+    it('should keep batting order fixed per game when rotating mode is disabled', () => {
+      const players = createPlayers(9);
+      const lineup = generateLineup(players, 9, 3, true, [], false);
+
+      expect(lineup.inningBattingOrders).toBeUndefined();
+      expect(lineup.battingOrder.map(p => p.battingOrder)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    });
+  });
+
+  describe('generateLineup - Preset order (manually touched)', () => {
+    it('should use preset order as the batting order when provided', () => {
+      const players = createPlayers(9);
+      // Reverse the order to simulate a manual shuffle/re-order
+      const presetOrder = [...players].reverse();
+      const lineup = generateLineup(players, 6, 3, true, [], false, presetOrder);
+
+      const battingNames = lineup.battingOrder.map(p => p.name);
+      const presetNames = presetOrder.map(p => p.name);
+      expect(battingNames).toEqual(presetNames);
+    });
+
+    it('should ignore auto-rotation when preset order is provided', () => {
+      const players = createPlayers(9);
+
+      // Build history so auto-rotation would reorder players
+      const game1 = generateLineup(players, 6, 3, true, [], false);
+      const history = [buildHistoryGame(game1)];
+
+      // Preset order is the original input order
+      const presetOrder = [...players];
+      const lineup = generateLineup(players, 6, 3, true, history, false, presetOrder);
+
+      const battingNames = lineup.battingOrder.map(p => p.name);
+      const presetNames = presetOrder.map(p => p.name);
+      expect(battingNames).toEqual(presetNames);
+    });
+
+    it('should only include active players from preset order', () => {
+      const players = createPlayers(10);
+      // Mark the last player as inactive
+      const playersWithInactive = players.map((p, i) => ({ ...p, active: i < 9 }));
+      const presetOrder = [...playersWithInactive];
+      const lineup = generateLineup(playersWithInactive, 6, 3, true, [], false, presetOrder);
+
+      expect(lineup.battingOrder).toHaveLength(9);
+      const battingNames = lineup.battingOrder.map(p => p.name);
+      expect(battingNames).not.toContain(players[9].name);
+    });
+
+    it('should still apply position balancing across innings when preset order is used', () => {
+      const players = createPlayers(12);
+      const presetOrder = [...players].reverse();
+      const lineup = generateLineup(players, 6, 3, true, [], false, presetOrder);
+
+      lineup.battingOrder.forEach(player => {
+        const totalInnings = player.infieldInnings + player.outfieldInnings + player.benchInnings;
+        expect(totalInnings).toBe(6);
+      });
+    });
+
+    it('should respect historical position balancing when preset order is used', () => {
+      const players = createPlayers(9);
+      // Give Player 1 lots of infield history
+      const history = [{
+        id: '1',
+        date: new Date().toISOString(),
+        lineup: {
+          battingOrder: players.map((p, idx) => ({
+            name: p.name,
+            number: p.number,
+            battingOrder: idx + 1,
+            infieldInnings: idx === 0 ? 6 : 3,
+            outfieldInnings: idx === 0 ? 0 : 3,
+            benchInnings: 0,
+          })),
+        },
+        settings: { numInnings: 6, numOutfielders: 3, hasCatcher: true, rotatingBattingOrder: false },
+      }];
+
+      const presetOrder = [...players];
+      const lineup = generateLineup(players, 6, 3, true, history, false, presetOrder);
+
+      // Player 1 should get more outfield time due to history (still balanced)
+      const player1 = lineup.battingOrder.find(p => p.name === 'Player 1');
+      expect(player1).toBeDefined();
+      // Overall innings must add up correctly
+      expect(player1.infieldInnings + player1.outfieldInnings + player1.benchInnings).toBe(6);
+    });
+
+    it('should use preset order as the base for rotating batting order when both are enabled', () => {
+      const players = createPlayers(9);
+      const presetOrder = [...players].reverse();
+      const lineup = generateLineup(players, 6, 3, true, [], true, presetOrder);
+
+      // Inning 0 should match the preset order exactly
+      const inning0Names = lineup.inningBattingOrders[0].map(p => p.name);
+      const presetNames = presetOrder.map(p => p.name);
+      expect(inning0Names).toEqual(presetNames);
+    });
+
+    it('subsequent innings should rotate from the preset base order', () => {
+      const players = createPlayers(9);
+      const presetOrder = [...players].reverse();
+      const lineup = generateLineup(players, 6, 3, true, [], true, presetOrder);
+
+      const n = players.length;
+      lineup.inningBattingOrders.forEach((order, inningIndex) => {
+        for (let slot = 0; slot < n; slot++) {
+          const expectedPlayer = lineup.battingOrder[(slot + inningIndex) % n];
+          expect(order[slot].name).toBe(expectedPlayer.name);
+        }
+      });
+    });
+
+    it('should return to auto-rotation when preset order is null', () => {
+      const players = createPlayers(9);
+
+      // Build history so auto-rotation would change the order
+      const game1 = generateLineup(players, 6, 3, true, [], false);
+      const history = [buildHistoryGame(game1)];
+
+      const lineupWithPreset = generateLineup(players, 6, 3, true, history, false, [...players]);
+      const lineupAutoRotated = generateLineup(players, 6, 3, true, history, false, null);
+
+      // Preset order should match input order
+      const presetNames = lineupWithPreset.battingOrder.map(p => p.name);
+      const inputNames = players.map(p => p.name);
+      expect(presetNames).toEqual(inputNames);
+
+      // Auto-rotated order should differ from input order when there is history
+      const autoNames = lineupAutoRotated.battingOrder.map(p => p.name);
+      // The auto-rotation should produce a different ordering than the raw input
+      expect(autoNames).not.toEqual(inputNames);
     });
   });
 });

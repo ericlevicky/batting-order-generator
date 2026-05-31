@@ -349,6 +349,23 @@ describe('storage utilities', () => {
       expect(csv).toContain('Player, With Comma');
     });
 
+    it('should import valid CSV data with embedded newlines', () => {
+      const teamId = createTeam('Team\nBreak', [{ name: 'Player\nOne', number: '1' }]);
+      setCurrentTeamId(teamId);
+      const csv = exportAllData();
+
+      localStorage.clear();
+
+      const result = importAllData(csv);
+
+      expect(result.success).toBe(true);
+
+      const teams = getTeams();
+      expect(teams[teamId].name).toBe('Team\nBreak');
+      expect(teams[teamId].players[0].name).toBe('Player\nOne');
+      expect(getCurrentTeamId()).toBe(teamId);
+    });
+
     it('should import valid CSV data', () => {
       // Create and export data
       const teamId = createTeam('Test Team', [{ name: 'Player 1', number: '1' }]);

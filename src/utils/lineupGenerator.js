@@ -173,10 +173,14 @@ function rotateBattingOrder(players, historicalStats) {
   return playersWithScores.map(item => item.player);
 }
 
-export function generateLineup(players, numInnings, numOutfielders, hasCatcher, gameHistory = []) {
+export function generateLineup(players, numInnings, numOutfielders, hasCatcher, gameHistory = [], rotatingBattingOrder = false, presetOrder = null) {
   const activePlayers = players.filter(p => p.active !== false);
   const historicalStats = calculateHistoricalStats(activePlayers, gameHistory);
-  const rotatedPlayers = rotateBattingOrder(activePlayers, historicalStats);
+  // If a preset order has been manually set (shuffle or move), honour it for this game.
+  // Otherwise fall back to the automatic rotation algorithm.
+  const rotatedPlayers = presetOrder
+    ? presetOrder.filter(p => p.active !== false)
+    : rotateBattingOrder(activePlayers, historicalStats);
   const playerStats = rotatedPlayers.map((player, index) => {
     const h = historicalStats[player.name] || {};
     return {
@@ -204,7 +208,19 @@ export function generateLineup(players, numInnings, numOutfielders, hasCatcher, 
   for (let inning = 0; inning < numInnings; inning++) {
     innings.push(generateInningPositions(playerStats, positions));
   }
-  return { battingOrder: playerStats, innings, positions };
+
+  const result = { battingOrder: playerStats, innings, positions };
+
+  if (rotatingBattingOrder) {
+    // Build per-inning batting orders by rotating the base order one slot each inning.
+    // Inning 0: [0,1,2,...,N-1], Inning 1: [1,2,...,N-1,0], etc.
+    const n = playerStats.length;
+    result.inningBattingOrders = Array.from({ length: numInnings }, (_, inningIndex) =>
+      Array.from({ length: n }, (__, slot) => playerStats[(slot + inningIndex) % n])
+    );
+  }
+
+  return result;
 }
 
 function getPositionsForGame(numOutfielders, hasCatcher) {

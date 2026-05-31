@@ -120,6 +120,21 @@
   line-height: 1.4;
 }
 
+.grid-inning-group-header {
+  border-bottom: none;
+}
+
+.grid-rotating-sub-col {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  border-top: 1px solid #475569;
+}
+
+.grid-rotating-player {
+  min-width: 90px;
+}
+
 /* Mobile responsive */
 @media screen and (max-width: 768px) {
   .grid-table {
