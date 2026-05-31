@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatPlayerName } from '../utils/formatPlayerName';
 import './BattingOrder.css';
 
 function BattingOrder({ battingOrder }) {
@@ -10,7 +11,7 @@ function BattingOrder({ battingOrder }) {
           <div key={player.id} className="batting-order-item">
             <div className="batting-position">{player.battingOrder}</div>
             <div className="batting-player-info">
-              <span className="batting-player-name">{player.name}</span>
+              <span className="batting-player-name">{formatPlayerName(player)}</span>
               <span className="batting-player-number">#{player.number}</span>
             </div>
           </div>

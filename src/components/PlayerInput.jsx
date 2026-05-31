@@ -38,6 +38,7 @@ function PlayerInput({ players, setPlayers, onOrderTouched }) {
         id: Date.now(),
         name: currentName.trim(),
         number: currentNumber.trim() || (players.length + 1).toString(),
+        isAutoNumbered: !currentNumber.trim(),
         active: true,
       };
       setPlayers([...players, newPlayer]);

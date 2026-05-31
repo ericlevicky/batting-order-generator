@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatPlayerName } from '../utils/formatPlayerName';
 import './PrintableLineup.css';
 
 // Position abbreviations mapping
@@ -66,7 +67,7 @@ function PrintableLineup({ lineup, numInnings }) {
           {lineup.battingOrder.map((player, index) => (
             <tr key={player.id}>
               <td className="order-col">{index + 1}</td>
-              <td className="player-col">{player.name}</td>
+              <td className="player-col">{formatPlayerName(player)}</td>
               <td className="number-col">{player.number}</td>
               {Array.from({ length: numInnings }, (_, inningIndex) => (
                 <td key={inningIndex} className="inning-col">
