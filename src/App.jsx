@@ -300,20 +300,6 @@ function App() {
         )}
       </div>
 
-      <footer className="app-footer">
-        <p>
-          Enjoying this app? 
-          <a 
-            href="https://venmo.com/u/Eric-Levicky" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="donate-link"
-          >
-            ☕ Buy me a coffee
-          </a>
-        </p>
-      </footer>
-
       <InstallPrompt />
       <UpdateNotification />
       <ToastContainer toasts={toasts} onDismiss={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
