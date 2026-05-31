@@ -196,7 +196,7 @@ function GameHistory({ history, onDeleteGame, onDeleteAllGames, onShowToast, onR
                       <div key={idx} className="batting-order-item">
                         <span className="order-number">{idx + 1}</span>
                         <span className="player-name">{formatPlayerName(player)}</span>
-                        {player.number && (
+                        {(player.isAutoNumbered && player.number) && (
                           <span className="player-number">#{player.number}</span>
                         )}
                       </div>

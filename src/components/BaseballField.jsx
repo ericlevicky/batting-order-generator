@@ -9,7 +9,7 @@ function BaseballField({ assignments, hasCatcher }) {
     return (
       <div className="player-badge">
         <div className="player-name">{formatPlayerName(player)}</div>
-        <div className="player-num">#{player.number}</div>
+        {player.isAutoNumbered && <div className="player-num">#{player.number}</div>}
       </div>
     );
   };

@@ -12,7 +12,7 @@ function BattingOrder({ battingOrder }) {
             <div className="batting-position">{player.battingOrder}</div>
             <div className="batting-player-info">
               <span className="batting-player-name">{formatPlayerName(player)}</span>
-              <span className="batting-player-number">#{player.number}</span>
+              {player.isAutoNumbered && <span className="batting-player-number">#{player.number}</span>}
             </div>
           </div>
         ))}
