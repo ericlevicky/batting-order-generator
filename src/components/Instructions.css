@@ -5,45 +5,40 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
-  animation: fadeIn 0.2s ease;
+  animation: overlayFadeIn 0.25s ease;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .instructions-modal {
-  background: white;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(var(--glass-blur-strong));
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
   max-width: 800px;
   width: 100%;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease;
+  box-shadow: var(--glass-shadow-lg);
+  animation: modalSlideUp 0.35s ease;
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+@keyframes modalSlideUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .instructions-header {
@@ -51,16 +46,17 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  border-bottom: 2px solid #e2e8f0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(102, 126, 234, 0.3);
   color: white;
-  border-radius: 16px 16px 0 0;
+  border-radius: 20px 20px 0 0;
 }
 
 .instructions-header h2 {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 .btn-close-instructions {
@@ -69,17 +65,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   color: white;
   font-size: 1.25rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .btn-close-instructions:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.25);
   transform: scale(1.1);
 }
 
@@ -98,7 +94,7 @@
 }
 
 .instructions-section h3 {
-  color: #1e293b;
+  color: var(--text-on-dark);
   font-size: 1.25rem;
   font-weight: 700;
   margin: 0 0 1rem 0;
@@ -114,9 +110,14 @@
   gap: 1rem;
   align-items: flex-start;
   padding: 1rem;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: background var(--transition-normal);
+}
+
+.benefit-item:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .benefit-icon {
@@ -126,13 +127,13 @@
 
 .benefit-item strong {
   display: block;
-  color: #1e293b;
+  color: var(--text-on-dark);
   font-size: 1rem;
   margin-bottom: 0.25rem;
 }
 
 .benefit-item p {
-  color: #64748b;
+  color: var(--text-on-dark-muted);
   font-size: 0.875rem;
   margin: 0;
   line-height: 1.5;
@@ -150,9 +151,9 @@
   position: relative;
   padding: 1rem 1rem 1rem 3.5rem;
   margin-bottom: 1rem;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .tutorial-steps li::before {
@@ -165,22 +166,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   color: white;
   border-radius: 50%;
   font-weight: 700;
   font-size: 0.875rem;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .tutorial-steps li strong {
   display: block;
-  color: #1e293b;
+  color: var(--text-on-dark);
   font-size: 1rem;
   margin-bottom: 0.25rem;
 }
 
 .tutorial-steps li p {
-  color: #64748b;
+  color: var(--text-on-dark-muted);
   font-size: 0.875rem;
   margin: 0;
   line-height: 1.5;
@@ -192,7 +194,7 @@
 }
 
 .tips-list li {
-  color: #475569;
+  color: var(--text-on-dark-muted);
   font-size: 0.875rem;
   margin-bottom: 0.75rem;
   line-height: 1.5;
@@ -203,49 +205,49 @@
 }
 
 .privacy-note {
-  color: #475569;
+  color: var(--text-on-dark);
   font-size: 0.875rem;
   line-height: 1.6;
   padding: 1rem;
-  background: #fef3c7;
-  border: 1px solid #fbbf24;
-  border-radius: 8px;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 10px;
   margin: 0;
 }
 
 .instructions-footer {
   padding: 1.5rem 2rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   justify-content: center;
 }
 
 .btn-close-modal {
   padding: 0.75rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   color: white;
-  border: none;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .btn-close-modal:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
 @media (max-width: 768px) {
   .instructions-modal {
     max-height: 95vh;
-    border-radius: 12px;
+    border-radius: 16px;
   }
 
   .instructions-header {
     padding: 1rem 1.5rem;
-    border-radius: 12px 12px 0 0;
+    border-radius: 16px 16px 0 0;
   }
 
   .instructions-header h2 {

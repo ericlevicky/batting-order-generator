@@ -5,9 +5,10 @@
   margin: 0 auto;
   aspect-ratio: 1;
   background: linear-gradient(135deg, #7cb342 0%, #558b2f 100%);
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .field-svg {
@@ -54,13 +55,15 @@
 }
 
 .player-badge {
-  background: white;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   padding: 0.4rem 0.6rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   min-width: 80px;
   text-align: center;
-  border: 2px solid #667eea;
+  border: 1px solid rgba(102, 126, 234, 0.4);
   margin-top: 0.25rem;
 }
 

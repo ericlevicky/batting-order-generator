@@ -6,10 +6,10 @@
   z-index: 9999;
   max-width: 500px;
   width: 90%;
-  animation: slideUp 0.3s ease-out;
+  animation: updateSlideUp 0.4s ease-out;
 }
 
-@keyframes slideUp {
+@keyframes updateSlideUp {
   from {
     opacity: 0;
     transform: translateX(-50%) translateY(20px);
@@ -21,11 +21,14 @@
 }
 
 .update-content {
-  background: #1e3a8a;
+  background: rgba(30, 58, 138, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   color: white;
   padding: 16px 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow-lg);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -61,30 +64,31 @@
 .btn-update,
 .btn-dismiss {
   padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-normal);
 }
 
 .btn-update {
-  background: #10b981;
+  background: rgba(16, 185, 129, 0.8);
   color: white;
 }
 
 .btn-update:hover {
-  background: #059669;
+  background: rgba(5, 150, 105, 0.9);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .btn-dismiss {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
   color: white;
 }
 
 .btn-dismiss:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 @media (max-width: 640px) {

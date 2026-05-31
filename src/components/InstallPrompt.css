@@ -3,15 +3,18 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  background: rgba(30, 58, 138, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   color: white;
   padding: 16px;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
   z-index: 1000;
-  animation: slideUp 0.3s ease-out;
+  animation: installSlideUp 0.4s ease-out;
 }
 
-@keyframes slideUp {
+@keyframes installSlideUp {
   from {
     transform: translateY(100%);
   }
@@ -51,21 +54,22 @@
 }
 
 .install-prompt-button {
-  background: white;
+  background: rgba(255, 255, 255, 0.9);
   color: #1e3a8a;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 10px 24px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all var(--transition-normal);
   flex-shrink: 0;
 }
 
 .install-prompt-button:hover {
+  background: white;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .install-prompt-button:active {
@@ -80,7 +84,7 @@
   cursor: pointer;
   padding: 4px 8px;
   opacity: 0.7;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition-fast);
   flex-shrink: 0;
 }
 
