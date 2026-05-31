@@ -133,7 +133,7 @@
 }
 
 .current-team-label strong {
-  color: #a5b4fc;
+  color: #F0D555;
   font-size: 1rem;
 }
 
@@ -177,7 +177,7 @@
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(102, 126, 234, 0.45);
+  box-shadow: 0 8px 28px rgba(201, 162, 39, 0.45);
   border-color: rgba(255, 255, 255, 0.35);
 }
 
@@ -228,7 +228,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(102, 126, 234, 0.35) 0%, transparent 70%);
+  background: radial-gradient(circle at center, rgba(201, 162, 39, 0.35) 0%, transparent 70%);
   animation: flashPulse 0.9s ease-out forwards;
 }
 
@@ -236,7 +236,7 @@
   font-size: 2.5rem;
   font-weight: 800;
   color: white;
-  text-shadow: 0 2px 20px rgba(102, 126, 234, 0.8);
+  text-shadow: 0 2px 20px rgba(201, 162, 39, 0.8);
   animation: flashTextPop 0.9s ease-out forwards;
   z-index: 1;
 }
