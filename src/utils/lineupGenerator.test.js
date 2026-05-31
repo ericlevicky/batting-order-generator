@@ -633,7 +633,7 @@ describe('lineupGenerator', () => {
             benchInnings: 0,
           })),
         },
-        settings: { numInnings: 6, numOutfielders: 3, hasCatcher: true },
+        settings: { numInnings: 6, numOutfielders: 3, hasCatcher: true, rotatingBattingOrder: false },
       }];
 
       const presetOrder = [...players];
