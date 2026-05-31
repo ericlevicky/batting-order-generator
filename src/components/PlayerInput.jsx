@@ -7,6 +7,7 @@ function PlayerInput({ players, setPlayers, onOrderTouched }) {
   const [currentNumber, setCurrentNumber] = useState('');
   const [editingNumberId, setEditingNumberId] = useState(null);
   const [editingNumberValue, setEditingNumberValue] = useState('');
+  const editingCancelledRef = useRef(false);
   const nameInputRef = useRef(null);
 
   const loadExamplePlayers = () => {
@@ -83,17 +84,21 @@ function PlayerInput({ players, setPlayers, onOrderTouched }) {
   const startEditingNumber = (player) => {
     setEditingNumberId(player.id);
     setEditingNumberValue(player.number);
+    editingCancelledRef.current = false;
   };
 
   const saveNumber = (id) => {
-    if (editingNumberValue.trim()) {
-      setPlayers(players.map(p => p.id === id ? { ...p, number: editingNumberValue.trim() } : p));
+    if (editingCancelledRef.current) return;
+    const trimmed = editingNumberValue.trim();
+    if (trimmed) {
+      setPlayers(players.map(p => p.id === id ? { ...p, number: trimmed } : p));
     }
     setEditingNumberId(null);
     setEditingNumberValue('');
   };
 
   const cancelEditingNumber = () => {
+    editingCancelledRef.current = true;
     setEditingNumberId(null);
     setEditingNumberValue('');
   };
