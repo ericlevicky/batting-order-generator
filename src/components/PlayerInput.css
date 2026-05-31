@@ -212,6 +212,30 @@
   border-radius: 4px;
 }
 
+.player-number-editable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.player-number-editable:hover {
+  background: #e2e8f0;
+  border-color: #667eea;
+}
+
+.player-number-input {
+  width: 48px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  border: 2px solid #667eea;
+  border-radius: 4px;
+  outline: none;
+  text-align: center;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
 .player-actions {
   display: flex;
   gap: 0.25rem;
