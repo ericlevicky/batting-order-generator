@@ -198,7 +198,7 @@
   font-weight: 700;
   font-size: 0.875rem;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(201, 162, 39, 0.3);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .player-info {
@@ -230,7 +230,7 @@
 
 .player-number-editable:hover {
   background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(201, 162, 39, 0.4);
+  border-color: rgba(16, 185, 129, 0.4);
 }
 
 .player-number-input {

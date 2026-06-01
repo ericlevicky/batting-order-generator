@@ -112,16 +112,16 @@
 }
 
 .button-group-item.active {
-  background: rgba(201, 162, 39, 0.7);
+  background: rgba(16, 185, 129, 0.7);
   color: white;
-  border-color: rgba(201, 162, 39, 0.5);
+  border-color: rgba(16, 185, 129, 0.5);
   z-index: 1;
   position: relative;
-  box-shadow: 0 0 12px rgba(201, 162, 39, 0.3);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
 }
 
 .button-group-item.active:hover {
-  background: rgba(85, 104, 211, 0.8);
+  background: rgba(16, 185, 129, 0.8);
 }
 
 .button-group-item:focus {

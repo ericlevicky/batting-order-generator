@@ -141,9 +141,9 @@
 }
 
 .team-item.active {
-  border-color: rgba(201, 162, 39, 0.6);
-  background: rgba(201, 162, 39, 0.15);
-  box-shadow: 0 0 20px rgba(201, 162, 39, 0.15);
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.12);
 }
 
 .team-info {
@@ -295,14 +295,14 @@
 }
 
 .btn-import {
-  background: rgba(139, 92, 246, 0.75);
+  background: rgba(14, 165, 233, 0.75);
   color: white;
 }
 
 .btn-import:hover {
-  background: rgba(124, 58, 237, 0.85);
+  background: rgba(2, 132, 199, 0.85);
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.3);
 }
 
 @media (max-width: 768px) {

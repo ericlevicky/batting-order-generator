@@ -1,14 +1,14 @@
 :root {
   /* Glass theme tokens */
-  --glass-bg: rgba(255, 255, 255, 0.18);
-  --glass-bg-strong: rgba(255, 255, 255, 0.28);
-  --glass-bg-subtle: rgba(255, 255, 255, 0.10);
-  --glass-border: rgba(255, 255, 255, 0.25);
-  --glass-border-strong: rgba(255, 255, 255, 0.40);
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-bg-strong: rgba(255, 255, 255, 0.12);
+  --glass-bg-subtle: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-strong: rgba(255, 255, 255, 0.22);
   --glass-blur: 16px;
   --glass-blur-strong: 24px;
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  --glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.18);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.25);
   --glass-inner-bg: rgba(255, 255, 255, 0.55);
   --glass-inner-bg-strong: rgba(255, 255, 255, 0.72);
   --glass-inner-border: rgba(255, 255, 255, 0.35);
@@ -16,14 +16,14 @@
   --text-primary: #0f172a;
   --text-secondary: #334155;
   --text-muted: #475569;
-  --text-on-dark: #ffffff;
-  --text-on-dark-muted: rgba(255, 255, 255, 0.85);
-  /* Accent (gold) */
-  --accent: #C9A227;
-  --accent-hover: #b89220;
-  --accent-gradient: linear-gradient(135deg, #C9A227 0%, #7b4dbd 100%);
+  --text-on-dark: #f1f5f9;
+  --text-on-dark-muted: rgba(226, 232, 240, 0.85);
+  /* Accent (emerald/teal) */
+  --accent: #10b981;
+  --accent-hover: #059669;
+  --accent-gradient: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
   /* Focus ring (high contrast for accessibility) */
-  --focus-ring: 0 0 0 3px rgba(201, 162, 39, 0.5), 0 0 0 5px rgba(201, 162, 39, 0.2);
+  --focus-ring: 0 0 0 3px rgba(16, 185, 129, 0.4), 0 0 0 5px rgba(16, 185, 129, 0.15);
   /* Transition defaults */
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s ease;
@@ -42,7 +42,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #3d2b6b 0%, #2a1854 40%, #1a0f3d 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
   background-attachment: fixed;
   min-height: 100vh;
   padding: 20px;
