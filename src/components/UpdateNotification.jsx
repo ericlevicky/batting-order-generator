@@ -3,66 +3,86 @@ import './UpdateNotification.css';
 
 function UpdateNotification() {
   const [showUpdate, setShowUpdate] = useState(false);
-  const [registration, setRegistration] = useState(null);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      // Listen for service worker updates
-      navigator.serviceWorker.ready.then((reg) => {
-        setRegistration(reg);
-        
-        // Check for updates every 60 seconds
-        const intervalId = setInterval(() => {
-          reg.update();
-        }, 60000);
+    if (!('serviceWorker' in navigator)) return;
 
-        // Check for updates when tab becomes visible
-        document.addEventListener('visibilitychange', () => {
-          if (!document.hidden) {
-            reg.update();
+    let refreshing = false;
+    let fallbackTimeout = null;
+
+    // When a new service worker takes control, reload the page automatically
+    // This fires after skipWaiting() + clients.claim() in the new SW
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      if (fallbackTimeout) clearTimeout(fallbackTimeout);
+      window.location.reload();
+    });
+
+    // Check for updates and show notification when a new SW is waiting
+    navigator.serviceWorker.ready.then((reg) => {
+      // Check for updates periodically
+      const intervalId = setInterval(() => {
+        reg.update().catch(() => {});
+      }, 60000);
+
+      // Check for updates when tab becomes visible
+      const handleVisibility = () => {
+        if (!document.hidden) {
+          reg.update().catch(() => {});
+        }
+      };
+      document.addEventListener('visibilitychange', handleVisibility);
+
+      // If there's already a waiting worker, show update notification
+      if (reg.waiting) {
+        setShowUpdate(true);
+      }
+
+      // Listen for new service worker installing
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+
+        newWorker.addEventListener('statechange', () => {
+          // New SW installed and waiting - since we use skipWaiting(), 
+          // it should activate immediately. But as a fallback, show notification.
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            setShowUpdate(true);
           }
         });
-
-        return () => clearInterval(intervalId);
       });
 
-      // Listen for the controlling service worker change
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        // Don't show update notification if this is the first installation
-        if (navigator.serviceWorker.controller) {
-          setShowUpdate(true);
-        }
-      });
-
-      // Check if there's a waiting service worker
-      navigator.serviceWorker.ready.then((reg) => {
-        if (reg.waiting) {
-          setShowUpdate(true);
-        }
-
-        // Listen for new service worker waiting
-        reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing;
-          
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New service worker is installed and ready
-              setShowUpdate(true);
-            }
-          });
-        });
-      });
-    }
+      return () => {
+        clearInterval(intervalId);
+        document.removeEventListener('visibilitychange', handleVisibility);
+      };
+    });
   }, []);
 
   const handleUpdate = () => {
-    if (registration && registration.waiting) {
-      // Tell the service worker to skip waiting
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    setUpdating(true);
+    
+    // The new SW should already be active (skipWaiting is called in install).
+    // But if there's a waiting SW for some reason, tell it to activate.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then((reg) => {
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        } else {
+          // SW already activated, just reload
+          window.location.reload();
+        }
+      });
+    } else {
+      window.location.reload();
     }
     
-    // Reload the page to get the new version
-    window.location.reload();
+    // Fallback: if controllerchange doesn't fire within 3 seconds, force reload
+    fallbackTimeout = setTimeout(() => {
+      window.location.reload();
+    }, 3000);
   };
 
   const handleDismiss = () => {
@@ -82,10 +102,10 @@ function UpdateNotification() {
           <p>A new version is available. Refresh to get the latest features.</p>
         </div>
         <div className="update-actions">
-          <button className="btn-update" onClick={handleUpdate}>
-            Update Now
+          <button className="btn-update" onClick={handleUpdate} disabled={updating}>
+            {updating ? 'Updating...' : 'Update Now'}
           </button>
-          <button className="btn-dismiss" onClick={handleDismiss}>
+          <button className="btn-dismiss" onClick={handleDismiss} disabled={updating}>
             Later
           </button>
         </div>

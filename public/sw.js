@@ -1,85 +1,121 @@
 // Service Worker for Batting Order Generator PWA
-const CACHE_NAME = 'batting-order-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+// The version below is replaced at build time by the Vite plugin.
+// During development it stays as-is which is fine (dev doesn't use SW).
+const CACHE_VERSION = '__BUILD_VERSION__';
+const CACHE_NAME = 'batting-order-' + CACHE_VERSION;
+
+// Static shell files to pre-cache on install
+const PRECACHE_URLS = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
-// Install event - cache essential files
+// Install event - cache essential shell files
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-      .catch((error) => {
-        console.log('Cache install failed:', error);
+        console.log('[SW] Caching shell:', CACHE_NAME);
+        return cache.addAll(PRECACHE_URLS);
       })
   );
-  // Don't force activate immediately - let the update notification handle it
+  // Activate new SW immediately so updates aren't stuck waiting
+  self.skipWaiting();
 });
 
-// Listen for SKIP_WAITING message
+// Activate event - clean up ALL old caches and take control
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((name) => {
+          if (name !== CACHE_NAME) {
+            console.log('[SW] Deleting old cache:', name);
+            return caches.delete(name);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+
+// Listen for SKIP_WAITING message (kept for backward compat)
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 });
 
-// Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
-  // Take control of all pages immediately
-  return self.clients.claim();
-});
-
-// Fetch event - serve from cache, fallback to network
+// Fetch event
+// Strategy:
+//  - Navigation requests (HTML pages): Network-first, fall back to cache
+//  - Hashed assets (contain hash in filename): Cache-first (immutable)
+//  - Everything else: Network-first, fall back to cache
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
+  const { request } = event;
 
-        // Clone the request
-        const fetchRequest = event.request.clone();
+  // Skip non-GET requests
+  if (request.method !== 'GET') return;
 
-        return fetch(fetchRequest).then((response) => {
-          // Check if valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
+  // Navigation requests - always try network first for fresh HTML
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
 
-          // Clone the response
-          const responseToCache = response.clone();
+  // Hashed assets from Vite build (e.g. /assets/index-abc123.js)
+  // These are immutable - safe to serve from cache forever
+  if (isHashedAsset(request.url)) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
 
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-
-          return response;
-        }).catch((error) => {
-          console.log('Fetch failed:', error);
-          // You could return a custom offline page here
-        });
-      })
-  );
+  // All other requests - network first
+  event.respondWith(networkFirst(request));
 });
+
+// Network-first strategy: try network, fall back to cache
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request);
+    if (response && response.status === 200) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    // For navigation, return cached index.html as fallback
+    if (request.mode === 'navigate') {
+      return caches.match('./index.html');
+    }
+    return new Response('Offline', { status: 503 });
+  }
+}
+
+// Cache-first strategy: serve from cache, update from network in background
+async function cacheFirst(request) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(request);
+    if (response && response.status === 200) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    return new Response('Offline', { status: 503 });
+  }
+}
+
+// Check if URL is a Vite hashed asset (contains content hash in filename)
+function isHashedAsset(url) {
+  // Vite outputs assets like /assets/index-BxK3a1Fc.js or /assets/style-abc123.css
+  return /\/assets\/[^/]+-[a-zA-Z0-9]{8,}\.(js|css|woff2?|png|jpg|svg)/.test(url);
+}
