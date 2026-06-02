@@ -97,12 +97,16 @@ ${additionalContext.trim() || 'N/A'}
             />
           </label>
 
+          <p className="feature-suggestion-note">
+            Clicking the button below will open GitHub in a new tab with your details pre-filled. You must be logged in to GitHub and click <strong>Submit new issue</strong> there to finish.
+          </p>
+
           <div className="feature-suggestion-actions">
             <button type="button" className="btn-cancel-feature-suggestion" onClick={onClose}>
               Cancel
             </button>
             <button type="submit" className="btn-submit-feature-suggestion">
-              Create GitHub Issue
+              Open on GitHub <span aria-hidden="true">→</span>
             </button>
           </div>
         </form>

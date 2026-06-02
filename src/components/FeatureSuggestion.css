@@ -113,6 +113,17 @@
   min-height: 96px;
 }
 
+.feature-suggestion-note {
+  margin: 0;
+  padding: 0.65rem 0.9rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: var(--text-on-dark);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 .feature-suggestion-actions {
   margin-top: 0.5rem;
   display: flex;
