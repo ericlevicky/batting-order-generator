@@ -68,7 +68,7 @@ function Instructions({ onClose }) {
               </li>
               <li>
                 <strong>Add Players</strong>
-                <p>Click "Load Example Team" to populate with sample players, or add players manually with names and optional numbers</p>
+                <p>Click "Load Example Team" when a team is empty to populate it with sample players, or add players manually with names and optional numbers</p>
               </li>
               <li>
                 <strong>Configure Game Settings</strong>
