@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import './FeatureSuggestion.css';
 
 const ISSUE_URL = 'https://github.com/ericlevicky/batting-order-generator/issues/new';
+const MAX_FEATURE_TITLE_LENGTH = 120;
 
-function FeatureSuggestion({ onClose, onIssueCreated }) {
+function FeatureSuggestion({ onClose, onIssueFormOpened, onIssueFormBlocked }) {
   const [featureTitle, setFeatureTitle] = useState('');
   const [problemDescription, setProblemDescription] = useState('');
   const [proposedSolution, setProposedSolution] = useState('');
@@ -32,9 +33,15 @@ ${additionalContext.trim() || 'N/A'}
       labels: 'enhancement'
     });
 
-    window.open(`${ISSUE_URL}?${params.toString()}`, '_blank', 'noopener,noreferrer');
-    onIssueCreated?.();
-    onClose();
+    const issueWindow = window.open(`${ISSUE_URL}?${params.toString()}`, '_blank', 'noopener,noreferrer');
+
+    if (issueWindow) {
+      onIssueFormOpened?.();
+      onClose();
+      return;
+    }
+
+    onIssueFormBlocked?.();
   };
 
   return (
@@ -54,7 +61,7 @@ ${additionalContext.trim() || 'N/A'}
               onChange={(event) => setFeatureTitle(event.target.value)}
               placeholder="Example: Save multiple lineup presets"
               required
-              maxLength={120}
+              maxLength={MAX_FEATURE_TITLE_LENGTH}
             />
           </label>
 

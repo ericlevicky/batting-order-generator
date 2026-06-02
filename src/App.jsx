@@ -337,7 +337,8 @@ function App() {
       {showFeatureSuggestion && (
         <FeatureSuggestion
           onClose={() => setShowFeatureSuggestion(false)}
-          onIssueCreated={() => showToast('Opening GitHub issue form...', 'info')}
+          onIssueFormOpened={() => showToast('Opening GitHub issue form...', 'info')}
+          onIssueFormBlocked={() => showToast('Please allow pop-ups to open the GitHub issue form.', 'error')}
         />
       )}
 
