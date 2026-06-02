@@ -6,6 +6,7 @@ import GameHistory from './components/GameHistory';
 import CumulativeStats from './components/CumulativeStats';
 import InstallPrompt from './components/InstallPrompt';
 import Instructions from './components/Instructions';
+import FeatureSuggestion from './components/FeatureSuggestion';
 import UpdateNotification from './components/UpdateNotification';
 import ToastContainer from './components/ToastContainer';
 import ConfirmDialog from './components/ConfirmDialog';
@@ -38,6 +39,7 @@ function App() {
   const [lineup, setLineup] = useState(null);
   const [gameHistory, setGameHistory] = useState([]);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [showFeatureSuggestion, setShowFeatureSuggestion] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showCumulativeStats, setShowCumulativeStats] = useState(false);
@@ -218,13 +220,22 @@ function App() {
             <h1>⚾ Little League Batting Order Generator</h1>
             <p>Generate batting orders and field positions for your game</p>
           </div>
-          <button 
-            className="btn-help"
-            onClick={() => setShowInstructions(true)}
-            title="How to use this app"
-          >
-            ❓ Help
-          </button>
+          <div className="header-actions">
+            <button
+              className="btn-feature-suggestion"
+              onClick={() => setShowFeatureSuggestion(true)}
+              title="Suggest a feature"
+            >
+              💡 Suggest Feature
+            </button>
+            <button
+              className="btn-help"
+              onClick={() => setShowInstructions(true)}
+              title="How to use this app"
+            >
+              ❓ Help
+            </button>
+          </div>
         </div>
       </header>
 
@@ -321,6 +332,14 @@ function App() {
       
       {showInstructions && (
         <Instructions onClose={() => setShowInstructions(false)} />
+      )}
+
+      {showFeatureSuggestion && (
+        <FeatureSuggestion
+          onClose={() => setShowFeatureSuggestion(false)}
+          onIssueFormOpened={() => showToast('Opening GitHub issue form...', 'info')}
+          onIssueFormBlocked={() => showToast('Please allow pop-ups to open the GitHub issue form.', 'error')}
+        />
       )}
 
       {showFlash && (
