@@ -108,15 +108,17 @@ function PlayerInput({ players, setPlayers, onOrderTouched }) {
     <div className="player-input-section">
       <div className="players-header">
         <h3>Players</h3>
-        <div className="header-buttons">
-          <button
-            type="button"
-            className="btn-example"
-            onClick={loadExamplePlayers}
-          >
-            Load Example Team
-          </button>
-        </div>
+        {players.length === 0 && (
+          <div className="header-buttons">
+            <button
+              type="button"
+              className="btn-example"
+              onClick={loadExamplePlayers}
+            >
+              Load Example Team
+            </button>
+          </div>
+        )}
       </div>
       <p className="input-hint">
         Enter player name and number, then press Tab to add the next player
