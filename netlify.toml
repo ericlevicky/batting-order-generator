@@ -8,6 +8,9 @@
   # Node version for build environment
   environment = { NODE_VERSION = "20" }
 
+[functions]
+  directory = "netlify/functions"
+
 # Redirects for single page application
 [[redirects]]
   from = "/*"

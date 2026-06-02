@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import './FeatureSuggestion.css';
 
-const ISSUE_URL = 'https://github.com/ericlevicky/batting-order-generator/issues/new';
 const MAX_FEATURE_TITLE_LENGTH = 120;
 
-function FeatureSuggestion({ onClose, onIssueFormOpened, onIssueFormBlocked }) {
+function FeatureSuggestion({ onClose, onSubmitSuccess, onSubmitError }) {
   const [featureTitle, setFeatureTitle] = useState('');
   const [problemDescription, setProblemDescription] = useState('');
   const [proposedSolution, setProposedSolution] = useState('');
   const [additionalContext, setAdditionalContext] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setIsSubmitting(true);
 
     const title = `Feature Request: ${featureTitle.trim()}`;
-    const body = `## Summary
+    const description = `## Summary
 ${featureTitle.trim()}
 
 ## Problem to Solve
@@ -27,21 +28,26 @@ ${proposedSolution.trim()}
 ${additionalContext.trim() || 'N/A'}
 `;
 
-    const params = new URLSearchParams({
-      title,
-      body,
-      labels: 'enhancement'
-    });
+    try {
+      const response = await fetch('/.netlify/functions/create-issue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description }),
+      });
 
-    const issueWindow = window.open(`${ISSUE_URL}?${params.toString()}`, '_blank', 'noopener,noreferrer');
+      const data = await response.json();
 
-    if (issueWindow) {
-      onIssueFormOpened?.();
-      onClose();
-      return;
+      if (response.ok) {
+        onSubmitSuccess?.(data.issueNumber);
+        onClose();
+      } else {
+        onSubmitError?.(data.error || 'Failed to submit feature request.');
+      }
+    } catch (error) {
+      onSubmitError?.('Network error. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onIssueFormBlocked?.();
   };
 
   return (
@@ -98,15 +104,15 @@ ${additionalContext.trim() || 'N/A'}
           </label>
 
           <p className="feature-suggestion-note">
-            Clicking the button below will open GitHub in a new tab with your details pre-filled. You must be logged in to GitHub and click <strong>Submit new issue</strong> there to finish.
+            Your feature request will be submitted directly. No GitHub account needed!
           </p>
 
           <div className="feature-suggestion-actions">
-            <button type="button" className="btn-cancel-feature-suggestion" onClick={onClose}>
+            <button type="button" className="btn-cancel-feature-suggestion" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </button>
-            <button type="submit" className="btn-submit-feature-suggestion">
-              Open on GitHub <span aria-hidden="true">→</span>
+            <button type="submit" className="btn-submit-feature-suggestion" disabled={isSubmitting}>
+              {isSubmitting ? 'Submitting…' : 'Submit Feature Request'}
             </button>
           </div>
         </form>
