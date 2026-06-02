@@ -9,6 +9,7 @@ export default async (req) => {
   }
 
   const token = process.env.GITHUB_ISSUES_TOKEN;
+  if (!token) {
     return new Response(JSON.stringify({ error: 'Server configuration error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
@@ -27,6 +28,7 @@ export default async (req) => {
 
   const { title, description } = body;
 
+  if (!title || !description) {
     return new Response(JSON.stringify({ error: 'Title and description are required' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -49,6 +51,7 @@ export default async (req) => {
       }),
     });
 
+    if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       return new Response(JSON.stringify({ error: 'Failed to create issue', details: errorData.message }), {
         status: response.status,
