@@ -5,12 +5,15 @@ const SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/authorize';
 const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token';
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
 
+// Client ID is set at build time via environment variable (VITE_SPOTIFY_CLIENT_ID).
+// This avoids requiring each user to create their own Spotify Developer App.
+const APP_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || '';
+
 const STORAGE_KEYS = {
   ACCESS_TOKEN: 'spotify_access_token',
   REFRESH_TOKEN: 'spotify_refresh_token',
   TOKEN_EXPIRY: 'spotify_token_expiry',
   CODE_VERIFIER: 'spotify_code_verifier',
-  CLIENT_ID: 'spotify_client_id',
 };
 
 const SCOPES = [
@@ -47,11 +50,7 @@ function base64UrlEncode(buffer) {
 // --- Token Management ---
 
 export function getClientId() {
-  return localStorage.getItem(STORAGE_KEYS.CLIENT_ID) || '';
-}
-
-export function setClientId(clientId) {
-  localStorage.setItem(STORAGE_KEYS.CLIENT_ID, clientId.trim());
+  return APP_CLIENT_ID;
 }
 
 function getStoredTokens() {

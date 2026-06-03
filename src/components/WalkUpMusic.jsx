@@ -5,7 +5,6 @@ import {
   handleAuthCallback,
   clearTokens,
   getClientId,
-  setClientId,
   getUserPlaylists,
   getPlaylistTracks,
   playTrack,
@@ -26,8 +25,6 @@ import './WalkUpMusic.css';
 function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowToast }) {
   // Auth state
   const [authenticated, setAuthenticated] = useState(false);
-  const [clientId, setClientIdState] = useState('');
-  const [showClientIdSetup, setShowClientIdSetup] = useState(false);
 
   // Data state
   const [walkUpConfig, setWalkUpConfig] = useState({ spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} });
@@ -51,7 +48,6 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
   useEffect(() => {
     const config = getTeamWalkUpMusic(teamId);
     setWalkUpConfig(config);
-    setClientIdState(getClientId());
 
     // Handle OAuth callback
     handleAuthCallback()
@@ -126,35 +122,9 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
     }
   };
 
-  // --- Auth Helpers ---
-
-  const hasClientId = !!getClientId();
-
-  const handleCopyRedirectUri = () => {
-    const uri = window.location.origin + window.location.pathname;
-    navigator.clipboard.writeText(uri).then(
-      () => onShowToast('Redirect URI copied!', 'success'),
-      () => onShowToast('Could not copy — please copy manually', 'error')
-    );
-  };
-
   // --- Auth Handlers ---
 
-  const handleSaveClientId = () => {
-    if (!clientId.trim()) {
-      onShowToast('Please enter a Spotify Client ID', 'error');
-      return;
-    }
-    setClientId(clientId.trim());
-    setShowClientIdSetup(false);
-    onShowToast('Client ID saved! Now click "Connect to Spotify" to log in.', 'success');
-  };
-
   const handleLogin = async () => {
-    if (!getClientId()) {
-      setShowClientIdSetup(true);
-      return;
-    }
     try {
       await startAuthFlow();
     } catch (err) {
