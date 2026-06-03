@@ -13,6 +13,8 @@ import {
   getAvailableDevices,
   getPreferredDeviceId,
   setPreferredDeviceId,
+  selectBestDevice,
+  filterPlayableDevices,
 } from '../utils/spotify';
 import {
   getTeamWalkUpMusic,
@@ -212,24 +214,16 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
       try {
         debugDevices = await getAvailableDevices();
         debugPreferredId = getPreferredDeviceId();
-        const preferredDevice = debugPreferredId ? debugDevices.find(d => d.id === debugPreferredId) : null;
-        if (preferredDevice) {
-          targetDeviceId = preferredDevice.id;
-        } else {
-          const smartphone = debugDevices.find(d => d.type === 'Smartphone');
-          if (smartphone) {
-            targetDeviceId = smartphone.id;
-          }
-        }
+        targetDeviceId = selectBestDevice(debugDevices, debugPreferredId);
       } catch {
         // Continue without a device ID — Spotify will use the last active device
       }
 
-      // If no devices were found at all, try to open Spotify app and retry
-      if (debugDevices.length === 0 && !targetDeviceId) {
+      // If no playable devices were found, try to open Spotify app
+      if (!targetDeviceId && filterPlayableDevices(debugDevices).length === 0) {
         // Attempt to open Spotify native app via deep link
         window.open('spotify://', '_blank');
-        showToast('Opening Spotify app... Tap play again in a few seconds.', 'info');
+        showToast('No playable device found. Opening Spotify app... Tap play again in a few seconds.', 'info');
         return;
       }
 

@@ -15,6 +15,8 @@ import {
   getAvailableDevices,
   getPreferredDeviceId,
   setPreferredDeviceId,
+  selectBestDevice,
+  filterPlayableDevices,
 } from '../utils/spotify';
 import {
   getTeamWalkUpMusic,
@@ -114,9 +116,10 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
         if (!preferredId) return;
 
         const devices = await getAvailableDevices();
-        const preferred = devices.find(d => d.id === preferredId);
+        const playable = filterPlayableDevices(devices);
+        const preferred = playable.find(d => d.id === preferredId);
 
-        // If device exists but is inactive, re-transfer without playing
+        // If preferred playable device exists but is inactive, re-transfer without playing
         if (preferred && !preferred.is_active) {
           await transferPlayback(preferredId, false);
         }
@@ -241,33 +244,16 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
       try {
         debugDevices = await getAvailableDevices();
         debugPreferredId = getPreferredDeviceId();
-        const preferredDevice = debugPreferredId ? debugDevices.find(d => d.id === debugPreferredId) : null;
-        if (preferredDevice) {
-          targetDeviceId = preferredDevice.id;
-        } else {
-          // Prefer an active device first, then fall back to a smartphone, then any device
-          const activeDevice = debugDevices.find(d => d.is_active);
-          if (activeDevice) {
-            targetDeviceId = activeDevice.id;
-          } else {
-            const smartphone = debugDevices.find(d => d.type === 'Smartphone');
-            if (smartphone) {
-              targetDeviceId = smartphone.id;
-            } else if (debugDevices.length > 0) {
-              // Use whatever device is available (e.g. Echo Show)
-              targetDeviceId = debugDevices[0].id;
-            }
-          }
-        }
+        targetDeviceId = selectBestDevice(debugDevices, debugPreferredId);
       } catch {
         // Continue without a device ID — Spotify will use the last active device
       }
 
-      // If no devices were found at all, try to open Spotify app and retry
-      if (debugDevices.length === 0 && !targetDeviceId) {
+      // If no playable devices were found, try to open Spotify app
+      if (!targetDeviceId && filterPlayableDevices(debugDevices).length === 0) {
         // Attempt to open Spotify native app via deep link
         window.open('spotify://', '_blank');
-        showToast('Opening Spotify app... Tap play again in a few seconds.', 'info');
+        showToast('No playable device found. Opening Spotify app... Tap play again in a few seconds.', 'info');
         return;
       }
 

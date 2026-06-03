@@ -90,6 +90,44 @@ export function setPreferredDeviceId(deviceId) {
   }
 }
 
+// Device types that should never be targeted for playback (they aren't
+// meant to be controlled from this app, e.g. Echo Show, smart speakers)
+const EXCLUDED_DEVICE_TYPES = ['Speaker'];
+
+/**
+ * Filter a list of Spotify devices to only those eligible for playback.
+ * Excludes smart speakers and similar devices.
+ */
+export function filterPlayableDevices(devices) {
+  return devices.filter(d => !EXCLUDED_DEVICE_TYPES.includes(d.type));
+}
+
+/**
+ * Select the best device for playback from a list of devices.
+ * Returns the device ID or null if no suitable device is found.
+ */
+export function selectBestDevice(devices, preferredId) {
+  const playable = filterPlayableDevices(devices);
+  if (playable.length === 0) return null;
+
+  // 1. Preferred device (if still available and playable)
+  if (preferredId) {
+    const preferred = playable.find(d => d.id === preferredId);
+    if (preferred) return preferred.id;
+  }
+
+  // 2. Currently active device
+  const active = playable.find(d => d.is_active);
+  if (active) return active.id;
+
+  // 3. Smartphone
+  const phone = playable.find(d => d.type === 'Smartphone');
+  if (phone) return phone.id;
+
+  // 4. Any playable device (Computer, etc.)
+  return playable[0].id;
+}
+
 export function isAuthenticated() {
   const { accessToken, expiry } = getStoredTokens();
   return !!accessToken && Date.now() < expiry;
