@@ -352,9 +352,10 @@ export async function playTrack(trackUri, positionMs = 0, deviceId = null) {
   const RETRY_TRANSFER_DELAY = 1500; // Time to wait after re-transfer during retries
 
   // If a device is specified, transfer playback first to force-activate it
+  // Pass play=false to avoid briefly resuming the previously paused track
   if (deviceId) {
     try {
-      await transferPlayback(deviceId);
+      await transferPlayback(deviceId, false);
       await new Promise(resolve => setTimeout(resolve, DEVICE_ACTIVATION_DELAY));
     } catch {
       // Continue anyway - the play call may still work
@@ -392,7 +393,7 @@ export async function playTrack(trackUri, positionMs = 0, deviceId = null) {
       // Re-transfer playback on each retry to wake the device
       if (deviceId) {
         try {
-          await transferPlayback(deviceId);
+          await transferPlayback(deviceId, false);
           await new Promise(resolve => setTimeout(resolve, RETRY_TRANSFER_DELAY));
         } catch {
           // On last retry attempt, try without device_id
