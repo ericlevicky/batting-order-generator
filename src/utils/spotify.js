@@ -350,7 +350,7 @@ export async function pollForDevice(timeoutMs = 10000, intervalMs = 1500) {
       const devices = await getAvailableDevices();
       const playable = filterPlayableDevices(devices);
       if (playable.length > 0) {
-        return selectBestDevice(devices, preferredId);
+        return selectBestDevice(playable, preferredId);
       }
     } catch {
       // Ignore transient errors during polling
@@ -429,8 +429,8 @@ export async function playTrack(trackUri, positionMs = 0, deviceId = null) {
 
           if (playable.length > 0) {
             // Prefer the originally targeted device if still present
-            const stillThere = deviceId && playable.find(d => d.id === deviceId);
-            const newTarget = stillThere ? deviceId : selectBestDevice(freshDevices, getPreferredDeviceId());
+            const stillThere = deviceId && playable.some(d => d.id === deviceId);
+            const newTarget = stillThere ? deviceId : selectBestDevice(playable, getPreferredDeviceId());
 
             if (newTarget) {
               deviceId = newTarget;
@@ -442,9 +442,6 @@ export async function playTrack(trackUri, positionMs = 0, deviceId = null) {
                 // Continue to retry the play call
               }
             }
-          } else if (attempt < MAX_RETRIES - 1) {
-            // No devices visible yet — keep waiting, they may appear
-            continue;
           }
         } catch {
           // Device fetch failed, just retry the play call
