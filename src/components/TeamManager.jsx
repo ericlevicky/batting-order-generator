@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { exportAllData, importAllData, getTeams } from '../utils/storage';
-import { generateShareUrl } from '../utils/shareUrl';
+import { generateShareUrlViaApi } from '../utils/shareUrl';
 import './TeamManager.css';
 
 function TeamManager({ 
@@ -78,7 +78,7 @@ function TeamManager({
   const handleShareLink = async () => {
     try {
       const csv = exportAllData();
-      const shareUrl = await generateShareUrl(csv);
+      const shareUrl = await generateShareUrlViaApi(csv);
 
       // Try native share first (mobile), fall back to clipboard
       if (navigator.share) {

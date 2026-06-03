@@ -29,7 +29,7 @@ import {
   importAllData,
   getTeamWalkUpMusic
 } from './utils/storage';
-import { getSharedDataFromUrl, clearShareDataFromUrl } from './utils/shareUrl';
+import { getSharedDataFromUrl, clearShareDataFromUrl, getSharedIdFromUrl, fetchSharedDataById } from './utils/shareUrl';
 import './App.css';
 
 function App() {
@@ -73,7 +73,22 @@ function App() {
   // Handle shared data import from URL
   useEffect(() => {
     const handleSharedUrl = async () => {
-      const sharedCsv = await getSharedDataFromUrl();
+      let sharedCsv = null;
+
+      // Check for API-based share ID first (?share=<uuid>)
+      const shareId = getSharedIdFromUrl();
+      if (shareId) {
+        sharedCsv = await fetchSharedDataById(shareId);
+        if (!sharedCsv) {
+          showToast('Could not load shared data. The link may be invalid or expired.', 'error');
+          clearShareDataFromUrl();
+          return;
+        }
+      } else {
+        // Fall back to compressed data in URL (?data= or #import=)
+        sharedCsv = await getSharedDataFromUrl();
+      }
+
       if (!sharedCsv) return;
 
       setConfirmDialog({

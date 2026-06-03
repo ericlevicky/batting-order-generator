@@ -137,12 +137,67 @@ export const getSharedDataFromUrl = async () => {
  */
 export const clearShareDataFromUrl = () => {
   const params = new URLSearchParams(window.location.search);
-  if (params.has('data')) {
+  if (params.has('data') || params.has('share')) {
     params.delete('data');
+    params.delete('share');
     const newSearch = params.toString();
     const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash;
     history.replaceState(null, '', newUrl);
   } else if (window.location.hash.startsWith('#import=')) {
     history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+};
+
+/**
+ * Generate a shareable URL by persisting data to Vercel Blob via the API.
+ * Returns a short URL with ?share=<uuid>.
+ * Falls back to the compressed URL approach if the API call fails.
+ */
+export const generateShareUrlViaApi = async (csvData) => {
+  try {
+    const response = await fetch('/api/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: csvData }),
+    });
+
+    if (!response.ok) {
+      throw new Error('API returned ' + response.status);
+    }
+
+    const { id } = await response.json();
+    const baseUrl = window.location.origin + window.location.pathname;
+    return `${baseUrl}?share=${id}`;
+  } catch (error) {
+    // Fall back to compressed URL if API is unavailable
+    console.warn('Share API unavailable, falling back to compressed URL:', error.message);
+    return generateShareUrl(csvData);
+  }
+};
+
+/**
+ * Check if the current URL has a share ID (?share=<uuid>).
+ * Returns the share ID string if found, otherwise null.
+ */
+export const getSharedIdFromUrl = () => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('share') || null;
+};
+
+/**
+ * Fetch shared data from the API using a share ID.
+ * Returns the CSV string if successful, otherwise null.
+ */
+export const fetchSharedDataById = async (shareId) => {
+  try {
+    const response = await fetch(`/api/share?id=${encodeURIComponent(shareId)}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch shared data');
+    }
+    const { data } = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching shared data:', error);
+    return null;
   }
 };
