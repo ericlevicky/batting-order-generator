@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { exportAllData, importAllData, getTeams } from '../utils/storage';
+import { generateShareUrl } from '../utils/shareUrl';
 import './TeamManager.css';
 
 function TeamManager({ 
@@ -71,6 +72,32 @@ function TeamManager({
       onShowToast?.('Data exported successfully', 'success');
     } catch (error) {
       onShowToast?.('Error exporting data: ' + error.message, 'error');
+    }
+  };
+
+  const handleShareLink = async () => {
+    try {
+      const csv = exportAllData();
+      const shareUrl = await generateShareUrl(csv);
+
+      // Try native share first (mobile), fall back to clipboard
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Batting Order Generator - Team Data',
+          url: shareUrl
+        });
+        onShowToast?.('Share link sent!', 'success');
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
+        onShowToast?.('Share link copied to clipboard!', 'success');
+      } else {
+        // Fallback: prompt with the URL
+        window.prompt('Copy this link to share your team data:', shareUrl);
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        onShowToast?.('Error creating share link: ' + error.message, 'error');
+      }
     }
   };
 
@@ -246,6 +273,11 @@ function TeamManager({
         {teamList.length > 0 && (
           <button className="btn-export" onClick={handleExport} title="Export all teams and data">
             📥 Export Data
+          </button>
+        )}
+        {teamList.length > 0 && (
+          <button className="btn-export" onClick={handleShareLink} title="Copy a shareable link with all your team data">
+            🔗 Share Link
           </button>
         )}
         <button className="btn-import" onClick={handleImport} title="Import teams and data from file">
