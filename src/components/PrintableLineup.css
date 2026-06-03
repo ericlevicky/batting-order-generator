@@ -136,9 +136,9 @@
     background: white;
   }
 
-  /* Optimize for 8.5x11 paper */
+  /* Optimize for 8.5x11 paper in landscape to fit more innings */
   @page {
-    size: letter;
+    size: letter landscape;
     margin: 0.5in;
   }
 
