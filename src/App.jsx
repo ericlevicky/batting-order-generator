@@ -75,9 +75,6 @@ function App() {
       const sharedCsv = await getSharedDataFromUrl();
       if (!sharedCsv) return;
 
-      // Clear the hash immediately so refreshes don't re-import
-      clearShareDataFromUrl();
-
       setConfirmDialog({
         title: 'Import Shared Data',
         message: 'Someone shared their team data with you. Would you like to import it? Teams will be merged with your existing teams.',
@@ -85,6 +82,7 @@ function App() {
         cancelLabel: 'Cancel',
         destructive: false,
         onConfirm: () => {
+          clearShareDataFromUrl();
           const result = importAllData(sharedCsv);
           if (result.success) {
             const loadedTeams = getTeams();
@@ -98,6 +96,9 @@ function App() {
           } else {
             showToast('Error importing shared data: ' + result.error, 'error');
           }
+        },
+        onCancel: () => {
+          clearShareDataFromUrl();
         }
       });
     };
@@ -390,7 +391,10 @@ function App() {
       {confirmDialog && (
         <ConfirmDialog
           {...confirmDialog}
-          onCancel={() => setConfirmDialog(null)}
+          onCancel={() => {
+            confirmDialog.onCancel?.();
+            setConfirmDialog(null);
+          }}
           onConfirmAction={() => {
             confirmDialog.onConfirm?.();
             setConfirmDialog(null);

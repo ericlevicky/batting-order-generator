@@ -31,7 +31,14 @@ export const compressToBase64Url = async (str) => {
   }
 
   // Convert to base64url (URL-safe base64 without padding)
-  const base64 = btoa(String.fromCharCode(...compressed));
+  // Use chunked approach to avoid stack overflow with large arrays
+  let binaryStr = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < compressed.length; i += chunkSize) {
+    const slice = compressed.subarray(i, i + chunkSize);
+    binaryStr += String.fromCharCode(...slice);
+  }
+  const base64 = btoa(binaryStr);
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 };
 
