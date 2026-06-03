@@ -84,10 +84,19 @@ Play custom walk-up songs for each batter during the game using your Spotify acc
 ### Prerequisites
 
 - A **Spotify Premium** account (required for playback control)
-- A **Spotify Developer App** with a Client ID — see setup below
 - An active Spotify playback device (open Spotify on your phone, speaker, or computer)
 
-### Setting Up Your Spotify App
+### Connecting Spotify
+
+1. Click the **🎵 Walk-Up Music** button in the app
+2. Click **Connect to Spotify** — you'll be redirected to Spotify to authorize the app
+3. After approving, you'll be redirected back and connected
+
+> **Note:** The app uses the secure PKCE authorization flow, so no backend or client secret is needed.
+
+### Deploying with Spotify (for site owners)
+
+To enable Spotify integration on your own deployment, you need a Spotify Developer App:
 
 1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
 2. Click **Create App**
@@ -95,15 +104,7 @@ Play custom walk-up songs for each batter during the game using your Spotify acc
 4. Set the **Redirect URI** to your app's URL (e.g. `https://your-site.netlify.app/` for production or `http://localhost:5173/` for local dev)
 5. Check **Web API** under "Which API/SDKs are you planning to use?"
 6. Save the app and copy your **Client ID**
-
-### Connecting Spotify
-
-1. Click the **🎵 Walk-Up Music** button in the app
-2. Click **Configure Client ID** and paste in your Spotify Client ID
-3. Click **Connect to Spotify** — you'll be redirected to Spotify to authorize the app
-4. After approving, you'll be redirected back and connected
-
-> **Note:** You cannot reuse a token from a different site. Each app has its own Client ID and must go through its own OAuth login flow. The app uses the secure PKCE authorization flow, so no backend or client secret is needed.
+7. Set the `VITE_SPOTIFY_CLIENT_ID` environment variable to your Client ID (in Netlify environment settings or a local `.env` file)
 
 ### Configuring Walk-Up Songs
 
