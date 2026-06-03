@@ -858,16 +858,12 @@ function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
 
   useEffect(() => () => clearTimeout(searchTimerRef.current), []);
 
-  const handleSearch = useCallback((value, options = {}) => {
-    const { autoSelectFirst = false } = options;
+  const handleSearch = useCallback((value) => {
     setQuery(value);
     setSearchError(null);
     clearTimeout(searchTimerRef.current);
     if (!value.trim()) {
       setResults([]);
-      if (autoSelectFirst) {
-        setSelectedTrack(null);
-      }
       return;
     }
     searchTimerRef.current = setTimeout(async () => {
@@ -875,15 +871,9 @@ function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
       try {
         const tracks = await searchAppleMusicSongs(value);
         setResults(tracks);
-        if (autoSelectFirst) {
-          setSelectedTrack((currentTrack) => currentTrack || tracks[0] || null);
-        }
       } catch (err) {
         setSearchError(err.message);
         setResults([]);
-        if (autoSelectFirst) {
-          setSelectedTrack(null);
-        }
       } finally {
         setSearching(false);
       }
@@ -891,8 +881,10 @@ function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
   }, []);
 
   useEffect(() => {
+    // Existing Apple configs already have a saved Apple track, so only auto-search
+    // when we're using prior metadata (such as a Spotify assignment) to seed the picker.
     if (!initialQuery || hasExistingAppleConfig) return;
-    handleSearch(initialQuery, { autoSelectFirst: true });
+    handleSearch(initialQuery);
   }, [handleSearch, hasExistingAppleConfig, initialQuery]);
 
   const handleSave = () => {
