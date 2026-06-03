@@ -115,6 +115,19 @@
   color: var(--text-on-dark);
 }
 
+.grid-song-col {
+  text-align: left;
+  padding-left: 0.5rem !important;
+  min-width: 130px;
+  max-width: 200px;
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: var(--text-on-dark-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .grid-footer {
   margin-top: 0.75rem;
   font-size: 0.75rem;

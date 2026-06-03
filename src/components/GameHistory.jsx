@@ -4,7 +4,7 @@ import PlayerStats from './PlayerStats';
 import { formatPlayerName } from '../utils/formatPlayerName';
 import './GameHistory.css';
 
-function GameHistory({ history, onDeleteGame, onDeleteAllGames, onShowToast, onRequestConfirm, initialExpandGameId }) {
+function GameHistory({ history, onDeleteGame, onDeleteAllGames, onShowToast, onRequestConfirm, initialExpandGameId, walkUpMusic }) {
   const [expandedGame, setExpandedGame] = useState(initialExpandGameId || null);
   const printRef = useRef({});
 
@@ -69,6 +69,7 @@ function GameHistory({ history, onDeleteGame, onDeleteAllGames, onShowToast, onR
             .grid-order-col { width: 20px; font-weight: 700; color: #10b981; }
             .grid-player-col { text-align: left !important; padding-left: 0.2rem !important; font-weight: 600; }
             .grid-number-col { width: 25px; color: #64748b; font-weight: 600; }
+            .grid-song-col { text-align: left !important; padding-left: 0.2rem !important; font-size: 0.65rem; color: #64748b; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .grid-inning-col { font-weight: 600; color: #1e293b; }
             .grid-footer { margin-top: 0.5rem; font-size: 0.65rem; color: #64748b; }
             .grid-position-legend { line-height: 1.4; }
@@ -188,6 +189,7 @@ function GameHistory({ history, onDeleteGame, onDeleteAllGames, onShowToast, onR
                       lineup={game.lineup}
                       numInnings={game.settings?.numInnings || 6}
                       showHeader={true}
+                      walkUpMusic={walkUpMusic}
                     />
                   </div>
                 ) : (

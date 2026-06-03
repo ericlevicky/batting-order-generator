@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatPlayerName } from '../utils/formatPlayerName';
+import { resolvePlayerSongConfig } from '../utils/storage';
 import './LineupGrid.css';
 
 // Position abbreviations mapping
@@ -38,8 +39,20 @@ function getPlayerPositionInInning(playerId, inning) {
   return '-';
 }
 
-function LineupGrid({ lineup, numInnings, showHeader = true }) {
+function LineupGrid({ lineup, numInnings, showHeader = true, walkUpMusic }) {
   const isRotating = Array.isArray(lineup?.inningBattingOrders);
+
+  // Resolve walk-up song name for a player
+  const getPlayerSongName = (player) => {
+    if (!walkUpMusic || !walkUpMusic.players) return null;
+    const playerName = player.name;
+    const playerConfig = walkUpMusic.players[playerName] || walkUpMusic.players[player.id];
+    if (!playerConfig) return null;
+    const songConfig = resolvePlayerSongConfig(playerConfig, walkUpMusic.musicType || 'spotify');
+    return songConfig?.trackName || null;
+  };
+
+  const hasAnySongs = walkUpMusic?.players && Object.keys(walkUpMusic.players).length > 0;
 
   // Standard layout: one row per player, one column per inning showing position
   const renderStandardGrid = () => (
@@ -49,6 +62,7 @@ function LineupGrid({ lineup, numInnings, showHeader = true }) {
           <th className="grid-order-col">#</th>
           <th className="grid-player-col">Player</th>
           <th className="grid-number-col">No.</th>
+          {hasAnySongs && <th className="grid-song-col">🎵 Walk-Up Song</th>}
           {Array.from({ length: numInnings }, (_, i) => (
             <th key={i} className="grid-inning-col">
               <div className="grid-inning-header">
@@ -65,6 +79,7 @@ function LineupGrid({ lineup, numInnings, showHeader = true }) {
             <td className="grid-order-col">{index + 1}</td>
             <td className="grid-player-col">{formatPlayerName(player)}</td>
             <td className="grid-number-col">{player.number || '-'}</td>
+            {hasAnySongs && <td className="grid-song-col">{getPlayerSongName(player) || '-'}</td>}
             {Array.from({ length: numInnings }, (_, inningIndex) => (
               <td key={inningIndex} className="grid-inning-col">
                 {getPlayerPositionInInning(player.id || player.name, lineup.innings?.[inningIndex])}

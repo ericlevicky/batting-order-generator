@@ -25,7 +25,8 @@ import {
   deleteGameFromHistory,
   updateTeamLastSettings,
   getNextGameNumber,
-  deleteAllGamesFromHistory
+  deleteAllGamesFromHistory,
+  getTeamWalkUpMusic
 } from './utils/storage';
 import './App.css';
 
@@ -327,6 +328,7 @@ function App() {
               onShowToast={showToast}
               onRequestConfirm={requestConfirm}
               initialExpandGameId={lastGeneratedGameId}
+              walkUpMusic={currentTeamId ? getTeamWalkUpMusic(currentTeamId) : null}
             />
             <div className="card cumulative-stats-wrapper">
               <div className="cumulative-stats-header" onClick={() => setShowCumulativeStats(v => !v)} style={{cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
