@@ -42,7 +42,7 @@ function GameHistory({ history, onDeleteGame, onDeleteAllGames, onShowToast, onR
     const printContent = printRef.current[gameId];
     if (!printContent) return;
 
-    const printWindow = window.open('', '', 'width=800,height=600');
+    const printWindow = window.open('', '', 'width=1100,height=800');
     printWindow.document.write(`
       <html>
         <head>
@@ -50,30 +50,30 @@ function GameHistory({ history, onDeleteGame, onDeleteAllGames, onShowToast, onR
           <style>
             body {
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              padding: 20px;
+              padding: 0.25in;
               margin: 0;
             }
             .lineup-grid { width: 100%; }
-            .grid-header { text-align: center; margin-bottom: 1rem; }
-            .grid-header h3 { font-size: 1.5rem; margin: 0 0 0.5rem 0; color: #1e293b; }
-            .grid-subtitle { font-size: 1rem; color: #64748b; margin: 0; }
+            .grid-header { text-align: center; margin-bottom: 0.5rem; }
+            .grid-header h3 { font-size: 1.25rem; margin: 0 0 0.25rem 0; color: #1e293b; }
+            .grid-subtitle { font-size: 0.85rem; color: #64748b; margin: 0; }
             .grid-table-container { overflow: visible; border: 1px solid #e2e8f0; border-radius: 8px; }
-            .grid-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+            .grid-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; table-layout: fixed; }
             .grid-table thead { background: #1e293b; color: white; }
-            .grid-table th { padding: 0.4rem 0.3rem; text-align: center; font-weight: 600; border: 1px solid #475569; }
+            .grid-table th { padding: 0.3rem 0.2rem; text-align: center; font-weight: 600; border: 1px solid #475569; font-size: 0.7rem; }
             .grid-inning-header { display: flex; flex-direction: column; align-items: center; }
-            .grid-inning-label { font-size: 0.6rem; text-transform: uppercase; color: rgba(255,255,255,0.8); }
-            .grid-inning-number { font-size: 1rem; font-weight: 700; }
-            .grid-table td { padding: 0.35rem 0.3rem; text-align: center; border: 1px solid #e2e8f0; }
+            .grid-inning-label { font-size: 0.55rem; text-transform: uppercase; color: rgba(255,255,255,0.8); }
+            .grid-inning-number { font-size: 0.9rem; font-weight: 700; }
+            .grid-table td { padding: 0.25rem 0.2rem; text-align: center; border: 1px solid #e2e8f0; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             .grid-table tbody tr:nth-child(even) { background: #f8fafc; }
-            .grid-order-col { width: 40px; font-weight: 700; color: #10b981; }
-            .grid-player-col { text-align: left; padding-left: 0.5rem !important; font-weight: 600; min-width: 120px; }
-            .grid-number-col { width: 50px; color: #64748b; font-weight: 600; }
-            .grid-inning-col { width: 50px; font-weight: 600; color: #1e293b; }
-            .grid-footer { margin-top: 1rem; font-size: 0.75rem; color: #64748b; }
+            .grid-order-col { width: 25px; font-weight: 700; color: #10b981; }
+            .grid-player-col { text-align: left !important; padding-left: 0.4rem !important; font-weight: 600; }
+            .grid-number-col { width: 30px; color: #64748b; font-weight: 600; }
+            .grid-inning-col { font-weight: 600; color: #1e293b; }
+            .grid-footer { margin-top: 0.5rem; font-size: 0.65rem; color: #64748b; }
             .grid-position-legend { line-height: 1.4; }
             @media print {
-              @page { size: letter; margin: 0.5in; }
+              @page { size: letter landscape; margin: 0.3in; }
               body { padding: 0; }
             }
           </style>

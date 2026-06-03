@@ -132,74 +132,115 @@
     left: 0;
     top: 0;
     width: 100%;
-    padding: 0.5in;
-    background: white;
+    padding: 0.25in;
+    background: white !important;
+    color: black !important;
     overflow: visible;
   }
 
   /* Optimize for 8.5x11 paper in landscape to fit more innings */
   @page {
     size: letter landscape;
-    margin: 0.5in;
+    margin: 0.3in;
   }
 
   .print-header {
-    margin-bottom: 1rem;
-  }
-
-  .print-header h1 {
-    font-size: 1.5rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .print-subtitle {
-    font-size: 0.9rem;
     margin-bottom: 0.5rem;
   }
 
+  .print-header h1 {
+    font-size: 1.25rem;
+    margin-bottom: 0.15rem;
+    color: black !important;
+  }
+
+  .print-subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+    color: #333 !important;
+  }
+
   .lineup-table {
-    font-size: 0.85rem;
+    width: 100%;
+    table-layout: fixed;
+    font-size: 0.75rem;
     page-break-inside: avoid;
+    border-collapse: collapse;
   }
 
   .lineup-table th {
-    padding: 0.35rem 0.25rem;
-    font-size: 0.75rem;
+    padding: 0.25rem 0.15rem;
+    font-size: 0.65rem;
     background: #1e293b !important;
+    color: white !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    border: 1px solid #333;
+  }
+
+  .inning-header {
+    gap: 0;
   }
 
   .inning-label {
-    font-size: 0.6rem;
-    color: white;
+    font-size: 0.5rem;
+    color: white !important;
   }
 
   .inning-number {
-    font-size: 1rem;
+    font-size: 0.85rem;
     font-weight: 700;
-    color: white;
+    color: white !important;
   }
 
   .lineup-table td {
-    padding: 0.3rem 0.25rem;
+    padding: 0.2rem 0.15rem;
+    border: 1px solid #ccc;
+    color: black !important;
+    font-size: 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .lineup-table tbody tr:nth-child(even) {
-    background: #f8fafc !important;
+    background: #f1f5f9 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  .print-footer {
-    margin-top: 0.75rem;
-    font-size: 0.7rem;
-    page-break-inside: avoid;
+  .order-col {
+    width: 25px;
+    color: black !important;
+    font-weight: 700;
   }
 
-  /* Ensure proper spacing for different inning counts */
+  .player-col {
+    width: auto;
+    min-width: 0;
+    color: black !important;
+    font-weight: 600;
+    text-align: left;
+    padding-left: 0.3rem !important;
+  }
+
+  .number-col {
+    width: 30px;
+    color: #555 !important;
+  }
+
   .inning-col {
-    min-width: 35px;
+    width: 40px;
+    min-width: 30px;
+    font-weight: 600;
+    color: black !important;
+  }
+
+  .print-footer {
+    margin-top: 0.5rem;
+    font-size: 0.6rem;
+    page-break-inside: avoid;
+    color: #333 !important;
   }
 
   /* Hide any hover effects on print */
