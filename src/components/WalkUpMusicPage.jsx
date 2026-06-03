@@ -11,6 +11,8 @@ import {
   formatMs,
   parseTimeToMs,
   getAvailableDevices,
+  getPreferredDeviceId,
+  setPreferredDeviceId,
 } from '../utils/spotify';
 import {
   getTeamWalkUpMusic,
@@ -199,23 +201,32 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
     }
 
     try {
-      // Fetch devices fresh and only target a smartphone (iPhone) for playback.
-      // We explicitly avoid selecting smart speakers/displays (e.g. Echo Show)
-      // which can appear in the device list and steal playback.
+      // Resolve the target device for playback:
+      // 1. Try the previously successful device (stored in localStorage)
+      // 2. If that device isn't available, look for a smartphone
+      // 3. If nothing found, let Spotify decide (no device_id)
       let targetDeviceId = null;
       try {
         const devs = await getAvailableDevices();
-        const smartphone = devs.find(d => d.type === 'Smartphone');
-        if (smartphone) {
-          targetDeviceId = smartphone.id;
+        const preferredId = getPreferredDeviceId();
+        const preferredDevice = preferredId ? devs.find(d => d.id === preferredId) : null;
+        if (preferredDevice) {
+          targetDeviceId = preferredDevice.id;
+        } else {
+          const smartphone = devs.find(d => d.type === 'Smartphone');
+          if (smartphone) {
+            targetDeviceId = smartphone.id;
+          }
         }
-        // If no smartphone found, don't fall back to other devices —
-        // Spotify will route to the user's last active mobile session.
       } catch {
         // Continue without a device ID — Spotify will use the last active device
       }
 
       await playTrack(config.trackUri, config.startMs || 0, targetDeviceId);
+      // Remember this device for future playback
+      if (targetDeviceId) {
+        setPreferredDeviceId(targetDeviceId);
+      }
       setCurrentlyPlaying(playerName);
 
       // Set up auto-pause if end time is configured

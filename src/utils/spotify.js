@@ -14,6 +14,7 @@ const STORAGE_KEYS = {
   REFRESH_TOKEN: 'spotify_refresh_token',
   TOKEN_EXPIRY: 'spotify_token_expiry',
   CODE_VERIFIER: 'spotify_code_verifier',
+  PREFERRED_DEVICE: 'spotify_preferred_device_id',
 };
 
 const SCOPES = [
@@ -76,6 +77,16 @@ export function clearTokens() {
   localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
   localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
   localStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
+}
+
+export function getPreferredDeviceId() {
+  return localStorage.getItem(STORAGE_KEYS.PREFERRED_DEVICE) || null;
+}
+
+export function setPreferredDeviceId(deviceId) {
+  if (deviceId) {
+    localStorage.setItem(STORAGE_KEYS.PREFERRED_DEVICE, deviceId);
+  }
 }
 
 export function isAuthenticated() {
