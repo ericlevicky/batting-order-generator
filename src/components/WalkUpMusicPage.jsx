@@ -239,6 +239,7 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
       durationMs: track.durationMs,
       startMs,
       endMs,
+      musicType: 'spotify',
     };
 
     setPlayerWalkUpSong(teamId, playerName, songConfig);
@@ -278,8 +279,14 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
       stopTimerRef.current = null;
     }
 
+    // Determine which provider to use for this player's song.
+    // Prefer the per-player musicType (set when the song was assigned) over the
+    // global walkUpConfig.musicType so that songs assigned via one provider still
+    // play correctly even when the user switches the active provider.
+    const effectiveMusicType = config.musicType || walkUpConfig.musicType;
+
     // Apple Music playback via deep link
-    if (walkUpConfig.musicType === 'apple') {
+    if (effectiveMusicType === 'apple') {
       playAppleMusicTrack(config.appleMusicUrl);
       setCurrentlyPlaying(playerName);
       showToast(`Opening "${config.trackName}" in Apple Music...`, 'info');
