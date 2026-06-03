@@ -665,12 +665,12 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: #e8f5e9;
-  border: 1px solid #a5d6a7;
-  border-radius: 0.5rem;
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  border-radius: 10px;
   margin-bottom: 0.75rem;
   font-size: 0.85rem;
-  color: #2e7d32;
+  color: #34d399;
 }
 
 .walkup-page-device-icon {
