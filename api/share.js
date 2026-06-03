@@ -10,6 +10,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing share ID' });
     }
 
+    // Validate UUID format to prevent path traversal
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return res.status(400).json({ error: 'Invalid share ID format' });
+    }
+
     try {
       // List blobs with the prefix to find our file
       const { blobs } = await list({ prefix: `shares/${id}` });
