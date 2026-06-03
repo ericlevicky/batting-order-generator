@@ -370,13 +370,13 @@ export async function transferPlayback(deviceId, play = true) {
   });
 }
 
-export async function playTrack(trackUri, positionMs = 0, deviceId = null) {
+export async function playTrack(trackUri, positionMs = 0, deviceId = null, { skipTransfer = false } = {}) {
   const MAX_RETRIES = 4;
   const RETRY_DELAYS = [1000, 2000, 3000, 4000];
   const DEVICE_ACTIVATION_DELAY = 1500;
 
-  // If a device is specified, transfer playback first to force-activate it
-  if (deviceId) {
+  // If a device is specified and not already active, transfer playback first to force-activate it
+  if (deviceId && !skipTransfer) {
     try {
       await transferPlayback(deviceId, false);
       await new Promise(resolve => setTimeout(resolve, DEVICE_ACTIVATION_DELAY));

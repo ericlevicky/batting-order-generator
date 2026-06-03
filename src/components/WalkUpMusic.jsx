@@ -322,6 +322,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
     let targetDeviceId = null;
     let debugDevices = [];
     let debugPreferredId = null;
+    let deviceAlreadyActive = false;
     try {
       // Resolve the target device for playback:
       // 1. Try the previously successful device (stored in localStorage)
@@ -331,6 +332,11 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
         debugDevices = await getAvailableDevices();
         debugPreferredId = getPreferredDeviceId();
         targetDeviceId = selectBestDevice(debugDevices, debugPreferredId);
+        // Check if the target device is already active (skip transfer to save ~1.5s)
+        if (targetDeviceId) {
+          const targetDevice = debugDevices.find(d => d.id === targetDeviceId);
+          deviceAlreadyActive = targetDevice?.is_active || false;
+        }
       } catch {
         // Continue without a device ID — Spotify will use the last active device
       }
@@ -351,7 +357,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
         }
       }
 
-      await playTrack(config.trackUri, config.startMs || 0, targetDeviceId);
+      await playTrack(config.trackUri, config.startMs || 0, targetDeviceId, { skipTransfer: deviceAlreadyActive });
       // Remember this device for future playback
       if (targetDeviceId) {
         setPreferredDeviceId(targetDeviceId);
