@@ -224,6 +224,12 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
         // Continue without a device ID — Spotify will use the last active device
       }
 
+      // If no devices were found at all, show a helpful message before even trying
+      if (debugDevices.length === 0 && !targetDeviceId) {
+        showToast('No Spotify devices found. Open Spotify on your phone or computer and try again.', 'error');
+        return;
+      }
+
       await playTrack(config.trackUri, config.startMs || 0, targetDeviceId);
       // Remember this device for future playback
       if (targetDeviceId) {
