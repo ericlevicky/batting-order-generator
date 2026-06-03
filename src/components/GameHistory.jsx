@@ -58,17 +58,17 @@ function GameHistory({ history, onDeleteGame, onDeleteAllGames, onShowToast, onR
             .grid-header h3 { font-size: 1.25rem; margin: 0 0 0.25rem 0; color: #1e293b; }
             .grid-subtitle { font-size: 0.85rem; color: #64748b; margin: 0; }
             .grid-table-container { overflow: visible; border: 1px solid #e2e8f0; border-radius: 8px; }
-            .grid-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; table-layout: auto; }
+            .grid-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; table-layout: fixed; }
             .grid-table thead { background: #1e293b; color: white; }
-            .grid-table th { padding: 0.3rem 0.2rem; text-align: center; font-weight: 600; border: 1px solid #475569; font-size: 0.7rem; }
+            .grid-table th { padding: 0.2rem 0.1rem; text-align: center; font-weight: 600; border: 1px solid #475569; font-size: 0.6rem; }
             .grid-inning-header { display: flex; flex-direction: column; align-items: center; }
-            .grid-inning-label { font-size: 0.55rem; text-transform: uppercase; color: rgba(255,255,255,0.8); }
-            .grid-inning-number { font-size: 0.9rem; font-weight: 700; }
-            .grid-table td { padding: 0.25rem 0.2rem; text-align: center; border: 1px solid #e2e8f0; font-size: 0.8rem; white-space: nowrap; }
+            .grid-inning-label { font-size: 0.5rem; text-transform: uppercase; color: rgba(255,255,255,0.8); }
+            .grid-inning-number { font-size: 0.8rem; font-weight: 700; }
+            .grid-table td { padding: 0.2rem 0.1rem; text-align: center; border: 1px solid #e2e8f0; font-size: 0.7rem; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; }
             .grid-table tbody tr:nth-child(even) { background: #f8fafc; }
-            .grid-order-col { width: 25px; font-weight: 700; color: #10b981; }
-            .grid-player-col { text-align: left !important; padding-left: 0.4rem !important; font-weight: 600; }
-            .grid-number-col { width: 30px; color: #64748b; font-weight: 600; }
+            .grid-order-col { width: 20px; font-weight: 700; color: #10b981; }
+            .grid-player-col { text-align: left !important; padding-left: 0.2rem !important; font-weight: 600; }
+            .grid-number-col { width: 25px; color: #64748b; font-weight: 600; }
             .grid-inning-col { font-weight: 600; color: #1e293b; }
             .grid-footer { margin-top: 0.5rem; font-size: 0.65rem; color: #64748b; }
             .grid-position-legend { line-height: 1.4; }

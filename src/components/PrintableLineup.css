@@ -162,8 +162,8 @@
 
   .lineup-table {
     width: 100%;
-    table-layout: auto;
-    font-size: 0.75rem;
+    table-layout: fixed;
+    font-size: 0.7rem;
     page-break-inside: avoid;
     border-collapse: collapse;
   }
@@ -197,8 +197,10 @@
     padding: 0.2rem 0.15rem;
     border: 1px solid #ccc;
     color: black !important;
-    font-size: 0.75rem;
-    white-space: nowrap;
+    font-size: 0.7rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
   }
 
   .lineup-table tbody tr:nth-child(even) {
