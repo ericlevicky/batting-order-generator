@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   isAuthenticated,
   startAuthFlow,
@@ -831,7 +831,10 @@ function AppleConfigTab({
 
 function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
   const hasExistingAppleConfig = currentConfig?.musicType === 'apple' && currentConfig?.trackName;
-  const initialQuery = [currentConfig?.trackName, currentConfig?.artistName].filter(Boolean).join(' ');
+  const initialQuery = useMemo(
+    () => [currentConfig?.trackName, currentConfig?.artistName].filter(Boolean).join(' '),
+    [currentConfig?.trackName, currentConfig?.artistName]
+  );
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -873,7 +876,7 @@ function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
         const tracks = await searchAppleMusicSongs(value);
         setResults(tracks);
         if (autoSelectFirst) {
-          setSelectedTrack(tracks[0] || null);
+          setSelectedTrack((currentTrack) => currentTrack || tracks[0] || null);
         }
       } catch (err) {
         setSearchError(err.message);
