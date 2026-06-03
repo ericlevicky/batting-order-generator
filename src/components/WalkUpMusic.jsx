@@ -219,11 +219,13 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
         // Continue without a device ID — Spotify will use the last active device
       }
 
-      // If no playable devices were found, try to open Spotify app
+      // If no playable devices were found, try to open Spotify app with the specific track
       if (!targetDeviceId && filterPlayableDevices(debugDevices).length === 0) {
-        // Attempt to open Spotify native app via deep link
-        window.open('spotify://', '_blank');
-        showToast('No playable device found. Opening Spotify app... Tap play again in a few seconds.', 'info');
+        // Open the specific track in the Spotify native app via deep link
+        // Use the track URI (e.g. spotify:track:ABC123) so it starts playing that song
+        const deepLink = config.trackUri || 'spotify://';
+        window.open(deepLink, '_blank');
+        showToast('No playable device found. Opening song in Spotify app... Tap play again in a few seconds if needed.', 'info');
         return;
       }
 
