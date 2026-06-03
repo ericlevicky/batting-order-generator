@@ -23,7 +23,7 @@ function LineupWizard({
   const inactivePlayers = players.filter(p => p.active === false);
 
   const togglePlayer = (id) => {
-    setPlayers(players.map(p => p.id === id ? { ...p, active: p.active === false ? true : false } : p));
+    setPlayers(players.map(p => p.id === id ? { ...p, active: p.active === false } : p));
   };
 
   const canProceedFromStep1 = activePlayers.length >= 9;
