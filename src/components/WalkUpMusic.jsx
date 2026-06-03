@@ -201,20 +201,22 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
       stopTimerRef.current = null;
     }
 
+    let targetDeviceId = null;
+    let debugDevices = [];
+    let debugPreferredId = null;
     try {
       // Resolve the target device for playback:
       // 1. Try the previously successful device (stored in localStorage)
       // 2. If that device isn't available, look for a smartphone
       // 3. If nothing found, let Spotify decide (no device_id)
-      let targetDeviceId = null;
       try {
-        const devs = await getAvailableDevices();
-        const preferredId = getPreferredDeviceId();
-        const preferredDevice = preferredId ? devs.find(d => d.id === preferredId) : null;
+        debugDevices = await getAvailableDevices();
+        debugPreferredId = getPreferredDeviceId();
+        const preferredDevice = debugPreferredId ? debugDevices.find(d => d.id === debugPreferredId) : null;
         if (preferredDevice) {
           targetDeviceId = preferredDevice.id;
         } else {
-          const smartphone = devs.find(d => d.type === 'Smartphone');
+          const smartphone = debugDevices.find(d => d.type === 'Smartphone');
           if (smartphone) {
             targetDeviceId = smartphone.id;
           }
@@ -244,7 +246,8 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
         }, duration);
       }
     } catch (err) {
-      showToast(`Playback failed: ${err.message}`, 'error');
+      const deviceList = debugDevices.map(d => `${d.name} (${d.type}, active=${d.is_active})`).join(', ') || 'none';
+      showToast(`Playback failed: ${err.message} | Devices found: [${deviceList}] | Target: ${targetDeviceId || 'none'} | Preferred: ${debugPreferredId || 'none'}`, 'error');
       setCurrentlyPlaying(null);
     }
   }, [walkUpConfig, showToast]);
