@@ -53,6 +53,9 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
   const [toasts, setToasts] = useState([]);
   const toastIdRef = useRef(0);
 
+  // Active device state
+  const [activeDevice, setActiveDevice] = useState(null);
+
   const stopTimerRef = useRef(null);
 
   const showToast = useCallback((message, type = 'info') => {
@@ -125,6 +128,13 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
         const playable = filterPlayableDevices(devices);
         const preferred = playable.find(d => d.id === preferredId);
 
+        // Update active device display
+        if (preferred) {
+          setActiveDevice({ name: preferred.name, type: preferred.type });
+        } else if (playable.length > 0) {
+          setActiveDevice({ name: playable[0].name, type: playable[0].type });
+        }
+
         // If preferred playable device exists but is inactive, re-transfer without playing
         if (preferred && !preferred.is_active) {
           await transferPlayback(preferredId, false);
@@ -133,6 +143,9 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
         // Silently ignore keepalive errors — don't disrupt the user
       }
     };
+
+    // Run immediately on mount to show device right away
+    keepalive();
 
     const intervalId = setInterval(keepalive, KEEPALIVE_INTERVAL_MS);
 
@@ -310,6 +323,11 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
       // Remember this device for future playback
       if (targetDeviceId) {
         setPreferredDeviceId(targetDeviceId);
+        // Update active device display
+        const targetDevice = debugDevices.find(d => d.id === targetDeviceId);
+        if (targetDevice) {
+          setActiveDevice({ name: targetDevice.name, type: targetDevice.type });
+        }
       }
       setCurrentlyPlaying(playerName);
 
@@ -492,6 +510,7 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
             walkUpConfig={walkUpConfig}
             activePlayers={activePlayers}
             currentlyPlaying={currentlyPlaying}
+            activeDevice={activeDevice}
             gameHistory={gameHistory}
             gameMode={gameMode}
             selectedGameId={selectedGameId}
@@ -986,6 +1005,7 @@ function PagePlayTab({
   walkUpConfig,
   activePlayers,
   currentlyPlaying,
+  activeDevice,
   gameHistory,
   gameMode,
   selectedGameId,
@@ -1018,6 +1038,16 @@ function PagePlayTab({
 
   return (
     <div className="walkup-page-play">
+      {/* Active Device Indicator */}
+      {activeDevice && (
+        <div className="walkup-page-device-indicator">
+          <span className="walkup-page-device-icon">
+            {activeDevice.type === 'Smartphone' ? '📱' : activeDevice.type === 'Speaker' ? '🔊' : '💻'}
+          </span>
+          <span className="walkup-page-device-name">Playing on: {activeDevice.name}</span>
+        </div>
+      )}
+
       {/* Mode Toggle */}
       {hasGameHistory && (
         <div className="walkup-page-mode-toggle">
