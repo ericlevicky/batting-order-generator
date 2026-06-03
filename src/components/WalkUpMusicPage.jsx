@@ -30,7 +30,6 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
   const [playlistTracks, setPlaylistTracks] = useState([]);
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
   const [loadingTracks, setLoadingTracks] = useState(false);
-  const [devices, setDevices] = useState([]);
 
   // UI state
   const [activeTab, setActiveTab] = useState('config'); // 'config' | 'play'
@@ -89,7 +88,6 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
   useEffect(() => {
     if (authenticated) {
       loadPlaylists();
-      loadDevices();
     }
   }, [authenticated]);
 
@@ -127,15 +125,6 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
     }
   };
 
-  const loadDevices = async () => {
-    try {
-      const devs = await getAvailableDevices();
-      setDevices(devs);
-    } catch {
-      // Silently fail - devices will be empty
-    }
-  };
-
   // --- Auth Handlers ---
 
   const handleLogin = async () => {
@@ -151,7 +140,6 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
     setAuthenticated(false);
     setPlaylists([]);
     setPlaylistTracks([]);
-    setDevices([]);
     showToast('Disconnected from Spotify', 'info');
   };
 
@@ -211,7 +199,17 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
     }
 
     try {
-      await playTrack(config.trackUri, config.startMs || 0);
+      // Fetch devices fresh and prefer smartphone (iPhone) for playback
+      let targetDeviceId = null;
+      try {
+        const devs = await getAvailableDevices();
+        const smartphone = devs.find(d => d.type === 'Smartphone');
+        targetDeviceId = smartphone?.id || devs.find(d => d.is_active)?.id || devs[0]?.id || null;
+      } catch {
+        // Continue without a device ID — Spotify will use the last active device
+      }
+
+      await playTrack(config.trackUri, config.startMs || 0, targetDeviceId);
       setCurrentlyPlaying(playerName);
 
       // Set up auto-pause if end time is configured
@@ -351,23 +349,21 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
         )}
 
         {authenticated && activeTab === 'config' && (
-          <PageConfigTab
-            walkUpConfig={walkUpConfig}
-            playlists={playlists}
-            playlistTracks={playlistTracks}
-            loadingPlaylists={loadingPlaylists}
-            loadingTracks={loadingTracks}
-            activePlayers={activePlayers}
-            editingPlayer={editingPlayer}
-            onSelectPlaylist={handleSelectPlaylist}
-            onRefreshPlaylist={() => walkUpConfig.spotifyPlaylistId && loadPlaylistTracks(walkUpConfig.spotifyPlaylistId)}
-            onEditPlayer={setEditingPlayer}
-            onAssignSong={handleAssignSong}
-            onRemoveSong={handleRemoveSong}
-            onLogout={handleLogout}
-            onRefreshDevices={loadDevices}
-            devices={devices}
-          />
+         <PageConfigTab
+           walkUpConfig={walkUpConfig}
+           playlists={playlists}
+           playlistTracks={playlistTracks}
+           loadingPlaylists={loadingPlaylists}
+           loadingTracks={loadingTracks}
+           activePlayers={activePlayers}
+           editingPlayer={editingPlayer}
+           onSelectPlaylist={handleSelectPlaylist}
+           onRefreshPlaylist={() => walkUpConfig.spotifyPlaylistId && loadPlaylistTracks(walkUpConfig.spotifyPlaylistId)}
+           onEditPlayer={setEditingPlayer}
+           onAssignSong={handleAssignSong}
+           onRemoveSong={handleRemoveSong}
+           onLogout={handleLogout}
+         />
         )}
 
         {authenticated && activeTab === 'play' && (
@@ -409,8 +405,6 @@ function PageConfigTab({
   onAssignSong,
   onRemoveSong,
   onLogout,
-  onRefreshDevices,
-  devices,
 }) {
   return (
     <div className="walkup-page-config">
@@ -418,34 +412,9 @@ function PageConfigTab({
       <div className="walkup-page-status-bar">
         <span className="walkup-page-connected">✅ Spotify Connected</span>
         <div className="walkup-page-status-actions">
-          <button className="walkup-page-btn-refresh" onClick={onRefreshDevices} title="Refresh devices">
-            🔄 Devices ({devices.length})
-          </button>
           <button className="walkup-page-btn-logout" onClick={onLogout}>Disconnect</button>
         </div>
       </div>
-
-      {/* Devices List */}
-      {devices.length > 0 && (
-        <div className="walkup-page-devices">
-          <h4>Available Devices</h4>
-          <div className="walkup-page-devices-list">
-            {devices.map((d) => (
-              <div key={d.id} className={`walkup-page-device ${d.is_active ? 'active' : ''}`}>
-                <span className="walkup-page-device-icon">{d.type === 'Smartphone' ? '📱' : d.type === 'Computer' ? '💻' : '🔊'}</span>
-                <span className="walkup-page-device-name">{d.name}</span>
-                {d.is_active && <span className="walkup-page-device-badge">Active</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {devices.length === 0 && (
-        <div className="walkup-page-no-devices">
-          <p>⚠️ No active Spotify devices found. Open Spotify on your phone or computer and play any song briefly to activate it.</p>
-        </div>
-      )}
 
       {/* Playlist Selection */}
       <div className="walkup-page-playlist-section">
