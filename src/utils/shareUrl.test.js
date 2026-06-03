@@ -126,21 +126,23 @@ Data,History,"{\\"12345\\":[]}"`;
       expect(url).toContain(`?share=${mockId}`);
     });
 
-    it('should throw an error when the API returns a non-OK response', async () => {
+    it('should fall back to compressed URL when the API returns a non-OK response', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 500,
       });
 
       const csv = 'Type,Key,Value\nData,Teams,"{}"';
-      await expect(generateShareUrlViaApi(csv)).rejects.toThrow('Failed to store shared data (status 500)');
+      const url = await generateShareUrlViaApi(csv);
+      expect(url).toContain('?data=');
     });
 
-    it('should throw an error when the fetch itself fails', async () => {
+    it('should fall back to compressed URL when the fetch itself fails', async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
       const csv = 'Type,Key,Value\nData,Teams,"{}"';
-      await expect(generateShareUrlViaApi(csv)).rejects.toThrow('Network error');
+      const url = await generateShareUrlViaApi(csv);
+      expect(url).toContain('?data=');
     });
   });
 

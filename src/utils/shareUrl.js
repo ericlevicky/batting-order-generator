@@ -151,22 +151,28 @@ export const clearShareDataFromUrl = () => {
 /**
  * Generate a shareable URL by persisting data to Vercel Blob via the API.
  * Returns a short URL with ?share=<uuid>.
- * Throws an error if the API call fails so the caller can inform the user.
+ * Falls back to the compressed URL approach if the API call fails.
  */
 export const generateShareUrlViaApi = async (csvData) => {
-  const response = await fetch('/api/share', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ data: csvData }),
-  });
+  try {
+    const response = await fetch('/api/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: csvData }),
+    });
 
-  if (!response.ok) {
-    throw new Error('Failed to store shared data (status ' + response.status + ')');
+    if (!response.ok) {
+      throw new Error('API returned ' + response.status);
+    }
+
+    const { id } = await response.json();
+    const baseUrl = window.location.origin + window.location.pathname;
+    return `${baseUrl}?share=${id}`;
+  } catch (error) {
+    // Fall back to compressed URL if API is unavailable
+    console.warn('Share API unavailable, falling back to compressed URL:', error.message);
+    return generateShareUrl(csvData);
   }
-
-  const { id } = await response.json();
-  const baseUrl = window.location.origin + window.location.pathname;
-  return `${baseUrl}?share=${id}`;
 };
 
 /**
