@@ -264,6 +264,33 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
+.classic-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.classic-actions .btn-primary {
+  margin-top: 0;
+}
+
+.wizard-switch-btn {
+  background: none;
+  border: none;
+  color: var(--text-on-dark-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: color 0.2s ease;
+  text-align: center;
+}
+
+.wizard-switch-btn:hover {
+  color: var(--text-on-dark);
+}
+
 .cumulative-stats-wrapper {
   margin-top: 2rem;
 }
