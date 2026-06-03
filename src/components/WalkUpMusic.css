@@ -1271,3 +1271,109 @@
 .walkup-toast-close:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+
+/* Provider Section */
+.walkup-provider-section {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: 0.75rem;
+}
+
+.walkup-provider-toggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.walkup-provider-btn {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-on-dark);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.walkup-provider-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.walkup-provider-btn.active {
+  background: rgba(52, 211, 153, 0.15);
+  border-color: #34d399;
+  color: #34d399;
+}
+
+/* Apple Music Styles */
+.walkup-apple-info {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0.25rem 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+.walkup-apple-playlist-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.walkup-apple-input {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  color: var(--text-on-dark);
+  font-size: 0.8rem;
+  box-sizing: border-box;
+}
+
+.walkup-apple-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.walkup-apple-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.walkup-apple-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.walkup-apple-field label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.walkup-apple-field input {
+  padding: 0.5rem 0.6rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  color: var(--text-on-dark);
+  font-size: 0.8rem;
+}
+
+.walkup-apple-field input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.walkup-apple-field small {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.walkup-song-url {
+  font-size: 0.7rem;
+  color: rgba(52, 211, 153, 0.8);
+  margin-top: 0.1rem;
+}

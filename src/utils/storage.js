@@ -188,7 +188,12 @@ const saveWalkUpMusicData = (data) => {
 
 export const getTeamWalkUpMusic = (teamId) => {
   const data = getWalkUpMusicData();
-  return data[teamId] || { spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
+  const config = data[teamId] || { spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
+  // Default musicType to 'spotify' for backward compatibility
+  if (!config.musicType) {
+    config.musicType = 'spotify';
+  }
+  return config;
 };
 
 export const saveTeamWalkUpMusic = (teamId, walkUpMusic) => {
@@ -200,7 +205,7 @@ export const saveTeamWalkUpMusic = (teamId, walkUpMusic) => {
 export const setPlayerWalkUpSong = (teamId, playerName, songConfig) => {
   const data = getWalkUpMusicData();
   if (!data[teamId]) {
-    data[teamId] = { spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
+    data[teamId] = { musicType: 'spotify', spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
   }
   data[teamId].players[playerName] = songConfig;
   saveWalkUpMusicData(data);
@@ -217,10 +222,29 @@ export const removePlayerWalkUpSong = (teamId, playerName) => {
 export const setTeamPlaylist = (teamId, playlistId, playlistName) => {
   const data = getWalkUpMusicData();
   if (!data[teamId]) {
-    data[teamId] = { spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
+    data[teamId] = { musicType: 'spotify', spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
   }
   data[teamId].spotifyPlaylistId = playlistId;
   data[teamId].spotifyPlaylistName = playlistName;
+  saveWalkUpMusicData(data);
+};
+
+export const setTeamMusicType = (teamId, musicType) => {
+  const data = getWalkUpMusicData();
+  if (!data[teamId]) {
+    data[teamId] = { musicType: 'spotify', spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
+  }
+  data[teamId].musicType = musicType;
+  saveWalkUpMusicData(data);
+};
+
+export const setTeamApplePlaylist = (teamId, playlistUrl, playlistName) => {
+  const data = getWalkUpMusicData();
+  if (!data[teamId]) {
+    data[teamId] = { musicType: 'apple', spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
+  }
+  data[teamId].applePlaylistUrl = playlistUrl;
+  data[teamId].applePlaylistName = playlistName;
   saveWalkUpMusicData(data);
 };
 

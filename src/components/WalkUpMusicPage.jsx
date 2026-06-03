@@ -18,9 +18,12 @@ import {
   selectBestDevice,
   filterPlayableDevices,
 } from '../utils/spotify';
+import { playAppleMusicTrack } from '../utils/appleMusic';
 import {
   getTeamWalkUpMusic,
   setTeamPlaylist,
+  setTeamMusicType,
+  setTeamApplePlaylist,
   setPlayerWalkUpSong,
   removePlayerWalkUpSong,
 } from '../utils/storage';
@@ -31,7 +34,7 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
   const [authenticated, setAuthenticated] = useState(false);
 
   // Data state
-  const [walkUpConfig, setWalkUpConfig] = useState({ spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} });
+  const [walkUpConfig, setWalkUpConfig] = useState({ musicType: 'spotify', spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} });
   const [playlists, setPlaylists] = useState([]);
   const [playlistTracks, setPlaylistTracks] = useState([]);
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
@@ -68,20 +71,22 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
     const config = getTeamWalkUpMusic(teamId);
     setWalkUpConfig(config);
 
-    // Handle OAuth callback
-    handleAuthCallback()
-      .then((wasCallback) => {
-        if (wasCallback) {
-          setAuthenticated(true);
-          showToast('Connected to Spotify!', 'success');
-        } else {
-          setAuthenticated(isAuthenticated());
-        }
-      })
-      .catch((err) => {
-        showToast(err.message, 'error');
-        setAuthenticated(false);
-      });
+    // Handle OAuth callback (only relevant for Spotify)
+    if (config.musicType !== 'apple') {
+      handleAuthCallback()
+        .then((wasCallback) => {
+          if (wasCallback) {
+            setAuthenticated(true);
+            showToast('Connected to Spotify!', 'success');
+          } else {
+            setAuthenticated(isAuthenticated());
+          }
+        })
+        .catch((err) => {
+          showToast(err.message, 'error');
+          setAuthenticated(false);
+        });
+    }
 
     return () => {
       if (stopTimerRef.current) {
@@ -180,6 +185,18 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
 
   // --- Config Handlers ---
 
+  const handleMusicTypeChange = (newType) => {
+    setTeamMusicType(teamId, newType);
+    const updated = { ...walkUpConfig, musicType: newType };
+    setWalkUpConfig(updated);
+    if (newType === 'apple') {
+      // No Spotify auth needed for Apple Music
+      setAuthenticated(false);
+    } else {
+      setAuthenticated(isAuthenticated());
+    }
+  };
+
   const handleSelectPlaylist = (playlistId) => {
     const playlist = playlists.find((p) => p.id === playlistId);
     if (playlist) {
@@ -187,6 +204,12 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
       const updated = { ...walkUpConfig, spotifyPlaylistId: playlistId, spotifyPlaylistName: playlist.name };
       setWalkUpConfig(updated);
     }
+  };
+
+  const handleSaveApplePlaylist = (playlistUrl, playlistName) => {
+    setTeamApplePlaylist(teamId, playlistUrl, playlistName);
+    const updated = { ...walkUpConfig, applePlaylistUrl: playlistUrl, applePlaylistName: playlistName };
+    setWalkUpConfig(updated);
   };
 
   const handleAssignSong = (playerName, track, startTime, endTime) => {
@@ -204,6 +227,14 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
       endMs,
     };
 
+    setPlayerWalkUpSong(teamId, playerName, songConfig);
+    const updated = { ...walkUpConfig, players: { ...walkUpConfig.players, [playerName]: songConfig } };
+    setWalkUpConfig(updated);
+    setEditingPlayer(null);
+    showToast(`Walk-up song set for ${playerName}`, 'success');
+  };
+
+  const handleAssignAppleSong = (playerName, songConfig) => {
     setPlayerWalkUpSong(teamId, playerName, songConfig);
     const updated = { ...walkUpConfig, players: { ...walkUpConfig.players, [playerName]: songConfig } };
     setWalkUpConfig(updated);
@@ -233,6 +264,15 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
       stopTimerRef.current = null;
     }
 
+    // Apple Music playback via deep link
+    if (walkUpConfig.musicType === 'apple') {
+      playAppleMusicTrack(config.appleMusicUrl);
+      setCurrentlyPlaying(playerName);
+      showToast(`Opening "${config.trackName}" in Apple Music...`, 'info');
+      return;
+    }
+
+    // Spotify playback
     let targetDeviceId = null;
     let debugDevices = [];
     let debugPreferredId = null;
@@ -380,8 +420,27 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
       </div>
 
       <div className="walkup-page-content">
-        {/* Spotify Connection */}
-        {!authenticated && (
+        {/* Music Provider Selector */}
+        <div className="walkup-page-provider-section">
+          <h3>🎶 Music Provider</h3>
+          <div className="walkup-page-provider-toggle">
+            <button
+              className={`walkup-page-provider-btn ${walkUpConfig.musicType === 'spotify' ? 'active' : ''}`}
+              onClick={() => handleMusicTypeChange('spotify')}
+            >
+              🟢 Spotify
+            </button>
+            <button
+              className={`walkup-page-provider-btn ${walkUpConfig.musicType === 'apple' ? 'active' : ''}`}
+              onClick={() => handleMusicTypeChange('apple')}
+            >
+              🍎 Apple Music
+            </button>
+          </div>
+        </div>
+
+        {/* Spotify Flow */}
+        {walkUpConfig.musicType === 'spotify' && !authenticated && (
           <div className="walkup-page-auth-section">
             <div className="walkup-page-auth-info">
               <h3>🔗 Connect to Spotify</h3>
@@ -403,7 +462,7 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
           </div>
         )}
 
-        {authenticated && activeTab === 'config' && (
+        {walkUpConfig.musicType === 'spotify' && authenticated && activeTab === 'config' && (
          <PageConfigTab
            walkUpConfig={walkUpConfig}
            playlists={playlists}
@@ -421,7 +480,39 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
          />
         )}
 
-        {authenticated && activeTab === 'play' && (
+        {walkUpConfig.musicType === 'spotify' && authenticated && activeTab === 'play' && (
+          <PagePlayTab
+            walkUpConfig={walkUpConfig}
+            activePlayers={activePlayers}
+            currentlyPlaying={currentlyPlaying}
+            gameHistory={gameHistory}
+            gameMode={gameMode}
+            selectedGameId={selectedGameId}
+            currentBatterIndex={currentBatterIndex}
+            onPlay={handlePlay}
+            onPause={handlePause}
+            onToggleGameMode={() => setGameMode(!gameMode)}
+            onSelectGame={setSelectedGameId}
+            onNextBatter={handleNextBatter}
+            onPrevBatter={handlePrevBatter}
+            onSetBatterIndex={setCurrentBatterIndex}
+          />
+        )}
+
+        {/* Apple Music Flow - no auth required */}
+        {walkUpConfig.musicType === 'apple' && activeTab === 'config' && (
+          <AppleConfigTab
+            walkUpConfig={walkUpConfig}
+            activePlayers={activePlayers}
+            editingPlayer={editingPlayer}
+            onSavePlaylist={handleSaveApplePlaylist}
+            onEditPlayer={setEditingPlayer}
+            onAssignSong={handleAssignAppleSong}
+            onRemoveSong={handleRemoveSong}
+          />
+        )}
+
+        {walkUpConfig.musicType === 'apple' && activeTab === 'play' && (
           <PagePlayTab
             walkUpConfig={walkUpConfig}
             activePlayers={activePlayers}
@@ -653,6 +744,211 @@ function SongPickerModal({ playerName, tracks, currentConfig, onSave, onCancel }
 
         <div className="walkup-page-modal-footer">
           <button className="walkup-page-btn-save" onClick={handleSave} disabled={!selectedTrackId}>
+            Save
+          </button>
+          <button className="walkup-page-btn-cancel" onClick={onCancel}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Apple Music Config Tab ---
+
+function AppleConfigTab({
+  walkUpConfig,
+  activePlayers,
+  editingPlayer,
+  onSavePlaylist,
+  onEditPlayer,
+  onAssignSong,
+  onRemoveSong,
+}) {
+  const [playlistUrl, setPlaylistUrl] = useState(walkUpConfig.applePlaylistUrl || '');
+  const [playlistName, setPlaylistName] = useState(walkUpConfig.applePlaylistName || '');
+
+  const handleSavePlaylist = () => {
+    onSavePlaylist(playlistUrl, playlistName);
+  };
+
+  return (
+    <div className="walkup-page-config">
+      {/* Apple Music Info */}
+      <div className="walkup-page-status-bar">
+        <span className="walkup-page-connected">🍎 Apple Music (No login required)</span>
+      </div>
+
+      {/* Playlist Reference (Optional) */}
+      <div className="walkup-page-playlist-section">
+        <h3>📋 Playlist Reference (Optional)</h3>
+        <p className="walkup-page-apple-info">
+          Enter your Apple Music playlist name for reference. Songs are assigned manually below and will play through the Apple Music app on your device.
+        </p>
+        <div className="walkup-page-apple-playlist-form">
+          <input
+            type="text"
+            className="walkup-page-apple-input"
+            placeholder="Playlist name (e.g., Walk-Up Songs)"
+            value={playlistName}
+            onChange={(e) => setPlaylistName(e.target.value)}
+          />
+          <input
+            type="text"
+            className="walkup-page-apple-input"
+            placeholder="Apple Music playlist URL (optional)"
+            value={playlistUrl}
+            onChange={(e) => setPlaylistUrl(e.target.value)}
+          />
+          <button className="walkup-page-btn-save-playlist" onClick={handleSavePlaylist}>
+            Save Playlist Info
+          </button>
+        </div>
+      </div>
+
+      {/* Player Song Assignments */}
+      <div className="walkup-page-assignments">
+        <h3>🎤 Player Songs</h3>
+        <div className="walkup-page-player-list">
+          {activePlayers.map((player) => {
+            const songConfig = walkUpConfig.players[player.name];
+
+            return (
+              <div key={player.id} className="walkup-page-player-item">
+                <div className="walkup-page-player-info">
+                  <span className="walkup-page-player-number">#{player.number}</span>
+                  <span className="walkup-page-player-name">{player.name}</span>
+                </div>
+
+                {songConfig && (
+                  <div className="walkup-page-song-assigned">
+                    <div className="walkup-page-song-details">
+                      <div className="walkup-page-song-text">
+                        <div className="walkup-page-song-title">{songConfig.trackName}</div>
+                        <div className="walkup-page-song-artist">{songConfig.artistName}</div>
+                        {songConfig.appleMusicUrl && (
+                          <div className="walkup-page-song-url">🔗 Link configured</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="walkup-page-song-actions">
+                      <button className="walkup-page-btn-edit" onClick={() => onEditPlayer(player.name)}>✏️</button>
+                      <button className="walkup-page-btn-remove" onClick={() => onRemoveSong(player.name)}>🗑️</button>
+                    </div>
+                  </div>
+                )}
+
+                {!songConfig && (
+                  <button className="walkup-page-btn-assign" onClick={() => onEditPlayer(player.name)}>
+                    + Assign Song
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Edit Modal for Apple Music */}
+      {editingPlayer && (
+        <AppleSongPickerModal
+          playerName={editingPlayer}
+          currentConfig={walkUpConfig.players[editingPlayer]}
+          onSave={(songConfig) => onAssignSong(editingPlayer, songConfig)}
+          onCancel={() => onEditPlayer(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// --- Apple Music Song Picker Modal ---
+
+function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
+  const [trackName, setTrackName] = useState(currentConfig?.trackName || '');
+  const [artistName, setArtistName] = useState(currentConfig?.artistName || '');
+  const [appleMusicUrl, setAppleMusicUrl] = useState(currentConfig?.appleMusicUrl || '');
+  const [startTime, setStartTime] = useState(currentConfig ? formatMs(currentConfig.startMs) : '0:00');
+  const [endTime, setEndTime] = useState(currentConfig?.endMs != null ? formatMs(currentConfig.endMs) : '');
+
+  const handleSave = () => {
+    if (!trackName.trim()) return;
+    const startMs = parseTimeToMs(startTime) || 0;
+    const endMs = parseTimeToMs(endTime);
+    onSave({
+      trackName: trackName.trim(),
+      artistName: artistName.trim(),
+      appleMusicUrl: appleMusicUrl.trim(),
+      startMs,
+      endMs,
+      musicType: 'apple',
+    });
+  };
+
+  return (
+    <div className="walkup-page-modal-overlay" onClick={onCancel}>
+      <div className="walkup-page-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="walkup-page-modal-header">
+          <h3>🍎 Set Song for {playerName}</h3>
+          <button className="walkup-page-modal-close" onClick={onCancel}>✕</button>
+        </div>
+
+        <div className="walkup-page-modal-body">
+          <div className="walkup-page-apple-form">
+            <div className="walkup-page-apple-field">
+              <label>Song Name *</label>
+              <input
+                type="text"
+                value={trackName}
+                onChange={(e) => setTrackName(e.target.value)}
+                placeholder="Enter song name"
+              />
+            </div>
+            <div className="walkup-page-apple-field">
+              <label>Artist</label>
+              <input
+                type="text"
+                value={artistName}
+                onChange={(e) => setArtistName(e.target.value)}
+                placeholder="Enter artist name"
+              />
+            </div>
+            <div className="walkup-page-apple-field">
+              <label>Apple Music URL (optional)</label>
+              <input
+                type="text"
+                value={appleMusicUrl}
+                onChange={(e) => setAppleMusicUrl(e.target.value)}
+                placeholder="https://music.apple.com/..."
+              />
+              <small>If provided, tapping play will open this song in Apple Music app</small>
+            </div>
+            <div className="walkup-page-time-config">
+              <div className="walkup-page-time-field">
+                <label>Start Time (m:ss)</label>
+                <input
+                  type="text"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  placeholder="0:00"
+                />
+              </div>
+              <div className="walkup-page-time-field">
+                <label>End Time (m:ss)</label>
+                <input
+                  type="text"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="walkup-page-modal-footer">
+          <button className="walkup-page-btn-save" onClick={handleSave} disabled={!trackName.trim()}>
             Save
           </button>
           <button className="walkup-page-btn-cancel" onClick={onCancel}>
