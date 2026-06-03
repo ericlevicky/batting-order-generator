@@ -11,6 +11,8 @@ import UpdateNotification from './components/UpdateNotification';
 import ToastContainer from './components/ToastContainer';
 import ConfirmDialog from './components/ConfirmDialog';
 import WalkUpMusicPage from './components/WalkUpMusicPage';
+import LineupWizard from './components/LineupWizard';
+import WizardResult from './components/WizardResult';
 import { generateLineup } from './utils/lineupGenerator';
 import {
   getTeams,
@@ -51,6 +53,8 @@ function App() {
   const [presetTouched, setPresetTouched] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
   const [showWalkUpMusic, setShowWalkUpMusic] = useState(false);
+  const [viewMode, setViewMode] = useState('wizard'); // 'wizard' or 'classic'
+  const [wizardLineup, setWizardLineup] = useState(null);
   const initialSelectRef = useRef(true);
 
   // Load teams and current team on mount
@@ -273,6 +277,16 @@ function App() {
     );
   }
 
+  // After generating in wizard mode, show result once lineup is set
+  useEffect(() => {
+    if (viewMode === 'wizard' && lineup) {
+      setWizardLineup(lineup);
+    }
+  }, [lineup, viewMode]);
+
+  // Determine if we should show the wizard flow
+  const showWizardFlow = viewMode === 'wizard' && currentTeam && players.length > 0;
+
   return (
     <div className="app">
       <header className="app-header">
@@ -282,7 +296,7 @@ function App() {
             <p>Generate batting orders and field positions for your game</p>
           </div>
           <div className="header-actions">
-            {currentTeam && players.filter(p => p.active !== false).length > 0 && (
+            {viewMode === 'classic' && currentTeam && players.filter(p => p.active !== false).length > 0 && (
               <button
                 className="btn-walkup-music"
                 onClick={() => setShowWalkUpMusic(true)}
@@ -310,80 +324,132 @@ function App() {
       </header>
 
       <div className="app-content">
-        <div className="config-section">
-          <TeamManager
-            teams={teams}
-            currentTeamId={currentTeamId}
-            onSelectTeam={handleSelectTeam}
-            onCreateTeam={handleCreateTeam}
-            onRenameTeam={handleRenameTeam}
-            onDeleteTeam={handleDeleteTeam}
-            onDataImported={handleDataImported}
-            onShowToast={showToast}
-            onRequestConfirm={requestConfirm}
-          />
+        {/* Wizard mode */}
+        {showWizardFlow && !wizardLineup && (
+          <div className="card">
+            <LineupWizard
+              players={players}
+              setPlayers={setPlayers}
+              numInnings={numInnings}
+              setNumInnings={setNumInnings}
+              numOutfielders={numOutfielders}
+              setNumOutfielders={setNumOutfielders}
+              hasCatcher={hasCatcher}
+              setHasCatcher={setHasCatcher}
+              rotatingBattingOrder={rotatingBattingOrder}
+              setRotatingBattingOrder={setRotatingBattingOrder}
+              onGenerate={handleGenerateLineup}
+              onShowAllSettings={() => setViewMode('classic')}
+              teamName={currentTeam.name}
+            />
+          </div>
+        )}
 
-          {currentTeam && (
-            <div className="card">
-              <div className="team-header-badge">
-                <h2>Game Configuration</h2>
-                <div className="current-team-label">
-                  Team: <strong>{currentTeam.name}</strong>
-                </div>
-              </div>
+        {/* Wizard result view */}
+        {showWizardFlow && wizardLineup && (
+          <div className="card">
+            <WizardResult
+              lineup={wizardLineup}
+              numInnings={numInnings}
+              teamId={currentTeamId}
+              teamName={currentTeam.name}
+              players={players}
+              onStartOver={() => { setWizardLineup(null); setLineup(null); }}
+              onShowWalkUpMusic={() => setShowWalkUpMusic(true)}
+            />
+          </div>
+        )}
 
-              <PlayerInput players={players} setPlayers={setPlayers} onOrderTouched={() => setPresetTouched(true)} />
-
-              <GameSettings
-                numInnings={numInnings}
-                setNumInnings={setNumInnings}
-                numOutfielders={numOutfielders}
-                setNumOutfielders={setNumOutfielders}
-                hasCatcher={hasCatcher}
-                setHasCatcher={setHasCatcher}
-                rotatingBattingOrder={rotatingBattingOrder}
-                setRotatingBattingOrder={setRotatingBattingOrder}
+        {/* Classic mode or no team yet */}
+        {(viewMode === 'classic' || !currentTeam || players.length === 0) && (
+          <>
+            <div className="config-section">
+              <TeamManager
+                teams={teams}
+                currentTeamId={currentTeamId}
+                onSelectTeam={handleSelectTeam}
+                onCreateTeam={handleCreateTeam}
+                onRenameTeam={handleRenameTeam}
+                onDeleteTeam={handleDeleteTeam}
+                onDataImported={handleDataImported}
+                onShowToast={showToast}
+                onRequestConfirm={requestConfirm}
               />
 
-              <button className="btn-primary" onClick={handleGenerateLineup}>
-                Generate Lineup
-              </button>
-            </div>
-          )}
+              {currentTeam && (
+                <div className="card">
+                  <div className="team-header-badge">
+                    <h2>Game Configuration</h2>
+                    <div className="current-team-label">
+                      Team: <strong>{currentTeam.name}</strong>
+                    </div>
+                  </div>
 
-          {!currentTeam && (
-            <div className="card no-team-message">
-              <p>👆 Create or select a team above to get started!</p>
-            </div>
-          )}
-        </div>
+                  <PlayerInput players={players} setPlayers={setPlayers} onOrderTouched={() => setPresetTouched(true)} />
 
-        {currentTeam && gameHistory.length > 0 && (
-          <div className="config-section">
-            <GameHistory
-              history={gameHistory}
-              onDeleteGame={handleDeleteGame}
-              onDeleteAllGames={handleDeleteAllGames}
-              onShowToast={showToast}
-              onRequestConfirm={requestConfirm}
-              initialExpandGameId={lastGeneratedGameId}
-              walkUpMusic={currentTeamId ? getTeamWalkUpMusic(currentTeamId) : null}
-            />
-            <div className="card cumulative-stats-wrapper">
-              <div className="cumulative-stats-header" onClick={() => setShowCumulativeStats(v => !v)} style={{cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                <h3 style={{margin:0}}>Cumulative Statistics</h3>
-                <button 
-                  className="btn-expand" 
-                  style={{marginLeft:'auto'}}
-                  onClick={(e) => { e.stopPropagation(); setShowCumulativeStats(v => !v); }}
-                  title={showCumulativeStats ? 'Collapse cumulative statistics' : 'Expand cumulative statistics'}
-                >
-                  {showCumulativeStats ? '▲' : '▼'}
-                </button>
+                  <GameSettings
+                    numInnings={numInnings}
+                    setNumInnings={setNumInnings}
+                    numOutfielders={numOutfielders}
+                    setNumOutfielders={setNumOutfielders}
+                    hasCatcher={hasCatcher}
+                    setHasCatcher={setHasCatcher}
+                    rotatingBattingOrder={rotatingBattingOrder}
+                    setRotatingBattingOrder={setRotatingBattingOrder}
+                  />
+
+                  <div className="classic-actions">
+                    <button className="btn-primary" onClick={handleGenerateLineup}>
+                      Generate Lineup
+                    </button>
+                    {players.length > 0 && (
+                      <button
+                        className="wizard-switch-btn"
+                        onClick={() => { setViewMode('wizard'); setWizardLineup(null); setLineup(null); }}
+                        type="button"
+                      >
+                        ✨ Switch to simple mode
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {!currentTeam && (
+                <div className="card no-team-message">
+                  <p>👆 Create or select a team above to get started!</p>
+                </div>
+              )}
+            </div>
+
+            {currentTeam && gameHistory.length > 0 && (
+              <div className="config-section">
+                <GameHistory
+                  history={gameHistory}
+                  onDeleteGame={handleDeleteGame}
+                  onDeleteAllGames={handleDeleteAllGames}
+                  onShowToast={showToast}
+                  onRequestConfirm={requestConfirm}
+                  initialExpandGameId={lastGeneratedGameId}
+                  walkUpMusic={currentTeamId ? getTeamWalkUpMusic(currentTeamId) : null}
+                />
+                <div className="card cumulative-stats-wrapper">
+                  <div className="cumulative-stats-header" onClick={() => setShowCumulativeStats(v => !v)} style={{cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                    <h3 style={{margin:0}}>Cumulative Statistics</h3>
+                    <button 
+                      className="btn-expand" 
+                      style={{marginLeft:'auto'}}
+                      onClick={(e) => { e.stopPropagation(); setShowCumulativeStats(v => !v); }}
+                      title={showCumulativeStats ? 'Collapse cumulative statistics' : 'Expand cumulative statistics'}
+                    >
+                      {showCumulativeStats ? '▲' : '▼'}
+                    </button>
+                  </div>
+                  {showCumulativeStats && <CumulativeStats history={gameHistory} hideHeader />}
+                </div>
               </div>
-              {showCumulativeStats && <CumulativeStats history={gameHistory} hideHeader />}
-            </div>
-          </div>
+            )}
+          </>
         )}
       </div>
 
@@ -415,7 +481,6 @@ function App() {
           onSubmitError={(message) => showToast(message, 'error')}
         />
       )}
-
 
       {showFlash && (
         <div className="lineup-flash-overlay" role="status" aria-live="polite" aria-label="Lineup generated">

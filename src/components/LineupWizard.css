@@ -1,0 +1,388 @@
+.lineup-wizard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 60vh;
+  padding: 2rem 1rem;
+}
+
+/* Progress dots */
+.wizard-progress {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+
+.wizard-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.wizard-dot.active {
+  background: var(--accent);
+  transform: scale(1.2);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+/* Step container */
+.wizard-step {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: wizardFadeIn 0.3s ease-out;
+}
+
+@keyframes wizardFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.wizard-heading {
+  color: var(--text-on-dark);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.wizard-subheading {
+  color: var(--text-on-dark-muted);
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+/* Step 1: Player toggles */
+.wizard-player-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.wizard-player-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 52px;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-on-dark);
+  font-size: 1.05rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wizard-player-toggle.checked-in {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.wizard-player-toggle.checked-out {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  opacity: 0.6;
+}
+
+.wizard-player-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.wizard-player-toggle:active {
+  transform: translateY(0);
+}
+
+.wizard-player-name {
+  flex: 1;
+  text-align: left;
+}
+
+.wizard-toggle-indicator {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.checked-in .wizard-toggle-indicator {
+  background: rgba(16, 185, 129, 0.3);
+  color: #34d399;
+}
+
+.checked-out .wizard-toggle-indicator {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.wizard-player-count {
+  color: var(--text-on-dark-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.wizard-warning {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+/* Step 2: Innings stepper */
+.wizard-innings-stepper {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.wizard-stepper-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-on-dark);
+  font-size: 1.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wizard-stepper-btn:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: var(--accent);
+  transform: scale(1.05);
+}
+
+.wizard-stepper-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.wizard-innings-value {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: var(--text-on-dark);
+  min-width: 60px;
+  text-align: center;
+}
+
+/* Advanced options */
+.wizard-advanced-toggle {
+  background: none;
+  border: none;
+  color: var(--text-on-dark-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: color 0.2s ease;
+  margin-bottom: 1rem;
+}
+
+.wizard-advanced-toggle:hover {
+  color: var(--text-on-dark);
+}
+
+.wizard-advanced-options {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1.5rem;
+  animation: wizardFadeIn 0.2s ease-out;
+}
+
+.wizard-option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wizard-option-label {
+  color: var(--text-on-dark-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.wizard-button-group {
+  display: flex;
+  gap: 0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.wizard-option-btn {
+  flex: 1;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-on-dark-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-right: none;
+}
+
+.wizard-option-btn:last-child {
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.wizard-option-btn.active {
+  background: rgba(16, 185, 129, 0.6);
+  color: white;
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.wizard-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-on-dark);
+  font-size: 0.95rem;
+  transition: background 0.2s ease;
+}
+
+.wizard-checkbox:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.wizard-checkbox input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* Step 3: Generate button */
+.wizard-btn-generate {
+  width: 100%;
+  max-width: 360px;
+  padding: 1.5rem 2rem;
+  background: var(--accent-gradient);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  margin: 1.5rem 0;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+}
+
+.wizard-btn-generate:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 40px rgba(16, 185, 129, 0.45);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.wizard-btn-generate:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.wizard-reassurance {
+  color: var(--text-on-dark-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+/* Navigation buttons */
+.wizard-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  width: 100%;
+  max-width: 360px;
+}
+
+.wizard-btn-next {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  background: var(--accent-gradient);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wizard-btn-next:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+}
+
+.wizard-btn-next:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.wizard-btn-back {
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-on-dark-muted);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wizard-btn-back:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-on-dark);
+}
+
+/* Footer */
+.wizard-footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wizard-link-settings {
+  background: none;
+  border: none;
+  color: var(--text-on-dark-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: color 0.2s ease;
+}
+
+.wizard-link-settings:hover {
+  color: var(--text-on-dark);
+}
