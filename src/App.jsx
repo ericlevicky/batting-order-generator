@@ -26,8 +26,10 @@ import {
   updateTeamLastSettings,
   getNextGameNumber,
   deleteAllGamesFromHistory,
+  importAllData,
   getTeamWalkUpMusic
 } from './utils/storage';
+import { getSharedDataFromUrl, clearShareDataFromUrl } from './utils/shareUrl';
 import './App.css';
 
 function App() {
@@ -66,6 +68,43 @@ function App() {
     if (params.has('code') || params.has('error')) {
       setShowWalkUpMusic(true);
     }
+  }, []);
+
+  // Handle shared data import from URL
+  useEffect(() => {
+    const handleSharedUrl = async () => {
+      const sharedCsv = await getSharedDataFromUrl();
+      if (!sharedCsv) return;
+
+      setConfirmDialog({
+        title: 'Import Shared Data',
+        message: 'Someone shared their team data with you. Would you like to import it? Teams will be merged with your existing teams.',
+        confirmLabel: 'Import',
+        cancelLabel: 'Cancel',
+        destructive: false,
+        onConfirm: () => {
+          clearShareDataFromUrl();
+          const result = importAllData(sharedCsv);
+          if (result.success) {
+            const loadedTeams = getTeams();
+            setTeams(loadedTeams);
+            const currentId = getCurrentTeamId();
+            if (currentId && loadedTeams[currentId]) {
+              setCurrentTeamIdState(currentId);
+              loadTeamData(currentId);
+            }
+            showToast(`Imported ${result.teamsCount} team(s) from shared link!`, 'success');
+          } else {
+            showToast('Error importing shared data: ' + result.error, 'error');
+          }
+        },
+        onCancel: () => {
+          clearShareDataFromUrl();
+        }
+      });
+    };
+
+    handleSharedUrl();
   }, []);
 
   const loadTeamData = (teamId) => {
@@ -354,7 +393,10 @@ function App() {
       {confirmDialog && (
         <ConfirmDialog
           {...confirmDialog}
-          onCancel={() => setConfirmDialog(null)}
+          onCancel={() => {
+            confirmDialog.onCancel?.();
+            setConfirmDialog(null);
+          }}
           onConfirmAction={() => {
             confirmDialog.onConfirm?.();
             setConfirmDialog(null);
