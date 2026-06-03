@@ -429,6 +429,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
               activePlayers={activePlayers}
               editingPlayer={editingPlayer}
               onSelectPlaylist={handleSelectPlaylist}
+              onRefreshPlaylist={() => walkUpConfig.spotifyPlaylistId && loadPlaylistTracks(walkUpConfig.spotifyPlaylistId)}
               onEditPlayer={setEditingPlayer}
               onAssignSong={handleAssignSong}
               onRemoveSong={handleRemoveSong}
@@ -473,6 +474,7 @@ function ConfigTab({
   activePlayers,
   editingPlayer,
   onSelectPlaylist,
+  onRefreshPlaylist,
   onEditPlayer,
   onAssignSong,
   onRemoveSong,
@@ -521,18 +523,30 @@ function ConfigTab({
         {loadingPlaylists ? (
           <div className="walkup-loading">Loading playlists...</div>
         ) : (
-          <select
-            className="walkup-playlist-select"
-            value={walkUpConfig.spotifyPlaylistId || ''}
-            onChange={(e) => onSelectPlaylist(e.target.value)}
-          >
-            <option value="">-- Select a playlist --</option>
-            {playlists.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.trackCount} tracks)
-              </option>
-            ))}
-          </select>
+          <div className="walkup-playlist-controls">
+            <select
+              className="walkup-playlist-select"
+              value={walkUpConfig.spotifyPlaylistId || ''}
+              onChange={(e) => onSelectPlaylist(e.target.value)}
+            >
+              <option value="">-- Select a playlist --</option>
+              {playlists.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.trackCount} tracks)
+                </option>
+              ))}
+            </select>
+            {walkUpConfig.spotifyPlaylistId && (
+              <button
+                className="btn-walkup-refresh"
+                onClick={onRefreshPlaylist}
+                disabled={loadingTracks}
+                title="Refresh playlist to load added/removed songs"
+              >
+                🔄 Refresh
+              </button>
+            )}
+          </div>
         )}
       </div>
 

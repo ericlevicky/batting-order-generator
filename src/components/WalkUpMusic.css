@@ -453,6 +453,16 @@
   appearance: auto;
 }
 
+.walkup-playlist-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.walkup-playlist-controls .walkup-playlist-select {
+  flex: 1;
+}
+
 .walkup-playlist-select option {
   background: #1e293b;
   color: #f1f5f9;
