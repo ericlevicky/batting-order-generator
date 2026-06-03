@@ -402,6 +402,18 @@
   border-radius: 8px;
   font-size: 0.8rem;
   color: var(--text-on-dark-muted);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.walkup-device:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.walkup-device.selected {
+  border-color: rgba(99, 102, 241, 0.6);
+  background: rgba(99, 102, 241, 0.12);
 }
 
 .walkup-device.active {

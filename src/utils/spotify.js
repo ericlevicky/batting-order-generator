@@ -285,7 +285,26 @@ export async function getAvailableDevices() {
   return data.devices || [];
 }
 
+export async function transferPlayback(deviceId) {
+  await spotifyFetch('/me/player', {
+    method: 'PUT',
+    body: JSON.stringify({
+      device_ids: [deviceId],
+      play: false,
+    }),
+  });
+}
+
 export async function playTrack(trackUri, positionMs = 0, deviceId = null) {
+  // If a device is specified, transfer playback first to reactivate it
+  // This handles the case where the device has gone inactive after being paused too long
+  if (deviceId) {
+    try {
+      await transferPlayback(deviceId);
+    } catch {
+      // Continue anyway - the play call may still work
+    }
+  }
   const params = deviceId ? `?device_id=${deviceId}` : '';
   await spotifyFetch(`/me/player/play${params}`, {
     method: 'PUT',

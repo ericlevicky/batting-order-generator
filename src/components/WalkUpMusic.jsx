@@ -32,6 +32,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
   const [loadingTracks, setLoadingTracks] = useState(false);
   const [devices, setDevices] = useState([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState(null);
 
   // UI state
   const [activeTab, setActiveTab] = useState('config'); // 'config' | 'play'
@@ -132,6 +133,11 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
     try {
       const devs = await getAvailableDevices();
       setDevices(devs);
+      // Auto-select the active device if none is selected yet
+      if (!selectedDeviceId && devs.length > 0) {
+        const active = devs.find((d) => d.is_active);
+        setSelectedDeviceId(active ? active.id : devs[0].id);
+      }
     } catch {
       // Silently fail - devices will be empty
     }
@@ -212,7 +218,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
     }
 
     try {
-      await playTrack(config.trackUri, config.startMs || 0);
+      await playTrack(config.trackUri, config.startMs || 0, selectedDeviceId);
       setCurrentlyPlaying(playerName);
 
       // Set up auto-stop if end time is configured
@@ -220,7 +226,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
         const duration = config.endMs - (config.startMs || 0);
         stopTimerRef.current = setTimeout(async () => {
           try {
-            await pausePlayback();
+            await pausePlayback(selectedDeviceId);
           } catch {
             // Ignore pause errors
           }
@@ -232,7 +238,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
       showToast(`Playback failed: ${err.message}`, 'error');
       setCurrentlyPlaying(null);
     }
-  }, [walkUpConfig, showToast]);
+  }, [walkUpConfig, showToast, selectedDeviceId]);
 
   const handleStop = useCallback(async () => {
     if (stopTimerRef.current) {
@@ -240,12 +246,12 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
       stopTimerRef.current = null;
     }
     try {
-      await pausePlayback();
+      await pausePlayback(selectedDeviceId);
     } catch {
       // Ignore
     }
     setCurrentlyPlaying(null);
-  }, []);
+  }, [selectedDeviceId]);
 
   // --- Game Mode ---
 
@@ -372,6 +378,8 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
               onLogout={handleLogout}
               onRefreshDevices={loadDevices}
               devices={devices}
+              selectedDeviceId={selectedDeviceId}
+              onSelectDevice={setSelectedDeviceId}
             />
           )}
 
@@ -417,6 +425,8 @@ function ConfigTab({
   onLogout,
   onRefreshDevices,
   devices,
+  selectedDeviceId,
+  onSelectDevice,
 }) {
   return (
     <div className="walkup-config">
@@ -437,10 +447,18 @@ function ConfigTab({
           <h4>Available Devices</h4>
           <div className="walkup-devices-list">
             {devices.map((d) => (
-              <div key={d.id} className={`walkup-device ${d.is_active ? 'active' : ''}`}>
+              <div
+                key={d.id}
+                className={`walkup-device ${d.is_active ? 'active' : ''} ${selectedDeviceId === d.id ? 'selected' : ''}`}
+                onClick={() => onSelectDevice(d.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectDevice(d.id); } }}
+              >
                 <span className="device-icon">{d.type === 'Smartphone' ? '📱' : d.type === 'Computer' ? '💻' : '🔊'}</span>
                 <span className="device-name">{d.name}</span>
-                {d.is_active && <span className="device-active-badge">Active</span>}
+                {selectedDeviceId === d.id && <span className="device-active-badge">Selected</span>}
+                {d.is_active && selectedDeviceId !== d.id && <span className="device-active-badge">Active</span>}
               </div>
             ))}
           </div>
