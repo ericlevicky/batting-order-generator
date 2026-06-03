@@ -126,6 +126,18 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
     }
   };
 
+  // --- Auth Helpers ---
+
+  const hasClientId = !!getClientId();
+
+  const handleCopyRedirectUri = () => {
+    const uri = window.location.origin + window.location.pathname;
+    navigator.clipboard.writeText(uri).then(
+      () => onShowToast('Redirect URI copied!', 'success'),
+      () => onShowToast('Could not copy — please copy manually', 'error')
+    );
+  };
+
   // --- Auth Handlers ---
 
   const handleSaveClientId = () => {
@@ -135,7 +147,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
     }
     setClientId(clientId.trim());
     setShowClientIdSetup(false);
-    onShowToast('Client ID saved', 'success');
+    onShowToast('Client ID saved! Now click "Connect to Spotify" to log in.', 'success');
   };
 
   const handleLogin = async () => {
@@ -323,44 +335,87 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
             <div className="walkup-auth-section">
               <div className="walkup-auth-info">
                 <h3>🔗 Connect to Spotify</h3>
-                <p>Connect your Spotify Premium account to control music playback from this app.</p>
-                <p className="walkup-auth-note">
-                  ℹ️ Your Spotify app must be open and active on your device. This app sends play/pause commands to Spotify via the Connect API.
-                </p>
+                <p>Play walk-up songs through any device running Spotify. Follow the steps below to get started.</p>
               </div>
 
-              {showClientIdSetup ? (
-                <div className="walkup-client-id-setup">
-                  <label htmlFor="spotify-client-id">Spotify Client ID</label>
-                  <p className="walkup-setup-hint">
-                    Create an app at{' '}
-                    <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer">
-                      developer.spotify.com/dashboard
-                    </a>
-                    {' '}and paste the Client ID here. Set the redirect URI to: <code>{window.location.origin + window.location.pathname}</code>
-                  </p>
-                  <div className="walkup-client-id-form">
-                    <input
-                      id="spotify-client-id"
-                      type="text"
-                      value={clientId}
-                      onChange={(e) => setClientIdState(e.target.value)}
-                      placeholder="e.g. abc123def456..."
-                    />
-                    <button className="btn-walkup-save" onClick={handleSaveClientId}>Save</button>
-                    <button className="btn-walkup-cancel" onClick={() => setShowClientIdSetup(false)}>Cancel</button>
+              {/* Step 1 – Create a Spotify App */}
+              <div className={`walkup-setup-step ${hasClientId ? 'completed' : 'active'}`}>
+                <div className="walkup-step-header">
+                  <span className="walkup-step-number">{hasClientId ? '✅' : '1'}</span>
+                  <span className="walkup-step-title">
+                    {hasClientId ? 'Spotify App configured' : 'Create a free Spotify Developer App'}
+                  </span>
+                  {hasClientId && !showClientIdSetup && (
+                    <button className="btn-walkup-change-id" onClick={() => setShowClientIdSetup(true)}>
+                      Change
+                    </button>
+                  )}
+                </div>
+
+                {(!hasClientId || showClientIdSetup) && (
+                  <div className="walkup-step-body">
+                    <ol className="walkup-setup-instructions">
+                      <li>
+                        Go to{' '}
+                        <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer">
+                          developer.spotify.com/dashboard
+                        </a>{' '}
+                        and log in (or create a free account)
+                      </li>
+                      <li>Click <strong>Create App</strong> — give it any name (e.g. &quot;Walk-Up Music&quot;)</li>
+                      <li>
+                        Set the <strong>Redirect URI</strong> to:{' '}
+                        <span className="walkup-redirect-uri">
+                          <code>{window.location.origin + window.location.pathname}</code>
+                          <button className="btn-walkup-copy" onClick={handleCopyRedirectUri} title="Copy redirect URI">
+                            📋
+                          </button>
+                        </span>
+                      </li>
+                      <li>Under &quot;Which API/SDKs are you planning to use?&quot; check <strong>Web API</strong></li>
+                      <li>Save the app, then copy your <strong>Client ID</strong> and paste it below</li>
+                    </ol>
+
+                    <div className="walkup-client-id-form">
+                      <input
+                        id="spotify-client-id"
+                        type="text"
+                        value={clientId}
+                        onChange={(e) => setClientIdState(e.target.value)}
+                        placeholder="Paste your Client ID here"
+                        onKeyDown={(e) => e.key === 'Enter' && handleSaveClientId()}
+                      />
+                      <button className="btn-walkup-save" onClick={handleSaveClientId}>Save</button>
+                      {hasClientId && (
+                        <button className="btn-walkup-cancel" onClick={() => setShowClientIdSetup(false)}>Cancel</button>
+                      )}
+                    </div>
                   </div>
+                )}
+              </div>
+
+              {/* Step 2 – Connect */}
+              <div className={`walkup-setup-step ${hasClientId ? 'active' : 'disabled'}`}>
+                <div className="walkup-step-header">
+                  <span className="walkup-step-number">2</span>
+                  <span className="walkup-step-title">Connect your Spotify account</span>
                 </div>
-              ) : (
-                <div className="walkup-auth-actions">
-                  <button className="btn-spotify-login" onClick={handleLogin}>
-                    🎵 Connect to Spotify
-                  </button>
-                  <button className="btn-walkup-setup" onClick={() => setShowClientIdSetup(true)}>
-                    {getClientId() ? '🔑 Change Client ID' : '🔑 Set Client ID First'}
-                  </button>
-                </div>
-              )}
+
+                {hasClientId && !showClientIdSetup && (
+                  <div className="walkup-step-body">
+                    <p className="walkup-step-description">
+                      You&apos;ll be redirected to Spotify to grant permission. A <strong>Spotify Premium</strong> account is required for playback control.
+                    </p>
+                    <button className="btn-spotify-login" onClick={handleLogin}>
+                      🎵 Connect to Spotify
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <p className="walkup-auth-note">
+                ℹ️ Your Spotify app must be open and active on a device (phone, speaker, computer). This app sends play/pause commands via Spotify Connect.
+              </p>
             </div>
           )}
 
