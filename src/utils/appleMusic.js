@@ -93,5 +93,6 @@ export async function searchAppleMusicSongs(query, limit = 20) {
     durationMs: item.trackTimeMillis || 0,
     albumArt: item.artworkUrl100 || null,
     appleMusicUrl: item.trackViewUrl || '',
+    previewUrl: item.previewUrl || null,
   }));
 }

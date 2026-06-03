@@ -52,6 +52,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
   const toastIdRef = useRef(0);
 
   const stopTimerRef = useRef(null);
+  const audioRef = useRef(null);
 
   const showToast = useCallback((message, type = 'info') => {
     const id = ++toastIdRef.current;
@@ -90,6 +91,10 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
     return () => {
       if (stopTimerRef.current) {
         clearTimeout(stopTimerRef.current);
+      }
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
       }
     };
   }, [teamId, showToast]);
@@ -233,11 +238,55 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
       stopTimerRef.current = null;
     }
 
-    // Apple Music playback via deep link
+    // Apple Music playback via preview URL (in-browser) or deep link fallback
     if (walkUpConfig.musicType === 'apple') {
-      playAppleMusicTrack(config.appleMusicUrl);
-      setCurrentlyPlaying(playerName);
-      showToast(`Opening "${config.trackName}" in Apple Music...`, 'info');
+      if (config.previewUrl) {
+        // Stop any currently playing preview
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+
+        const audio = new Audio(config.previewUrl);
+        audioRef.current = audio;
+
+        const startSec = (config.startMs || 0) / 1000;
+        audio.currentTime = startSec;
+
+        audio.play().catch((err) => {
+          showToast(`Could not play preview for "${config.trackName}": ${err.message}`, 'error');
+        });
+
+        setCurrentlyPlaying(playerName);
+        const nowPlayingMsg = config.artistName
+          ? `Now playing "${config.trackName}" — ${config.artistName}`
+          : `Now playing "${config.trackName}"`;
+        showToast(nowPlayingMsg, 'info');
+
+        // Auto-stop if end time is configured
+        if (config.endMs != null && config.endMs > (config.startMs || 0)) {
+          const duration = config.endMs - (config.startMs || 0);
+          stopTimerRef.current = setTimeout(() => {
+            if (audioRef.current) {
+              audioRef.current.pause();
+              audioRef.current = null;
+            }
+            setCurrentlyPlaying(null);
+            stopTimerRef.current = null;
+          }, duration);
+        } else {
+          // Auto-clear playing state when the preview ends naturally
+          audio.addEventListener('ended', () => {
+            setCurrentlyPlaying(null);
+            audioRef.current = null;
+          }, { once: true });
+        }
+      } else {
+        // No preview URL available — fall back to opening Apple Music app
+        playAppleMusicTrack(config.appleMusicUrl);
+        setCurrentlyPlaying(playerName);
+        showToast(`Opening "${config.trackName}" in Apple Music...`, 'info');
+      }
       return;
     }
 
@@ -299,6 +348,11 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
     if (stopTimerRef.current) {
       clearTimeout(stopTimerRef.current);
       stopTimerRef.current = null;
+    }
+    // Stop any in-browser Apple Music preview
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
     }
     try {
       await pausePlayback();
@@ -806,6 +860,7 @@ function AppleSongPicker({ currentConfig, onSave, onCancel }) {
           durationMs: 0,
           albumArt: currentConfig.albumArt || null,
           appleMusicUrl: currentConfig.appleMusicUrl || '',
+          previewUrl: currentConfig.previewUrl || null,
         }
       : null
   );
@@ -844,6 +899,7 @@ function AppleSongPicker({ currentConfig, onSave, onCancel }) {
       artistName: selectedTrack.artist,
       albumArt: selectedTrack.albumArt,
       appleMusicUrl: selectedTrack.appleMusicUrl,
+      previewUrl: selectedTrack.previewUrl || null,
       startMs,
       endMs,
       musicType: 'apple',
