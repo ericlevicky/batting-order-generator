@@ -366,7 +366,6 @@ function App() {
           players={players}
           gameHistory={gameHistory}
           onClose={() => setShowWalkUpMusic(false)}
-          onShowToast={showToast}
         />
       )}
 

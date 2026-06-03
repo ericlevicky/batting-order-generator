@@ -21,7 +21,7 @@ import {
 } from '../utils/storage';
 import './WalkUpMusic.css';
 
-function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowToast }) {
+function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
   // Auth state
   const [authenticated, setAuthenticated] = useState(false);
 
@@ -41,7 +41,23 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
   const [selectedGameId, setSelectedGameId] = useState(null);
   const [currentBatterIndex, setCurrentBatterIndex] = useState(0);
 
+  // Internal toast state
+  const [toasts, setToasts] = useState([]);
+  const toastIdRef = useRef(0);
+
   const stopTimerRef = useRef(null);
+
+  const showToast = useCallback((message, type = 'info') => {
+    const id = ++toastIdRef.current;
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
+  }, []);
+
+  const dismissToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
 
   // Load config and handle auth callback on mount
   useEffect(() => {
@@ -53,13 +69,13 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
       .then((wasCallback) => {
         if (wasCallback) {
           setAuthenticated(true);
-          onShowToast('Connected to Spotify!', 'success');
+          showToast('Connected to Spotify!', 'success');
         } else {
           setAuthenticated(isAuthenticated());
         }
       })
       .catch((err) => {
-        onShowToast(err.message, 'error');
+        showToast(err.message, 'error');
         setAuthenticated(false);
       });
 
@@ -68,7 +84,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
         clearTimeout(stopTimerRef.current);
       }
     };
-  }, [teamId]);
+  }, [teamId, showToast]);
 
   // Load playlists when authenticated
   useEffect(() => {
@@ -91,7 +107,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
       const lists = await getUserPlaylists();
       setPlaylists(lists);
     } catch (err) {
-      onShowToast(`Failed to load playlists: ${err.message}`, 'error');
+      showToast(`Failed to load playlists: ${err.message}`, 'error');
       if (err.message.includes('log in')) {
         setAuthenticated(false);
       }
@@ -106,7 +122,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
       const result = await getPlaylistTracks(playlistId);
       setPlaylistTracks(result.tracks);
     } catch (err) {
-      onShowToast(`Failed to load tracks: ${err.message}`, 'error');
+      showToast(`Failed to load tracks: ${err.message}`, 'error');
     } finally {
       setLoadingTracks(false);
     }
@@ -127,7 +143,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
     try {
       await startAuthFlow();
     } catch (err) {
-      onShowToast(err.message, 'error');
+      showToast(err.message, 'error');
     }
   };
 
@@ -137,7 +153,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
     setPlaylists([]);
     setPlaylistTracks([]);
     setDevices([]);
-    onShowToast('Disconnected from Spotify', 'info');
+    showToast('Disconnected from Spotify', 'info');
   };
 
   // --- Config Handlers ---
@@ -170,7 +186,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
     const updated = { ...walkUpConfig, players: { ...walkUpConfig.players, [playerName]: songConfig } };
     setWalkUpConfig(updated);
     setEditingPlayer(null);
-    onShowToast(`Walk-up song set for ${playerName}`, 'success');
+    showToast(`Walk-up song set for ${playerName}`, 'success');
   };
 
   const handleRemoveSong = (playerName) => {
@@ -185,7 +201,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
   const handlePlay = useCallback(async (playerName) => {
     const config = walkUpConfig.players[playerName];
     if (!config) {
-      onShowToast(`No walk-up song configured for ${playerName}`, 'error');
+      showToast(`No walk-up song configured for ${playerName}`, 'error');
       return;
     }
 
@@ -213,10 +229,10 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
         }, duration);
       }
     } catch (err) {
-      onShowToast(`Playback failed: ${err.message}`, 'error');
+      showToast(`Playback failed: ${err.message}`, 'error');
       setCurrentlyPlaying(null);
     }
-  }, [walkUpConfig, onShowToast]);
+  }, [walkUpConfig, showToast]);
 
   const handleStop = useCallback(async () => {
     if (stopTimerRef.current) {
@@ -276,6 +292,21 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose, onShowTo
   return (
     <div className="walkup-overlay" onClick={onClose}>
       <div className="walkup-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Internal Toast Notifications */}
+        {toasts.length > 0 && (
+          <div className="walkup-toast-container">
+            {toasts.map(t => (
+              <div key={t.id} className={`walkup-toast walkup-toast-${t.type}`} onClick={() => dismissToast(t.id)}>
+                <span className="walkup-toast-icon">
+                  {t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ'}
+                </span>
+                <span className="walkup-toast-message">{t.message}</span>
+                <button className="walkup-toast-close" onClick={(e) => { e.stopPropagation(); dismissToast(t.id); }}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="walkup-header">
           <h2>🎵 Walk-Up Music</h2>
           <span className="walkup-team-name">{teamName}</span>
