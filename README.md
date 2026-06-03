@@ -101,10 +101,10 @@ To enable Spotify integration on your own deployment, you need a Spotify Develop
 1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
 2. Click **Create App**
 3. Fill in a name (e.g. "Batting Order Music") and description
-4. Set the **Redirect URI** to your app's URL (e.g. `https://your-site.netlify.app/` for production or `http://localhost:5173/` for local dev)
+4. Set the **Redirect URI** to your app's URL (e.g. `https://your-site.vercel.app/` for production or `http://localhost:5173/` for local dev)
 5. Check **Web API** under "Which API/SDKs are you planning to use?"
 6. Save the app and copy your **Client ID**
-7. Set the `VITE_SPOTIFY_CLIENT_ID` environment variable to your Client ID (in Netlify environment settings or a local `.env` file)
+7. Set the `VITE_SPOTIFY_CLIENT_ID` environment variable to your Client ID (in Vercel environment settings or a local `.env` file)
 
 ### Configuring Walk-Up Songs
 
@@ -170,25 +170,27 @@ After generating a lineup, you can view:
 
 ## Deployment
 
-### Web Deployment (Netlify)
+### Web Deployment (Vercel)
 
-This project is configured to automatically deploy to Netlify when a pull request is merged to the `main` branch.
+This project is configured to automatically deploy to Vercel when a pull request is merged to the `main` branch.
 
-#### Setup Netlify Deployment
+#### Setup Vercel Deployment
 
-1. **Create a Netlify Account**: Sign up for a free account at [netlify.com](https://www.netlify.com/)
+1. **Create a Vercel Account**: Sign up for a free account at [vercel.com](https://vercel.com/)
 
-2. **Create a New Site**: In Netlify, create a new site (you can create it manually or link to your GitHub repository)
+2. **Create a New Project**: In Vercel, import your GitHub repository
 
 3. **Get Required Credentials**:
-   - **NETLIFY_AUTH_TOKEN**: Go to User Settings → Applications → Personal Access Tokens → New access token
-   - **NETLIFY_SITE_ID**: Found in Site Settings → General → Site information → API ID
+   - **VERCEL_TOKEN**: Go to Settings → Tokens → Create a new token
+   - **VERCEL_ORG_ID**: Found in Settings → General → Your ID
+   - **VERCEL_PROJECT_ID**: Found in Project Settings → General → Project ID
 
 4. **Configure GitHub Secrets**:
    - Go to your GitHub repository → Settings → Secrets and variables → Actions
-   - Add two repository secrets:
-     - `NETLIFY_AUTH_TOKEN`: Your Netlify personal access token
-     - `NETLIFY_SITE_ID`: Your Netlify site API ID
+   - Add three repository secrets:
+     - `VERCEL_TOKEN`: Your Vercel access token
+     - `VERCEL_ORG_ID`: Your Vercel org/user ID
+     - `VERCEL_PROJECT_ID`: Your Vercel project ID
 
 5. **Automatic Deployment**: Once configured, the site will automatically deploy when PRs are merged to `main`
 
@@ -196,7 +198,7 @@ This project is configured to automatically deploy to Netlify when a pull reques
 
 You can also trigger a deployment manually:
 - Go to Actions tab in GitHub
-- Select "Deploy to Netlify" workflow
+- Select "Deploy to Vercel" workflow
 - Click "Run workflow"
 
 ### Progressive Web App (PWA)
@@ -217,7 +219,7 @@ This app is a PWA and can be installed on any device!
 - ✅ Works on ALL devices (iOS, Android, desktop)
 - ✅ Updates automatically when you deploy
 
-Once deployed to Netlify, anyone can install your app on their device instantly!
+Once deployed to Vercel, anyone can install your app on their device instantly!
 
 
 ## License
