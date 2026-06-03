@@ -80,7 +80,9 @@ export async function searchAppleMusicSongs(query, limit = 20) {
   })}`;
 
   const response = await fetch(url);
-  if (!response.ok) throw new Error(`iTunes search failed (${response.status})`);
+  if (!response.ok) {
+    throw new Error(`iTunes search failed (${response.status}). Check your network connection and try again.`);
+  }
 
   const data = await response.json();
   return (data.results || []).map((item) => ({
