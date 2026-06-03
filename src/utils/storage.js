@@ -3,7 +3,8 @@
 const STORAGE_KEYS = {
   TEAMS: 'batting_order_teams',
   CURRENT_TEAM: 'batting_order_current_team',
-  TEAM_HISTORY: 'batting_order_team_history'
+  TEAM_HISTORY: 'batting_order_team_history',
+  WALKUP_MUSIC: 'batting_order_walkup_music'
 };
 
 // Team Management
@@ -175,6 +176,54 @@ export const shuffleArray = (array) => {
   return shuffled;
 };
 
+// Walk-Up Music Configuration
+const getWalkUpMusicData = () => {
+  const data = localStorage.getItem(STORAGE_KEYS.WALKUP_MUSIC);
+  return data ? JSON.parse(data) : {};
+};
+
+const saveWalkUpMusicData = (data) => {
+  localStorage.setItem(STORAGE_KEYS.WALKUP_MUSIC, JSON.stringify(data));
+};
+
+export const getTeamWalkUpMusic = (teamId) => {
+  const data = getWalkUpMusicData();
+  return data[teamId] || { spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
+};
+
+export const saveTeamWalkUpMusic = (teamId, walkUpMusic) => {
+  const data = getWalkUpMusicData();
+  data[teamId] = walkUpMusic;
+  saveWalkUpMusicData(data);
+};
+
+export const setPlayerWalkUpSong = (teamId, playerName, songConfig) => {
+  const data = getWalkUpMusicData();
+  if (!data[teamId]) {
+    data[teamId] = { spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
+  }
+  data[teamId].players[playerName] = songConfig;
+  saveWalkUpMusicData(data);
+};
+
+export const removePlayerWalkUpSong = (teamId, playerName) => {
+  const data = getWalkUpMusicData();
+  if (data[teamId]?.players) {
+    delete data[teamId].players[playerName];
+    saveWalkUpMusicData(data);
+  }
+};
+
+export const setTeamPlaylist = (teamId, playlistId, playlistName) => {
+  const data = getWalkUpMusicData();
+  if (!data[teamId]) {
+    data[teamId] = { spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
+  }
+  data[teamId].spotifyPlaylistId = playlistId;
+  data[teamId].spotifyPlaylistName = playlistName;
+  saveWalkUpMusicData(data);
+};
+
 // Import/Export functionality
 const escapeCSV = (value) => {
   if (value === null || value === undefined) return '';
@@ -249,11 +298,13 @@ export const exportAllData = () => {
   const teams = getTeams();
   const currentTeamId = getCurrentTeamId();
   const history = getTeamHistory();
+  const walkUpMusic = getWalkUpMusicData();
   
   const data = {
     teams,
     currentTeamId,
     history,
+    walkUpMusic,
     exportedAt: new Date().toISOString()
   };
   
@@ -272,6 +323,9 @@ export const exportAllData = () => {
   
   // History data
   rows.push(`Data,History,${escapeCSV(JSON.stringify(history))}`);
+  
+  // Walk-up music data
+  rows.push(`Data,WalkUpMusic,${escapeCSV(JSON.stringify(walkUpMusic))}`);
   
   return rows.join('\n');
 };
@@ -293,6 +347,7 @@ export const importAllData = (csvContent) => {
     let teams = null;
     let history = null;
     let currentTeamId = null;
+    let walkUpMusic = null;
     
     // Parse data rows
     for (let i = 1; i < rows.length; i++) {
@@ -309,6 +364,8 @@ export const importAllData = (csvContent) => {
         teams = JSON.parse(value);
       } else if (type === 'Data' && key === 'History') {
         history = JSON.parse(value);
+      } else if (type === 'Data' && key === 'WalkUpMusic') {
+        walkUpMusic = JSON.parse(value);
       }
     }
     
@@ -391,6 +448,20 @@ export const importAllData = (csvContent) => {
         mergedHistory[newTeamId] = games;
       }
     });
+    
+    // Merge walk-up music, updating team IDs if necessary
+    if (walkUpMusic && typeof walkUpMusic === 'object') {
+      const existingWalkUpMusic = getWalkUpMusicData();
+      const mergedWalkUpMusic = Object.assign({}, existingWalkUpMusic);
+      Object.entries(walkUpMusic).forEach(([teamId, config]) => {
+        const newTeamId = teamIdMapping[teamId] || teamId;
+        // Only import if no existing config for this team
+        if (!mergedWalkUpMusic[newTeamId]) {
+          mergedWalkUpMusic[newTeamId] = config;
+        }
+      });
+      saveWalkUpMusicData(mergedWalkUpMusic);
+    }
     
     // Save merged data to localStorage
     saveTeams(mergedTeams);

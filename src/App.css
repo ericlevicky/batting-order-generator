@@ -87,6 +87,31 @@
   white-space: nowrap;
 }
 
+.btn-walkup-music {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(29, 185, 84, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: white;
+  border: 1px solid rgba(29, 185, 84, 0.5);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.btn-walkup-music:hover {
+  background: rgba(29, 185, 84, 0.4);
+  border-color: rgba(29, 185, 84, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(29, 185, 84, 0.35);
+}
+
 .btn-help:hover {
   background: rgba(255, 255, 255, 0.22);
   border-color: rgba(255, 255, 255, 0.45);
@@ -324,7 +349,8 @@
   }
 
   .btn-feature-suggestion,
-  .btn-help {
+  .btn-help,
+  .btn-walkup-music {
     width: 100%;
     justify-content: center;
   }
