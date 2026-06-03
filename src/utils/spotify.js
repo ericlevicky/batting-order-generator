@@ -301,19 +301,19 @@ export async function transferPlayback(deviceId) {
     method: 'PUT',
     body: JSON.stringify({
       device_ids: [deviceId],
-      play: false,
+      play: true,
     }),
   });
 }
 
 export async function playTrack(trackUri, positionMs = 0, deviceId = null) {
-  // If a device is specified, transfer playback first to reactivate it
-  // This handles the case where the device has gone inactive after being paused too long
+  // If a device is specified, transfer playback first to force-activate it
+  // Using play:true ensures the device wakes up even if it went inactive
   if (deviceId) {
     try {
       await transferPlayback(deviceId);
-      // Wait briefly for the device to become active after transfer
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for the device to become active after transfer
+      await new Promise(resolve => setTimeout(resolve, 1000));
     } catch {
       // Continue anyway - the play call may still work
     }
@@ -328,10 +328,10 @@ export async function playTrack(trackUri, positionMs = 0, deviceId = null) {
       }),
     });
   } catch (err) {
-    // If the first attempt fails with a device error, wait longer and retry once
-    if (deviceId && err.message && err.message.includes('No active device')) {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      await spotifyFetch(`/me/player/play?device_id=${deviceId}`, {
+    if (err.message && err.message.includes('No active device')) {
+      // Retry without device_id — let Spotify route to whatever is available
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      await spotifyFetch('/me/player/play', {
         method: 'PUT',
         body: JSON.stringify({
           uris: [trackUri],
