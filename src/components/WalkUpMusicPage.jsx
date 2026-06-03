@@ -17,6 +17,7 @@ import {
   setPreferredDeviceId,
   selectBestDevice,
   filterPlayableDevices,
+  pollForDevice,
 } from '../utils/spotify';
 import { playAppleMusicTrack, searchAppleMusicSongs } from '../utils/appleMusic';
 import {
@@ -51,6 +52,9 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
   // Internal toast state
   const [toasts, setToasts] = useState([]);
   const toastIdRef = useRef(0);
+
+  // Active device state
+  const [activeDevice, setActiveDevice] = useState(null);
 
   const stopTimerRef = useRef(null);
 
@@ -124,6 +128,13 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
         const playable = filterPlayableDevices(devices);
         const preferred = playable.find(d => d.id === preferredId);
 
+        // Update active device display
+        if (preferred) {
+          setActiveDevice({ name: preferred.name, type: preferred.type });
+        } else if (playable.length > 0) {
+          setActiveDevice({ name: playable[0].name, type: playable[0].type });
+        }
+
         // If preferred playable device exists but is inactive, re-transfer without playing
         if (preferred && !preferred.is_active) {
           await transferPlayback(preferredId, false);
@@ -132,6 +143,9 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
         // Silently ignore keepalive errors — don't disrupt the user
       }
     };
+
+    // Run immediately on mount to show device right away
+    keepalive();
 
     const intervalId = setInterval(keepalive, KEEPALIVE_INTERVAL_MS);
 
@@ -289,20 +303,31 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
         // Continue without a device ID — Spotify will use the last active device
       }
 
-      // If no playable devices were found, try to open Spotify app with the specific track
+      // If no playable devices were found, wake up Spotify and poll for device
       if (!targetDeviceId && filterPlayableDevices(debugDevices).length === 0) {
-        // Open the specific track in the Spotify native app via deep link
-        // Use the track URI (e.g. spotify:track:ABC123) so it starts playing that song
+        // Open Spotify app to wake it up and register the device
         const deepLink = config.trackUri || 'spotify://';
         window.open(deepLink, '_blank');
-        showToast('No playable device found. Opening song in Spotify app... Tap play again in a few seconds if needed.', 'info');
-        return;
+        showToast('Waking up Spotify on your phone... hang tight.', 'info');
+
+        // Poll for the device to appear (up to 10 seconds)
+        targetDeviceId = await pollForDevice(10000, 1500);
+
+        if (!targetDeviceId) {
+          showToast('Could not find your Spotify device. Make sure Spotify is open on your phone and try again.', 'error');
+          return;
+        }
       }
 
       await playTrack(config.trackUri, config.startMs || 0, targetDeviceId);
       // Remember this device for future playback
       if (targetDeviceId) {
         setPreferredDeviceId(targetDeviceId);
+        // Update active device display
+        const targetDevice = debugDevices.find(d => d.id === targetDeviceId);
+        if (targetDevice) {
+          setActiveDevice({ name: targetDevice.name, type: targetDevice.type });
+        }
       }
       setCurrentlyPlaying(playerName);
 
@@ -321,7 +346,7 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
       }
     } catch (err) {
       const deviceList = debugDevices.map(d => `${d.name} (${d.type}, active=${d.is_active})`).join(', ') || 'none';
-      showToast(`Playback failed: ${err.message} | Devices found: [${deviceList}] | Target: ${targetDeviceId || 'none'} | Preferred: ${debugPreferredId || 'none'}`, 'error');
+      showToast(`Playback failed: ${err.message} | Devices: [${deviceList}] | Target: ${targetDeviceId || 'none'}`, 'error');
       setCurrentlyPlaying(null);
     }
   }, [walkUpConfig, showToast]);
@@ -485,6 +510,7 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
             walkUpConfig={walkUpConfig}
             activePlayers={activePlayers}
             currentlyPlaying={currentlyPlaying}
+            activeDevice={activeDevice}
             gameHistory={gameHistory}
             gameMode={gameMode}
             selectedGameId={selectedGameId}
@@ -992,6 +1018,7 @@ function PagePlayTab({
   walkUpConfig,
   activePlayers,
   currentlyPlaying,
+  activeDevice,
   gameHistory,
   gameMode,
   selectedGameId,
@@ -1024,6 +1051,16 @@ function PagePlayTab({
 
   return (
     <div className="walkup-page-play">
+      {/* Active Device Indicator */}
+      {activeDevice && (
+        <div className="walkup-page-device-indicator">
+          <span className="walkup-page-device-icon">
+            {activeDevice.type === 'Smartphone' ? '📱' : activeDevice.type === 'Speaker' ? '🔊' : '💻'}
+          </span>
+          <span className="walkup-page-device-name">Playing on: {activeDevice.name}</span>
+        </div>
+      )}
+
       {/* Mode Toggle */}
       {hasGameHistory && (
         <div className="walkup-page-mode-toggle">
