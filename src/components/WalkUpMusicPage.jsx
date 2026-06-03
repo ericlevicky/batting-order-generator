@@ -8,6 +8,8 @@ import {
   getPlaylistTracks,
   playTrack,
   pausePlayback,
+  getPlaybackState,
+  transferPlayback,
   formatMs,
   parseTimeToMs,
   getAvailableDevices,
@@ -18,14 +20,13 @@ import {
 } from '../utils/spotify';
 import {
   getTeamWalkUpMusic,
-  saveTeamWalkUpMusic,
   setTeamPlaylist,
   setPlayerWalkUpSong,
   removePlayerWalkUpSong,
 } from '../utils/storage';
-import './WalkUpMusic.css';
+import './WalkUpMusicPage.css';
 
-function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
+function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
   // Auth state
   const [authenticated, setAuthenticated] = useState(false);
 
@@ -102,6 +103,35 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
       loadPlaylistTracks(walkUpConfig.spotifyPlaylistId);
     }
   }, [authenticated, walkUpConfig.spotifyPlaylistId]);
+
+  // Keepalive: poll Spotify every 20s to prevent device session from going inactive
+  useEffect(() => {
+    if (!authenticated) return;
+
+    const KEEPALIVE_INTERVAL_MS = 20000;
+
+    const keepalive = async () => {
+      try {
+        const preferredId = getPreferredDeviceId();
+        if (!preferredId) return;
+
+        const devices = await getAvailableDevices();
+        const playable = filterPlayableDevices(devices);
+        const preferred = playable.find(d => d.id === preferredId);
+
+        // If preferred playable device exists but is inactive, re-transfer without playing
+        if (preferred && !preferred.is_active) {
+          await transferPlayback(preferredId, false);
+        }
+      } catch {
+        // Silently ignore keepalive errors — don't disrupt the user
+      }
+    };
+
+    const intervalId = setInterval(keepalive, KEEPALIVE_INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [authenticated]);
 
   const loadPlaylists = async () => {
     setLoadingPlaylists(true);
@@ -234,7 +264,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
       }
       setCurrentlyPlaying(playerName);
 
-      // Set up auto-stop if end time is configured
+      // Set up auto-pause if end time is configured
       if (config.endMs != null && config.endMs > (config.startMs || 0)) {
         const duration = config.endMs - (config.startMs || 0);
         stopTimerRef.current = setTimeout(async () => {
@@ -254,7 +284,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
     }
   }, [walkUpConfig, showToast]);
 
-  const handleStop = useCallback(async () => {
+  const handlePause = useCallback(async () => {
     if (stopTimerRef.current) {
       clearTimeout(stopTimerRef.current);
       stopTimerRef.current = null;
@@ -279,8 +309,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
     const order = getBattingOrder();
     if (order.length === 0) return;
 
-    // Stop current
-    await handleStop();
+    await handlePause();
 
     const nextIndex = (currentBatterIndex + 1) % order.length;
     setCurrentBatterIndex(nextIndex);
@@ -295,7 +324,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
     const order = getBattingOrder();
     if (order.length === 0) return;
 
-    await handleStop();
+    await handlePause();
 
     const prevIndex = (currentBatterIndex - 1 + order.length) % order.length;
     setCurrentBatterIndex(prevIndex);
@@ -310,108 +339,104 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
   const activePlayers = players.filter((p) => p.active !== false);
 
   return (
-    <div className="walkup-overlay" onClick={onClose}>
-      <div className="walkup-modal" onClick={(e) => e.stopPropagation()}>
-        {/* Internal Toast Notifications */}
-        {toasts.length > 0 && (
-          <div className="walkup-toast-container">
-            {toasts.map(t => (
-              <div key={t.id} className={`walkup-toast walkup-toast-${t.type}`} onClick={() => dismissToast(t.id)}>
-                <span className="walkup-toast-icon">
-                  {t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ'}
-                </span>
-                <span className="walkup-toast-message">{t.message}</span>
-                <button className="walkup-toast-close" onClick={(e) => { e.stopPropagation(); dismissToast(t.id); }}>×</button>
-              </div>
-            ))}
+    <div className="walkup-page">
+      {/* Internal Toast Notifications */}
+      {toasts.length > 0 && (
+        <div className="walkup-page-toast-container">
+          {toasts.map(t => (
+            <div key={t.id} className={`walkup-page-toast walkup-page-toast-${t.type}`} onClick={() => dismissToast(t.id)}>
+              <span className="walkup-page-toast-icon">
+                {t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ'}
+              </span>
+              <span className="walkup-page-toast-message">{t.message}</span>
+              <button className="walkup-page-toast-close" onClick={(e) => { e.stopPropagation(); dismissToast(t.id); }}>×</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <header className="walkup-page-header">
+        <button className="walkup-page-back" onClick={onBack}>← Back</button>
+        <h1>🎵 Walk-Up Music</h1>
+        <span className="walkup-page-team">{teamName}</span>
+      </header>
+
+      {/* Tabs */}
+      <div className="walkup-page-tabs">
+        <button
+          className={`walkup-page-tab ${activeTab === 'config' ? 'active' : ''}`}
+          onClick={() => setActiveTab('config')}
+        >
+          ⚙️ Configure
+        </button>
+        <button
+          className={`walkup-page-tab ${activeTab === 'play' ? 'active' : ''}`}
+          onClick={() => setActiveTab('play')}
+        >
+          ▶️ Play
+        </button>
+      </div>
+
+      <div className="walkup-page-content">
+        {/* Spotify Connection */}
+        {!authenticated && (
+          <div className="walkup-page-auth-section">
+            <div className="walkup-page-auth-info">
+              <h3>🔗 Connect to Spotify</h3>
+              <p>Play walk-up songs through any device running Spotify. Click below to connect your account.</p>
+            </div>
+
+            <div className="walkup-page-setup-step">
+              <p className="walkup-page-step-description">
+                You&apos;ll be redirected to Spotify to grant permission. A <strong>Spotify Premium</strong> account is required for playback control.
+              </p>
+              <button className="walkup-page-btn-spotify" onClick={handleLogin}>
+                🎵 Connect to Spotify
+              </button>
+            </div>
+
+            <p className="walkup-page-auth-note">
+              ℹ️ Your Spotify app must be open and active on a device (phone, speaker, computer). This app sends play/pause commands via Spotify Connect.
+            </p>
           </div>
         )}
 
-        <div className="walkup-header">
-          <h2>🎵 Walk-Up Music</h2>
-          <span className="walkup-team-name">{teamName}</span>
-          <button className="btn-close-walkup" onClick={onClose}>✕</button>
-        </div>
+        {authenticated && activeTab === 'config' && (
+         <PageConfigTab
+           walkUpConfig={walkUpConfig}
+           playlists={playlists}
+           playlistTracks={playlistTracks}
+           loadingPlaylists={loadingPlaylists}
+           loadingTracks={loadingTracks}
+           activePlayers={activePlayers}
+           editingPlayer={editingPlayer}
+           onSelectPlaylist={handleSelectPlaylist}
+           onRefreshPlaylist={() => walkUpConfig.spotifyPlaylistId && loadPlaylistTracks(walkUpConfig.spotifyPlaylistId)}
+           onEditPlayer={setEditingPlayer}
+           onAssignSong={handleAssignSong}
+           onRemoveSong={handleRemoveSong}
+           onLogout={handleLogout}
+         />
+        )}
 
-        {/* Tabs */}
-        <div className="walkup-tabs">
-          <button
-            className={`walkup-tab ${activeTab === 'config' ? 'active' : ''}`}
-            onClick={() => setActiveTab('config')}
-          >
-            ⚙️ Configure
-          </button>
-          <button
-            className={`walkup-tab ${activeTab === 'play' ? 'active' : ''}`}
-            onClick={() => setActiveTab('play')}
-          >
-            ▶️ Play
-          </button>
-        </div>
-
-        <div className="walkup-content">
-          {/* Spotify Connection */}
-          {!authenticated && (
-            <div className="walkup-auth-section">
-              <div className="walkup-auth-info">
-                <h3>🔗 Connect to Spotify</h3>
-                <p>Play walk-up songs through any device running Spotify. Click below to connect your account.</p>
-              </div>
-
-              <div className="walkup-setup-step active">
-                <div className="walkup-step-body">
-                  <p className="walkup-step-description">
-                    You&apos;ll be redirected to Spotify to grant permission. A <strong>Spotify Premium</strong> account is required for playback control.
-                  </p>
-                  <button className="btn-spotify-login" onClick={handleLogin}>
-                    🎵 Connect to Spotify
-                  </button>
-                </div>
-              </div>
-
-              <p className="walkup-auth-note">
-                ℹ️ Your Spotify app must be open and active on a device (phone, speaker, computer). This app sends play/pause commands via Spotify Connect.
-              </p>
-            </div>
-          )}
-
-          {authenticated && activeTab === 'config' && (
-            <ConfigTab
-              walkUpConfig={walkUpConfig}
-              playlists={playlists}
-              playlistTracks={playlistTracks}
-              loadingPlaylists={loadingPlaylists}
-              loadingTracks={loadingTracks}
-              activePlayers={activePlayers}
-              editingPlayer={editingPlayer}
-              onSelectPlaylist={handleSelectPlaylist}
-              onRefreshPlaylist={() => walkUpConfig.spotifyPlaylistId && loadPlaylistTracks(walkUpConfig.spotifyPlaylistId)}
-              onEditPlayer={setEditingPlayer}
-              onAssignSong={handleAssignSong}
-              onRemoveSong={handleRemoveSong}
-              onLogout={handleLogout}
-            />
-          )}
-
-          {authenticated && activeTab === 'play' && (
-            <PlayTab
-              walkUpConfig={walkUpConfig}
-              activePlayers={activePlayers}
-              currentlyPlaying={currentlyPlaying}
-              gameHistory={gameHistory}
-              gameMode={gameMode}
-              selectedGameId={selectedGameId}
-              currentBatterIndex={currentBatterIndex}
-              onPlay={handlePlay}
-              onStop={handleStop}
-              onToggleGameMode={() => setGameMode(!gameMode)}
-              onSelectGame={setSelectedGameId}
-              onNextBatter={handleNextBatter}
-              onPrevBatter={handlePrevBatter}
-              onSetBatterIndex={setCurrentBatterIndex}
-            />
-          )}
-        </div>
+        {authenticated && activeTab === 'play' && (
+          <PagePlayTab
+            walkUpConfig={walkUpConfig}
+            activePlayers={activePlayers}
+            currentlyPlaying={currentlyPlaying}
+            gameHistory={gameHistory}
+            gameMode={gameMode}
+            selectedGameId={selectedGameId}
+            currentBatterIndex={currentBatterIndex}
+            onPlay={handlePlay}
+            onPause={handlePause}
+            onToggleGameMode={() => setGameMode(!gameMode)}
+            onSelectGame={setSelectedGameId}
+            onNextBatter={handleNextBatter}
+            onPrevBatter={handlePrevBatter}
+            onSetBatterIndex={setCurrentBatterIndex}
+          />
+        )}
       </div>
     </div>
   );
@@ -419,7 +444,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
 
 // --- Config Tab Sub-Component ---
 
-function ConfigTab({
+function PageConfigTab({
   walkUpConfig,
   playlists,
   playlistTracks,
@@ -435,24 +460,24 @@ function ConfigTab({
   onLogout,
 }) {
   return (
-    <div className="walkup-config">
+    <div className="walkup-page-config">
       {/* Spotify Status */}
-      <div className="walkup-status-bar">
-        <span className="walkup-connected">✅ Spotify Connected</span>
-        <div className="walkup-status-actions">
-          <button className="btn-walkup-logout" onClick={onLogout}>Disconnect</button>
+      <div className="walkup-page-status-bar">
+        <span className="walkup-page-connected">✅ Spotify Connected</span>
+        <div className="walkup-page-status-actions">
+          <button className="walkup-page-btn-logout" onClick={onLogout}>Disconnect</button>
         </div>
       </div>
 
       {/* Playlist Selection */}
-      <div className="walkup-playlist-section">
+      <div className="walkup-page-playlist-section">
         <h3>📋 Select Playlist</h3>
         {loadingPlaylists ? (
-          <div className="walkup-loading">Loading playlists...</div>
+          <div className="walkup-page-loading">Loading playlists...</div>
         ) : (
-          <div className="walkup-playlist-controls">
+          <div className="walkup-page-playlist-controls">
             <select
-              className="walkup-playlist-select"
+              className="walkup-page-playlist-select"
               value={walkUpConfig.spotifyPlaylistId || ''}
               onChange={(e) => onSelectPlaylist(e.target.value)}
             >
@@ -465,7 +490,7 @@ function ConfigTab({
             </select>
             {walkUpConfig.spotifyPlaylistId && (
               <button
-                className="btn-walkup-refresh"
+                className="walkup-page-btn-refresh"
                 onClick={onRefreshPlaylist}
                 disabled={loadingTracks}
                 title="Refresh playlist to load added/removed songs"
@@ -479,58 +504,48 @@ function ConfigTab({
 
       {/* Player Song Assignments */}
       {walkUpConfig.spotifyPlaylistId && (
-        <div className="walkup-assignments">
+        <div className="walkup-page-assignments">
           <h3>🎤 Player Songs</h3>
           {loadingTracks ? (
-            <div className="walkup-loading">Loading tracks...</div>
+            <div className="walkup-page-loading">Loading tracks...</div>
           ) : (
-            <div className="walkup-player-list">
+            <div className="walkup-page-player-list">
               {activePlayers.map((player) => {
                 const songConfig = walkUpConfig.players[player.name];
-                const isEditing = editingPlayer === player.name;
 
                 return (
-                  <div key={player.id} className="walkup-player-item">
-                    <div className="walkup-player-info">
-                      <span className="walkup-player-number">#{player.number}</span>
-                      <span className="walkup-player-name">{player.name}</span>
+                  <div key={player.id} className="walkup-page-player-item">
+                    <div className="walkup-page-player-info">
+                      <span className="walkup-page-player-number">#{player.number}</span>
+                      <span className="walkup-page-player-name">{player.name}</span>
                     </div>
 
-                    {songConfig && !isEditing && (
-                      <div className="walkup-song-assigned">
-                        <div className="walkup-song-details">
+                    {songConfig && (
+                      <div className="walkup-page-song-assigned">
+                        <div className="walkup-page-song-details">
                           {songConfig.albumArt && (
-                            <img src={songConfig.albumArt} alt="" className="walkup-album-art" />
+                            <img src={songConfig.albumArt} alt="" className="walkup-page-album-art" />
                           )}
-                          <div>
-                            <div className="walkup-song-title">{songConfig.trackName}</div>
-                            <div className="walkup-song-artist">{songConfig.artistName}</div>
-                            <div className="walkup-song-times">
+                          <div className="walkup-page-song-text">
+                            <div className="walkup-page-song-title">{songConfig.trackName}</div>
+                            <div className="walkup-page-song-artist">{songConfig.artistName}</div>
+                            <div className="walkup-page-song-times">
                               {formatMs(songConfig.startMs)}
                               {songConfig.endMs != null ? ` → ${formatMs(songConfig.endMs)}` : ''}
                             </div>
                           </div>
                         </div>
-                        <div className="walkup-song-actions">
-                          <button className="btn-walkup-edit" onClick={() => onEditPlayer(player.name)}>✏️</button>
-                          <button className="btn-walkup-remove" onClick={() => onRemoveSong(player.name)}>🗑️</button>
+                        <div className="walkup-page-song-actions">
+                          <button className="walkup-page-btn-edit" onClick={() => onEditPlayer(player.name)}>✏️</button>
+                          <button className="walkup-page-btn-remove" onClick={() => onRemoveSong(player.name)}>🗑️</button>
                         </div>
                       </div>
                     )}
 
-                    {!songConfig && !isEditing && (
-                      <button className="btn-walkup-assign" onClick={() => onEditPlayer(player.name)}>
+                    {!songConfig && (
+                      <button className="walkup-page-btn-assign" onClick={() => onEditPlayer(player.name)}>
                         + Assign Song
                       </button>
-                    )}
-
-                    {isEditing && (
-                      <SongPicker
-                        tracks={playlistTracks}
-                        currentConfig={songConfig}
-                        onSave={(track, startTime, endTime) => onAssignSong(player.name, track, startTime, endTime)}
-                        onCancel={() => onEditPlayer(null)}
-                      />
                     )}
                   </div>
                 );
@@ -539,13 +554,24 @@ function ConfigTab({
           )}
         </div>
       )}
+
+      {/* Edit Modal */}
+      {editingPlayer && (
+        <SongPickerModal
+          playerName={editingPlayer}
+          tracks={playlistTracks}
+          currentConfig={walkUpConfig.players[editingPlayer]}
+          onSave={(track, startTime, endTime) => onAssignSong(editingPlayer, track, startTime, endTime)}
+          onCancel={() => onEditPlayer(null)}
+        />
+      )}
     </div>
   );
 }
 
-// --- Song Picker Sub-Component ---
+// --- Song Picker Modal ---
 
-function SongPicker({ tracks, currentConfig, onSave, onCancel }) {
+function SongPickerModal({ playerName, tracks, currentConfig, onSave, onCancel }) {
   const [selectedTrackId, setSelectedTrackId] = useState(currentConfig?.trackId || '');
   const [startTime, setStartTime] = useState(currentConfig ? formatMs(currentConfig.startMs) : '0:00');
   const [endTime, setEndTime] = useState(currentConfig?.endMs != null ? formatMs(currentConfig.endMs) : '');
@@ -566,62 +592,71 @@ function SongPicker({ tracks, currentConfig, onSave, onCancel }) {
   };
 
   return (
-    <div className="walkup-song-picker">
-      <input
-        type="text"
-        className="walkup-search-input"
-        placeholder="Search songs..."
-        value={searchFilter}
-        onChange={(e) => setSearchFilter(e.target.value)}
-      />
-
-      <div className="walkup-track-list">
-        {filteredTracks.slice(0, 50).map((track) => (
-          <div
-            key={track.id}
-            className={`walkup-track-item ${selectedTrackId === track.id ? 'selected' : ''}`}
-            onClick={() => setSelectedTrackId(track.id)}
-          >
-            {track.albumArt && <img src={track.albumArt} alt="" className="walkup-track-art" />}
-            <div className="walkup-track-info">
-              <div className="walkup-track-name">{track.name}</div>
-              <div className="walkup-track-artist">{track.artist}</div>
-            </div>
-            <div className="walkup-track-duration">{formatMs(track.durationMs)}</div>
-          </div>
-        ))}
-      </div>
-
-      {selectedTrackId && (
-        <div className="walkup-time-config">
-          <div className="walkup-time-field">
-            <label>Start Time (m:ss)</label>
-            <input
-              type="text"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              placeholder="0:00"
-            />
-          </div>
-          <div className="walkup-time-field">
-            <label>End Time (m:ss)</label>
-            <input
-              type="text"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              placeholder="Optional"
-            />
-          </div>
+    <div className="walkup-page-modal-overlay" onClick={onCancel}>
+      <div className="walkup-page-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="walkup-page-modal-header">
+          <h3>🎵 Select Song for {playerName}</h3>
+          <button className="walkup-page-modal-close" onClick={onCancel}>✕</button>
         </div>
-      )}
 
-      <div className="walkup-picker-actions">
-        <button className="btn-walkup-save" onClick={handleSave} disabled={!selectedTrackId}>
-          Save
-        </button>
-        <button className="btn-walkup-cancel" onClick={onCancel}>
-          Cancel
-        </button>
+        <div className="walkup-page-modal-body">
+          <input
+            type="text"
+            className="walkup-page-search-input"
+            placeholder="Search songs..."
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+          />
+
+          <div className="walkup-page-track-list">
+            {filteredTracks.slice(0, 50).map((track) => (
+              <div
+                key={track.id}
+                className={`walkup-page-track-item ${selectedTrackId === track.id ? 'selected' : ''}`}
+                onClick={() => setSelectedTrackId(track.id)}
+              >
+                {track.albumArt && <img src={track.albumArt} alt="" className="walkup-page-track-art" />}
+                <div className="walkup-page-track-info">
+                  <div className="walkup-page-track-name">{track.name}</div>
+                  <div className="walkup-page-track-artist">{track.artist}</div>
+                </div>
+                <div className="walkup-page-track-duration">{formatMs(track.durationMs)}</div>
+              </div>
+            ))}
+          </div>
+
+          {selectedTrackId && (
+            <div className="walkup-page-time-config">
+              <div className="walkup-page-time-field">
+                <label>Start Time (m:ss)</label>
+                <input
+                  type="text"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  placeholder="0:00"
+                />
+              </div>
+              <div className="walkup-page-time-field">
+                <label>End Time (m:ss)</label>
+                <input
+                  type="text"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="walkup-page-modal-footer">
+          <button className="walkup-page-btn-save" onClick={handleSave} disabled={!selectedTrackId}>
+            Save
+          </button>
+          <button className="walkup-page-btn-cancel" onClick={onCancel}>
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -629,7 +664,7 @@ function SongPicker({ tracks, currentConfig, onSave, onCancel }) {
 
 // --- Play Tab Sub-Component ---
 
-function PlayTab({
+function PagePlayTab({
   walkUpConfig,
   activePlayers,
   currentlyPlaying,
@@ -638,7 +673,7 @@ function PlayTab({
   selectedGameId,
   currentBatterIndex,
   onPlay,
-  onStop,
+  onPause,
   onToggleGameMode,
   onSelectGame,
   onNextBatter,
@@ -656,7 +691,7 @@ function PlayTab({
 
   if (configuredPlayers.length === 0) {
     return (
-      <div className="walkup-empty-play">
+      <div className="walkup-page-empty">
         <p>No walk-up songs configured yet.</p>
         <p>Go to the Configure tab to assign songs to players.</p>
       </div>
@@ -664,18 +699,18 @@ function PlayTab({
   }
 
   return (
-    <div className="walkup-play">
+    <div className="walkup-page-play">
       {/* Mode Toggle */}
       {hasGameHistory && (
-        <div className="walkup-mode-toggle">
+        <div className="walkup-page-mode-toggle">
           <button
-            className={`walkup-mode-btn ${!gameMode ? 'active' : ''}`}
+            className={`walkup-page-mode-btn ${!gameMode ? 'active' : ''}`}
             onClick={() => { if (gameMode) onToggleGameMode(); }}
           >
             👤 Simple Mode
           </button>
           <button
-            className={`walkup-mode-btn ${gameMode ? 'active' : ''}`}
+            className={`walkup-page-mode-btn ${gameMode ? 'active' : ''}`}
             onClick={() => { if (!gameMode) onToggleGameMode(); }}
           >
             ⚾ Game Mode
@@ -683,44 +718,34 @@ function PlayTab({
         </div>
       )}
 
-      {/* Currently Playing Indicator */}
-      {currentlyPlaying && (
-        <div className="walkup-now-playing">
-          <div className="walkup-now-playing-info">
-            <span className="now-playing-pulse">🎵</span>
-            <span>Now Playing: <strong>{currentlyPlaying}</strong></span>
-            <span className="now-playing-song">{walkUpConfig.players[currentlyPlaying]?.trackName}</span>
-          </div>
-          <button className="btn-walkup-stop" onClick={onStop}>⏹ Stop</button>
-        </div>
-      )}
-
       {/* Simple Mode - Player List */}
       {!gameMode && (
-        <div className="walkup-play-list">
+        <div className="walkup-page-play-list">
           {configuredPlayers.map((player) => {
             const song = walkUpConfig.players[player.name];
             const isPlaying = currentlyPlaying === player.name;
             return (
               <div
                 key={player.id}
-                className={`walkup-play-item ${isPlaying ? 'playing' : ''}`}
-                onClick={() => isPlaying ? onStop() : onPlay(player.name)}
+                className={`walkup-page-play-item ${isPlaying ? 'playing' : ''}`}
+                onClick={() => isPlaying ? onPause() : onPlay(player.name)}
               >
-                <div className="walkup-play-player">
-                  <span className="walkup-play-number">#{player.number}</span>
-                  <span className="walkup-play-name">{player.name}</span>
+                <div className="walkup-page-play-item-top">
+                  <div className="walkup-page-play-player">
+                    <span className="walkup-page-play-number">#{player.number}</span>
+                    <span className="walkup-page-play-name">{player.name}</span>
+                  </div>
+                  <button className={`walkup-page-btn-play ${isPlaying ? 'playing' : ''}`}>
+                    {isPlaying ? '⏸' : '▶️'}
+                  </button>
                 </div>
-                <div className="walkup-play-song">
-                  {song.albumArt && <img src={song.albumArt} alt="" className="walkup-play-art" />}
-                  <div>
-                    <div className="walkup-play-track">{song.trackName}</div>
-                    <div className="walkup-play-artist">{song.artistName}</div>
+                <div className="walkup-page-play-song">
+                  {song.albumArt && <img src={song.albumArt} alt="" className="walkup-page-play-art" />}
+                  <div className="walkup-page-play-song-text">
+                    <div className="walkup-page-play-track">{song.trackName}</div>
+                    <div className="walkup-page-play-artist">{song.artistName}</div>
                   </div>
                 </div>
-                <button className={`btn-walkup-play ${isPlaying ? 'playing' : ''}`}>
-                  {isPlaying ? '⏹' : '▶️'}
-                </button>
               </div>
             );
           })}
@@ -729,8 +754,8 @@ function PlayTab({
 
       {/* Game Mode - Batting Order */}
       {gameMode && (
-        <div className="walkup-game-mode">
-          <div className="walkup-game-select">
+        <div className="walkup-page-game-mode">
+          <div className="walkup-page-game-select">
             <label>Select Game:</label>
             <select
               value={selectedGameId || ''}
@@ -750,7 +775,7 @@ function PlayTab({
 
           {selectedGameId && battingOrder.length > 0 && (
             <>
-              <div className="walkup-batting-order">
+              <div className="walkup-page-batting-order">
                 {battingOrder.map((batter, index) => {
                   const song = walkUpConfig.players[batter.name];
                   const isCurrent = index === currentBatterIndex;
@@ -758,51 +783,51 @@ function PlayTab({
                   return (
                     <div
                       key={index}
-                      className={`walkup-batter-item ${isCurrent ? 'current' : ''} ${isPlaying ? 'playing' : ''} ${!song ? 'no-song' : ''}`}
+                      className={`walkup-page-batter-item ${isCurrent ? 'current' : ''} ${isPlaying ? 'playing' : ''} ${!song ? 'no-song' : ''}`}
                       onClick={() => {
                         onSetBatterIndex(index);
                         if (song) {
                           if (isPlaying) {
-                            onStop();
+                            onPause();
                           } else {
                             onPlay(batter.name);
                           }
                         }
                       }}
                     >
-                      <span className="walkup-batter-order">{index + 1}</span>
-                      <span className="walkup-batter-number">#{batter.number}</span>
-                      <span className="walkup-batter-name">{batter.name}</span>
+                      <span className="walkup-page-batter-order">{index + 1}</span>
+                      <span className="walkup-page-batter-number">#{batter.number}</span>
+                      <span className="walkup-page-batter-name">{batter.name}</span>
                       {song && (
-                        <span className="walkup-batter-song">{song.trackName}</span>
+                        <span className="walkup-page-batter-song">{song.trackName}</span>
                       )}
                       {!song && (
-                        <span className="walkup-batter-no-song">No song</span>
+                        <span className="walkup-page-batter-no-song">No song</span>
                       )}
-                      {isPlaying && <span className="walkup-batter-playing">🎵</span>}
+                      {isPlaying && <span className="walkup-page-batter-playing">🎵</span>}
                     </div>
                   );
                 })}
               </div>
 
-              <div className="walkup-game-controls">
-                <button className="btn-walkup-prev" onClick={onPrevBatter}>⏮ Prev</button>
+              <div className="walkup-page-game-controls">
+                <button className="walkup-page-btn-prev" onClick={onPrevBatter}>⏮ Prev</button>
                 <button
-                  className="btn-walkup-play-current"
+                  className="walkup-page-btn-play-current"
                   onClick={() => {
                     const batter = battingOrder[currentBatterIndex];
                     if (batter && walkUpConfig.players[batter.name]) {
                       if (currentlyPlaying === batter.name) {
-                        onStop();
+                        onPause();
                       } else {
                         onPlay(batter.name);
                       }
                     }
                   }}
                 >
-                  {currentlyPlaying === battingOrder[currentBatterIndex]?.name ? '⏹ Stop' : '▶️ Play'}
+                  {currentlyPlaying === battingOrder[currentBatterIndex]?.name ? '⏸ Pause' : '▶️ Play'}
                 </button>
-                <button className="btn-walkup-next" onClick={onNextBatter}>Next ⏭</button>
+                <button className="walkup-page-btn-next" onClick={onNextBatter}>Next ⏭</button>
               </div>
             </>
           )}
@@ -812,4 +837,4 @@ function PlayTab({
   );
 }
 
-export default WalkUpMusic;
+export default WalkUpMusicPage;

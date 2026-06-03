@@ -10,7 +10,7 @@ import FeatureSuggestion from './components/FeatureSuggestion';
 import UpdateNotification from './components/UpdateNotification';
 import ToastContainer from './components/ToastContainer';
 import ConfirmDialog from './components/ConfirmDialog';
-import WalkUpMusic from './components/WalkUpMusic';
+import WalkUpMusicPage from './components/WalkUpMusicPage';
 import { generateLineup } from './utils/lineupGenerator';
 import {
   getTeams,
@@ -60,7 +60,7 @@ function App() {
       loadTeamData(currentId);
     }
 
-    // Auto-open WalkUpMusic modal when returning from Spotify OAuth redirect
+  // Auto-open WalkUpMusic page when returning from Spotify OAuth redirect
     const params = new URLSearchParams(window.location.search);
     if (params.has('code') || params.has('error')) {
       setShowWalkUpMusic(true);
@@ -220,6 +220,19 @@ function App() {
 
   const currentTeam = currentTeamId ? teams[currentTeamId] : null;
 
+  // If Walk-Up Music page is active, render it as a full page
+  if (showWalkUpMusic && currentTeam) {
+    return (
+      <WalkUpMusicPage
+        teamId={currentTeamId}
+        teamName={currentTeam.name}
+        players={players}
+        gameHistory={gameHistory}
+        onBack={() => setShowWalkUpMusic(false)}
+      />
+    );
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -359,15 +372,6 @@ function App() {
         />
       )}
 
-      {showWalkUpMusic && currentTeam && (
-        <WalkUpMusic
-          teamId={currentTeamId}
-          teamName={currentTeam.name}
-          players={players}
-          gameHistory={gameHistory}
-          onClose={() => setShowWalkUpMusic(false)}
-        />
-      )}
 
       {showFlash && (
         <div className="lineup-flash-overlay" role="status" aria-live="polite" aria-label="Lineup generated">
