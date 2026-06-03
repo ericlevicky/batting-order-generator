@@ -312,18 +312,36 @@ export async function playTrack(trackUri, positionMs = 0, deviceId = null) {
   if (deviceId) {
     try {
       await transferPlayback(deviceId);
+      // Wait briefly for the device to become active after transfer
+      await new Promise(resolve => setTimeout(resolve, 500));
     } catch {
       // Continue anyway - the play call may still work
     }
   }
   const params = deviceId ? `?device_id=${deviceId}` : '';
-  await spotifyFetch(`/me/player/play${params}`, {
-    method: 'PUT',
-    body: JSON.stringify({
-      uris: [trackUri],
-      position_ms: positionMs,
-    }),
-  });
+  try {
+    await spotifyFetch(`/me/player/play${params}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        uris: [trackUri],
+        position_ms: positionMs,
+      }),
+    });
+  } catch (err) {
+    // If the first attempt fails with a device error, wait longer and retry once
+    if (deviceId && err.message && err.message.includes('No active device')) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      await spotifyFetch(`/me/player/play?device_id=${deviceId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          uris: [trackUri],
+          position_ms: positionMs,
+        }),
+      });
+    } else {
+      throw err;
+    }
+  }
 }
 
 export async function pausePlayback(deviceId = null) {
