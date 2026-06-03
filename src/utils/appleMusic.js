@@ -20,8 +20,13 @@ export function getAppleMusicDeepLink(trackUrl) {
   // Convert Apple Music web URL to deep link
   // https://music.apple.com/us/album/song-name/123456?i=789
   // becomes music://music.apple.com/us/album/song-name/123456?i=789
-  if (trackUrl.includes('music.apple.com')) {
-    return trackUrl.replace('https://', 'music://');
+  try {
+    const url = new URL(trackUrl);
+    if (url.hostname === 'music.apple.com' || url.hostname.endsWith('.music.apple.com')) {
+      return trackUrl.replace('https://', 'music://');
+    }
+  } catch {
+    // Not a valid URL, continue to other checks
   }
 
   // If it's just an ID, construct a basic link
