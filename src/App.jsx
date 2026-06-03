@@ -59,6 +59,12 @@ function App() {
       setCurrentTeamIdState(currentId);
       loadTeamData(currentId);
     }
+
+    // Auto-open WalkUpMusic modal when returning from Spotify OAuth redirect
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('code') || params.has('error')) {
+      setShowWalkUpMusic(true);
+    }
   }, []);
 
   const loadTeamData = (teamId) => {
