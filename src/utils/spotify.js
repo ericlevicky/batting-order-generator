@@ -335,6 +335,31 @@ export async function getAvailableDevices() {
   return data.devices || [];
 }
 
+/**
+ * Poll for a playable device to appear.
+ * Useful after opening the Spotify app via deep link — the device may take
+ * a few seconds to register with Spotify Connect.
+ * Returns the best device ID found, or null if none appeared within the timeout.
+ */
+export async function pollForDevice(timeoutMs = 10000, intervalMs = 1500) {
+  const startTime = Date.now();
+  const preferredId = getPreferredDeviceId();
+
+  while (Date.now() - startTime < timeoutMs) {
+    try {
+      const devices = await getAvailableDevices();
+      const playable = filterPlayableDevices(devices);
+      if (playable.length > 0) {
+        return selectBestDevice(devices, preferredId);
+      }
+    } catch {
+      // Ignore transient errors during polling
+    }
+    await new Promise(resolve => setTimeout(resolve, intervalMs));
+  }
+  return null;
+}
+
 export async function transferPlayback(deviceId, play = true) {
   await spotifyFetch('/me/player', {
     method: 'PUT',
@@ -346,13 +371,11 @@ export async function transferPlayback(deviceId, play = true) {
 }
 
 export async function playTrack(trackUri, positionMs = 0, deviceId = null) {
-  const MAX_RETRIES = 3;
-  const RETRY_DELAYS = [1500, 3000, 5000]; // Increasing waits to allow device to wake up
-  const DEVICE_ACTIVATION_DELAY = 2000; // Time to wait after initial transfer for device to activate
-  const RETRY_TRANSFER_DELAY = 1500; // Time to wait after re-transfer during retries
+  const MAX_RETRIES = 4;
+  const RETRY_DELAYS = [1000, 2000, 3000, 4000];
+  const DEVICE_ACTIVATION_DELAY = 1500;
 
   // If a device is specified, transfer playback first to force-activate it
-  // Pass play=false to avoid briefly resuming the previously paused track
   if (deviceId) {
     try {
       await transferPlayback(deviceId, false);
@@ -362,10 +385,10 @@ export async function playTrack(trackUri, positionMs = 0, deviceId = null) {
     }
   }
 
-  const params = deviceId ? `?device_id=${deviceId}` : '';
   let lastError = null;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const params = deviceId ? `?device_id=${deviceId}` : '';
     try {
       await spotifyFetch(`/me/player/play${params}`, {
         method: 'PUT',
@@ -377,40 +400,54 @@ export async function playTrack(trackUri, positionMs = 0, deviceId = null) {
       return; // Success
     } catch (err) {
       lastError = err;
+
       const isDeviceError = err.message && (
         err.message.includes('No active device') ||
         err.message.includes('Device not found') ||
-        err.message.includes('Player command failed')
+        err.message.includes('Player command failed') ||
+        err.message.includes('Restriction violated')
       );
 
-      if (!isDeviceError || attempt === MAX_RETRIES) {
+      const isTransientError = err.message && (
+        err.message.includes('502') ||
+        err.message.includes('503') ||
+        err.message.includes('Server error')
+      );
+
+      if ((!isDeviceError && !isTransientError) || attempt === MAX_RETRIES) {
         break;
       }
 
       // Wait before retrying, with increasing delay
       await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS[attempt]));
 
-      // Re-transfer playback on each retry to wake the device
-      if (deviceId) {
+      // On device errors, re-fetch available devices and try to find a new target
+      if (isDeviceError) {
         try {
-          await transferPlayback(deviceId, false);
-          await new Promise(resolve => setTimeout(resolve, RETRY_TRANSFER_DELAY));
-        } catch {
-          // On last retry attempt, try without device_id
-          if (attempt === MAX_RETRIES - 1) {
-            try {
-              await spotifyFetch('/me/player/play', {
-                method: 'PUT',
-                body: JSON.stringify({
-                  uris: [trackUri],
-                  position_ms: positionMs,
-                }),
-              });
-              return; // Success without device_id
-            } catch {
-              // Will fall through to throw lastError
+          const freshDevices = await getAvailableDevices();
+          const playable = filterPlayableDevices(freshDevices);
+
+          if (playable.length > 0) {
+            // Prefer the originally targeted device if still present
+            const stillThere = deviceId && playable.find(d => d.id === deviceId);
+            const newTarget = stillThere ? deviceId : selectBestDevice(freshDevices, getPreferredDeviceId());
+
+            if (newTarget) {
+              deviceId = newTarget;
+              // Re-transfer to wake it up
+              try {
+                await transferPlayback(deviceId, false);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              } catch {
+                // Continue to retry the play call
+              }
             }
+          } else if (attempt < MAX_RETRIES - 1) {
+            // No devices visible yet — keep waiting, they may appear
+            continue;
           }
+        } catch {
+          // Device fetch failed, just retry the play call
         }
       }
     }

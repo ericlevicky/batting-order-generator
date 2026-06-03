@@ -17,6 +17,7 @@ import {
   setPreferredDeviceId,
   selectBestDevice,
   filterPlayableDevices,
+  pollForDevice,
 } from '../utils/spotify';
 import { playAppleMusicTrack, searchAppleMusicSongs } from '../utils/appleMusic';
 import {
@@ -289,14 +290,20 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
         // Continue without a device ID — Spotify will use the last active device
       }
 
-      // If no playable devices were found, try to open Spotify app with the specific track
+      // If no playable devices were found, wake up Spotify and poll for device
       if (!targetDeviceId && filterPlayableDevices(debugDevices).length === 0) {
-        // Open the specific track in the Spotify native app via deep link
-        // Use the track URI (e.g. spotify:track:ABC123) so it starts playing that song
+        // Open Spotify app to wake it up and register the device
         const deepLink = config.trackUri || 'spotify://';
         window.open(deepLink, '_blank');
-        showToast('No playable device found. Opening song in Spotify app... Tap play again in a few seconds if needed.', 'info');
-        return;
+        showToast('Waking up Spotify on your phone... hang tight.', 'info');
+
+        // Poll for the device to appear (up to 10 seconds)
+        targetDeviceId = await pollForDevice(10000, 1500);
+
+        if (!targetDeviceId) {
+          showToast('Could not find your Spotify device. Make sure Spotify is open on your phone and try again.', 'error');
+          return;
+        }
       }
 
       await playTrack(config.trackUri, config.startMs || 0, targetDeviceId);
@@ -321,7 +328,7 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
       }
     } catch (err) {
       const deviceList = debugDevices.map(d => `${d.name} (${d.type}, active=${d.is_active})`).join(', ') || 'none';
-      showToast(`Playback failed: ${err.message} | Devices found: [${deviceList}] | Target: ${targetDeviceId || 'none'} | Preferred: ${debugPreferredId || 'none'}`, 'error');
+      showToast(`Playback failed: ${err.message} | Devices: [${deviceList}] | Target: ${targetDeviceId || 'none'}`, 'error');
       setCurrentlyPlaying(null);
     }
   }, [walkUpConfig, showToast]);
