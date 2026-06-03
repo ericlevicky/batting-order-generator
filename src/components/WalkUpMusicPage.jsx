@@ -830,12 +830,14 @@ function AppleConfigTab({
 // --- Apple Music Song Picker Modal ---
 
 function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
-  const [query, setQuery] = useState('');
+  const hasExistingAppleConfig = currentConfig?.musicType === 'apple' && currentConfig?.trackName;
+  const initialQuery = [currentConfig?.trackName, currentConfig?.artistName].filter(Boolean).join(' ');
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
   const [selectedTrack, setSelectedTrack] = useState(
-    currentConfig?.trackName
+    hasExistingAppleConfig
       ? {
           id: currentConfig.appleMusicUrl || currentConfig.trackName,
           name: currentConfig.trackName,
@@ -851,12 +853,18 @@ function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
   const [endTime, setEndTime] = useState(currentConfig?.endMs != null ? formatMs(currentConfig.endMs) : '');
   const searchTimerRef = useRef(null);
 
-  const handleSearch = (value) => {
+  useEffect(() => () => clearTimeout(searchTimerRef.current), []);
+
+  const handleSearch = useCallback((value, options = {}) => {
+    const { autoSelectFirst = false } = options;
     setQuery(value);
     setSearchError(null);
     clearTimeout(searchTimerRef.current);
     if (!value.trim()) {
       setResults([]);
+      if (autoSelectFirst) {
+        setSelectedTrack(null);
+      }
       return;
     }
     searchTimerRef.current = setTimeout(async () => {
@@ -864,14 +872,25 @@ function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
       try {
         const tracks = await searchAppleMusicSongs(value);
         setResults(tracks);
+        if (autoSelectFirst) {
+          setSelectedTrack(tracks[0] || null);
+        }
       } catch (err) {
         setSearchError(err.message);
         setResults([]);
+        if (autoSelectFirst) {
+          setSelectedTrack(null);
+        }
       } finally {
         setSearching(false);
       }
     }, 400);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!initialQuery || hasExistingAppleConfig) return;
+    handleSearch(initialQuery, { autoSelectFirst: true });
+  }, [handleSearch, hasExistingAppleConfig, initialQuery]);
 
   const handleSave = () => {
     if (!selectedTrack) return;
