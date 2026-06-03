@@ -161,6 +161,25 @@ export const deleteGameFromHistory = (teamId, gameId) => {
   }
 };
 
+export const replaceGameInHistory = (teamId, gameId, newLineup, settings) => {
+  const history = getTeamHistory();
+  if (history[teamId]) {
+    const index = history[teamId].findIndex(game => game.id === gameId);
+    if (index !== -1) {
+      const existing = history[teamId][index];
+      history[teamId][index] = {
+        ...existing,
+        lineup: newLineup,
+        settings: settings,
+        battingOrder: newLineup.battingOrder.map(p => ({ name: p.name, number: p.number }))
+      };
+      saveTeamHistory(history);
+      return history[teamId][index];
+    }
+  }
+  return null;
+};
+
 export const deleteAllGamesFromHistory = (teamId) => {
   const history = getTeamHistory();
   if (history[teamId]) {

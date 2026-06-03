@@ -173,14 +173,21 @@ function rotateBattingOrder(players, historicalStats) {
   return playersWithScores.map(item => item.player);
 }
 
-export function generateLineup(players, numInnings, numOutfielders, hasCatcher, gameHistory = [], rotatingBattingOrder = false, presetOrder = null) {
+export function generateLineup(players, numInnings, numOutfielders, hasCatcher, gameHistory = [], rotatingBattingOrder = false, presetOrder = null, randomize = false) {
   const activePlayers = players.filter(p => p.active !== false);
   const historicalStats = calculateHistoricalStats(activePlayers, gameHistory);
   // If a preset order has been manually set (shuffle or move), honour it for this game.
   // Otherwise fall back to the automatic rotation algorithm.
-  const rotatedPlayers = presetOrder
-    ? presetOrder.filter(p => p.active !== false)
-    : rotateBattingOrder(activePlayers, historicalStats);
+  let rotatedPlayers;
+  if (presetOrder) {
+    rotatedPlayers = presetOrder.filter(p => p.active !== false);
+  } else if (randomize) {
+    // When randomizing, shuffle players before sorting so ties break differently each time
+    const shuffled = [...activePlayers].sort(() => Math.random() - 0.5);
+    rotatedPlayers = rotateBattingOrder(shuffled, historicalStats);
+  } else {
+    rotatedPlayers = rotateBattingOrder(activePlayers, historicalStats);
+  }
   const playerStats = rotatedPlayers.map((player, index) => {
     const h = historicalStats[player.name] || {};
     return {
@@ -206,7 +213,7 @@ export function generateLineup(players, numInnings, numOutfielders, hasCatcher, 
   const positions = getPositionsForGame(actualNumOutfielders, hasCatcher);
   const innings = [];
   for (let inning = 0; inning < numInnings; inning++) {
-    innings.push(generateInningPositions(playerStats, positions));
+    innings.push(generateInningPositions(playerStats, positions, randomize));
   }
 
   const result = { battingOrder: playerStats, innings, positions };
@@ -270,9 +277,14 @@ function getPositionType(position) {
   }
 }
 
-function generateInningPositions(playerStats, positions) {
+function generateInningPositions(playerStats, positions, randomize = false) {
   const inningAssignments = {};
   const availablePlayers = [...playerStats];
+
+  // When randomizing, shuffle first so ties break differently
+  if (randomize) {
+    availablePlayers.sort(() => Math.random() - 0.5);
+  }
 
   // Sort players by total active innings (including historical), then by balance between infield/outfield
   availablePlayers.sort((a, b) => {
@@ -284,7 +296,10 @@ function generateInningPositions(playerStats, positions) {
     // Balance between infield/outfield including history
     const aBalance = Math.abs((a.infieldInnings + (a._historicalInfield || 0)) - (a.outfieldInnings + (a._historicalOutfield || 0)));
     const bBalance = Math.abs((b.infieldInnings + (b._historicalInfield || 0)) - (b.outfieldInnings + (b._historicalOutfield || 0)));
-    return aBalance - bBalance;
+    if (aBalance !== bBalance) return aBalance - bBalance;
+
+    // If still tied and randomize is on, the pre-shuffle handles it
+    return 0;
   });
 
   const assignedPlayers = [];
