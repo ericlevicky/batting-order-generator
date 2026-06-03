@@ -307,41 +307,76 @@ export async function transferPlayback(deviceId) {
 }
 
 export async function playTrack(trackUri, positionMs = 0, deviceId = null) {
+  const MAX_RETRIES = 3;
+  const RETRY_DELAYS = [1500, 3000, 5000]; // Increasing waits to allow device to wake up
+  const DEVICE_ACTIVATION_DELAY = 2000; // Time to wait after initial transfer for device to activate
+  const RETRY_TRANSFER_DELAY = 1500; // Time to wait after re-transfer during retries
+
   // If a device is specified, transfer playback first to force-activate it
-  // Using play:true ensures the device wakes up even if it went inactive
   if (deviceId) {
     try {
       await transferPlayback(deviceId);
-      // Wait for the device to become active after transfer
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, DEVICE_ACTIVATION_DELAY));
     } catch {
       // Continue anyway - the play call may still work
     }
   }
+
   const params = deviceId ? `?device_id=${deviceId}` : '';
-  try {
-    await spotifyFetch(`/me/player/play${params}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        uris: [trackUri],
-        position_ms: positionMs,
-      }),
-    });
-  } catch (err) {
-    if (err.message && err.message.includes('No active device')) {
-      // Retry without device_id — let Spotify route to whatever is available
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      await spotifyFetch('/me/player/play', {
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      await spotifyFetch(`/me/player/play${params}`, {
         method: 'PUT',
         body: JSON.stringify({
           uris: [trackUri],
           position_ms: positionMs,
         }),
       });
-    } else {
-      throw err;
+      return; // Success
+    } catch (err) {
+      lastError = err;
+      const isDeviceError = err.message && (
+        err.message.includes('No active device') ||
+        err.message.includes('Device not found') ||
+        err.message.includes('Player command failed')
+      );
+
+      if (!isDeviceError || attempt === MAX_RETRIES) {
+        break;
+      }
+
+      // Wait before retrying, with increasing delay
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS[attempt]));
+
+      // Re-transfer playback on each retry to wake the device
+      if (deviceId) {
+        try {
+          await transferPlayback(deviceId);
+          await new Promise(resolve => setTimeout(resolve, RETRY_TRANSFER_DELAY));
+        } catch {
+          // On last retry attempt, try without device_id
+          if (attempt === MAX_RETRIES - 1) {
+            try {
+              await spotifyFetch('/me/player/play', {
+                method: 'PUT',
+                body: JSON.stringify({
+                  uris: [trackUri],
+                  position_ms: positionMs,
+                }),
+              });
+              return; // Success without device_id
+            } catch {
+              // Will fall through to throw lastError
+            }
+          }
+        }
+      }
     }
   }
+
+  throw lastError;
 }
 
 export async function pausePlayback(deviceId = null) {

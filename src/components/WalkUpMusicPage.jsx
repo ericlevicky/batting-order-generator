@@ -215,9 +215,18 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
         if (preferredDevice) {
           targetDeviceId = preferredDevice.id;
         } else {
-          const smartphone = debugDevices.find(d => d.type === 'Smartphone');
-          if (smartphone) {
-            targetDeviceId = smartphone.id;
+          // Prefer an active device first, then fall back to a smartphone, then any device
+          const activeDevice = debugDevices.find(d => d.is_active);
+          if (activeDevice) {
+            targetDeviceId = activeDevice.id;
+          } else {
+            const smartphone = debugDevices.find(d => d.type === 'Smartphone');
+            if (smartphone) {
+              targetDeviceId = smartphone.id;
+            } else if (debugDevices.length > 0) {
+              // Use whatever device is available (e.g. Echo Show)
+              targetDeviceId = debugDevices[0].id;
+            }
           }
         }
       } catch {
