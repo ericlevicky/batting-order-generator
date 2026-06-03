@@ -130,6 +130,7 @@ Data,History,"{\\"12345\\":[]}"`;
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 500,
+        json: () => Promise.resolve({ error: 'Failed', reason: 'Store not found' }),
       });
 
       const csv = 'Type,Key,Value\nData,Teams,"{}"';

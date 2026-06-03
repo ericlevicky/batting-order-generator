@@ -2,6 +2,11 @@ import { put, list } from '@vercel/blob';
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
+  // Check that blob storage is configured
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return res.status(503).json({ error: 'Blob storage is not configured', reason: 'BLOB_READ_WRITE_TOKEN is not set' });
+  }
+
   // GET: retrieve shared data by ID
   if (req.method === 'GET') {
     const { id } = req.query;
@@ -34,7 +39,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ data });
     } catch (error) {
       console.error('Error retrieving share:', error);
-      return res.status(500).json({ error: 'Failed to retrieve shared data' });
+      return res.status(500).json({ error: 'Failed to retrieve shared data', reason: error.message });
     }
   }
 
@@ -58,7 +63,7 @@ export default async function handler(req, res) {
       return res.status(201).json({ id });
     } catch (error) {
       console.error('Error storing share:', error);
-      return res.status(500).json({ error: 'Failed to store shared data' });
+      return res.status(500).json({ error: 'Failed to store shared data', reason: error.message });
     }
   }
 
