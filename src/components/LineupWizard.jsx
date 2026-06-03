@@ -17,7 +17,6 @@ function LineupWizard({
   teamName,
 }) {
   const [step, setStep] = useState(1);
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const activePlayers = players.filter(p => p.active !== false);
   const inactivePlayers = players.filter(p => p.active === false);
@@ -115,16 +114,7 @@ function LineupWizard({
             </button>
           </div>
 
-          <button
-            className="wizard-advanced-toggle"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            type="button"
-          >
-            {showAdvanced ? 'Hide options' : 'More options'}
-          </button>
-
-          {showAdvanced && (
-            <div className="wizard-advanced-options">
+          <div className="wizard-advanced-options">
               <div className="wizard-option-group">
                 <label className="wizard-option-label">Outfielders</label>
                 <div className="wizard-button-group">
@@ -170,7 +160,6 @@ function LineupWizard({
                 <span>Different batting order every inning</span>
               </label>
             </div>
-          )}
 
           <div className="wizard-actions">
             <button className="wizard-btn-back" onClick={() => setStep(1)} type="button">
