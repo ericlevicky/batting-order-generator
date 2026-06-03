@@ -28,6 +28,7 @@ import {
   updateTeamLastSettings,
   getNextGameNumber,
   deleteAllGamesFromHistory,
+  replaceGameInHistory,
   importAllData,
   getTeamWalkUpMusic
 } from './utils/storage';
@@ -50,6 +51,7 @@ function App() {
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showCumulativeStats, setShowCumulativeStats] = useState(false);
   const [lastGeneratedGameId, setLastGeneratedGameId] = useState(null);
+  const [lastGeneratedGameNumber, setLastGeneratedGameNumber] = useState(null);
   const [presetTouched, setPresetTouched] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
   const [showWalkUpMusic, setShowWalkUpMusic] = useState(false);
@@ -222,11 +224,41 @@ function App() {
     updateTeamLastSettings(currentTeamId, settings);
 
     setLastGeneratedGameId(gameRecord.id);
+    setLastGeneratedGameNumber(upcomingGameNumber);
 
     // Reload history
     const history = getTeamGameHistory(currentTeamId);
     setGameHistory(history);
     showToast(`Game ${upcomingGameNumber} generated`, 'success');
+  };
+
+  const handleRegenerateLineup = () => {
+    if (!currentTeamId || !lastGeneratedGameId) return;
+
+    // Regenerate with same settings but get a new random lineup
+    // Use history WITHOUT the current game so balancing stays correct
+    const historyWithoutCurrent = gameHistory.filter(g => g.id !== lastGeneratedGameId);
+
+    const generatedLineup = generateLineup(
+      players,
+      numInnings,
+      numOutfielders,
+      hasCatcher,
+      historyWithoutCurrent,
+      rotatingBattingOrder,
+      null
+    );
+    setLineup(generatedLineup);
+    setWizardLineup(generatedLineup);
+
+    // Replace the existing game record in history
+    const settings = { numInnings, numOutfielders, hasCatcher, rotatingBattingOrder };
+    replaceGameInHistory(currentTeamId, lastGeneratedGameId, generatedLineup, settings);
+
+    // Reload history
+    const history = getTeamGameHistory(currentTeamId);
+    setGameHistory(history);
+    showToast(`Game ${lastGeneratedGameNumber} regenerated`, 'success');
   };
 
   const handleDeleteGame = (gameId) => {
@@ -354,7 +386,9 @@ function App() {
               teamId={currentTeamId}
               teamName={currentTeam.name}
               players={players}
+              gameNumber={lastGeneratedGameNumber}
               onStartOver={() => { setWizardLineup(null); setLineup(null); }}
+              onRegenerate={handleRegenerateLineup}
               onShowWalkUpMusic={() => setShowWalkUpMusic(true)}
             />
           </div>

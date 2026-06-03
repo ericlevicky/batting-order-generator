@@ -26,6 +26,14 @@
 .wizard-result-subtitle {
   color: var(--text-on-dark-muted);
   font-size: 1rem;
+  margin: 0;
+}
+
+.wizard-result-game-number {
+  color: #34d399;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0.25rem 0 0 0;
 }
 
 .wizard-result-actions-top {
@@ -44,6 +52,17 @@
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.wizard-result-btn.print {
+  background: rgba(148, 163, 184, 0.2);
+  color: white;
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+.wizard-result-btn.print:hover {
+  background: rgba(148, 163, 184, 0.35);
+  transform: translateY(-2px);
 }
 
 .wizard-result-btn.share {
@@ -68,6 +87,18 @@
   transform: translateY(-2px);
 }
 
+.wizard-result-btn.regen {
+  background: rgba(251, 191, 36, 0.2);
+  color: white;
+  border-color: rgba(251, 191, 36, 0.4);
+  margin-bottom: 0.75rem;
+}
+
+.wizard-result-btn.regen:hover {
+  background: rgba(251, 191, 36, 0.35);
+  transform: translateY(-2px);
+}
+
 .wizard-result-grid {
   width: 100%;
   max-width: 900px;
@@ -77,6 +108,9 @@
 .wizard-result-footer {
   padding-top: 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .wizard-result-start-over {
