@@ -31,8 +31,6 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
   const [playlistTracks, setPlaylistTracks] = useState([]);
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
   const [loadingTracks, setLoadingTracks] = useState(false);
-  const [devices, setDevices] = useState([]);
-  const [selectedDeviceId, setSelectedDeviceId] = useState(null);
 
   // UI state
   const [activeTab, setActiveTab] = useState('config'); // 'config' | 'play'
@@ -91,7 +89,6 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
   useEffect(() => {
     if (authenticated) {
       loadPlaylists();
-      loadDevices();
     }
   }, [authenticated]);
 
@@ -129,20 +126,6 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
     }
   };
 
-  const loadDevices = async () => {
-    try {
-      const devs = await getAvailableDevices();
-      setDevices(devs);
-      // Auto-select the active device if none is selected yet
-      if (!selectedDeviceId && devs.length > 0) {
-        const active = devs.find((d) => d.is_active);
-        setSelectedDeviceId(active ? active.id : devs[0].id);
-      }
-    } catch {
-      // Silently fail - devices will be empty
-    }
-  };
-
   // --- Auth Handlers ---
 
   const handleLogin = async () => {
@@ -158,7 +141,6 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
     setAuthenticated(false);
     setPlaylists([]);
     setPlaylistTracks([]);
-    setDevices([]);
     showToast('Disconnected from Spotify', 'info');
   };
 
@@ -218,7 +200,17 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
     }
 
     try {
-      await playTrack(config.trackUri, config.startMs || 0, selectedDeviceId);
+      // Fetch devices fresh and prefer smartphone (iPhone) for playback
+      let targetDeviceId = null;
+      try {
+        const devs = await getAvailableDevices();
+        const smartphone = devs.find(d => d.type === 'Smartphone');
+        targetDeviceId = smartphone?.id || devs.find(d => d.is_active)?.id || devs[0]?.id || null;
+      } catch {
+        // Continue without a device ID — Spotify will use the last active device
+      }
+
+      await playTrack(config.trackUri, config.startMs || 0, targetDeviceId);
       setCurrentlyPlaying(playerName);
 
       // Set up auto-stop if end time is configured
@@ -226,7 +218,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
         const duration = config.endMs - (config.startMs || 0);
         stopTimerRef.current = setTimeout(async () => {
           try {
-            await pausePlayback(selectedDeviceId);
+            await pausePlayback();
           } catch {
             // Ignore pause errors
           }
@@ -238,7 +230,7 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
       showToast(`Playback failed: ${err.message}`, 'error');
       setCurrentlyPlaying(null);
     }
-  }, [walkUpConfig, showToast, selectedDeviceId]);
+  }, [walkUpConfig, showToast]);
 
   const handleStop = useCallback(async () => {
     if (stopTimerRef.current) {
@@ -246,12 +238,12 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
       stopTimerRef.current = null;
     }
     try {
-      await pausePlayback(selectedDeviceId);
+      await pausePlayback();
     } catch {
       // Ignore
     }
     setCurrentlyPlaying(null);
-  }, [selectedDeviceId]);
+  }, []);
 
   // --- Game Mode ---
 
@@ -376,10 +368,6 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
               onAssignSong={handleAssignSong}
               onRemoveSong={handleRemoveSong}
               onLogout={handleLogout}
-              onRefreshDevices={loadDevices}
-              devices={devices}
-              selectedDeviceId={selectedDeviceId}
-              onSelectDevice={setSelectedDeviceId}
             />
           )}
 
@@ -423,10 +411,6 @@ function ConfigTab({
   onAssignSong,
   onRemoveSong,
   onLogout,
-  onRefreshDevices,
-  devices,
-  selectedDeviceId,
-  onSelectDevice,
 }) {
   return (
     <div className="walkup-config">
@@ -434,42 +418,9 @@ function ConfigTab({
       <div className="walkup-status-bar">
         <span className="walkup-connected">✅ Spotify Connected</span>
         <div className="walkup-status-actions">
-          <button className="btn-walkup-refresh" onClick={onRefreshDevices} title="Refresh devices">
-            🔄 Devices ({devices.length})
-          </button>
           <button className="btn-walkup-logout" onClick={onLogout}>Disconnect</button>
         </div>
       </div>
-
-      {/* Devices List */}
-      {devices.length > 0 && (
-        <div className="walkup-devices">
-          <h4>Available Devices</h4>
-          <div className="walkup-devices-list">
-            {devices.map((d) => (
-              <div
-                key={d.id}
-                className={`walkup-device ${d.is_active ? 'active' : ''} ${selectedDeviceId === d.id ? 'selected' : ''}`}
-                onClick={() => onSelectDevice(d.id)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectDevice(d.id); } }}
-              >
-                <span className="device-icon">{d.type === 'Smartphone' ? '📱' : d.type === 'Computer' ? '💻' : '🔊'}</span>
-                <span className="device-name">{d.name}</span>
-                {selectedDeviceId === d.id && <span className="device-active-badge">Selected</span>}
-                {d.is_active && selectedDeviceId !== d.id && <span className="device-active-badge">Active</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {devices.length === 0 && (
-        <div className="walkup-no-devices">
-          <p>⚠️ No active Spotify devices found. Open Spotify on your phone or computer and play any song briefly to activate it.</p>
-        </div>
-      )}
 
       {/* Playlist Selection */}
       <div className="walkup-playlist-section">
