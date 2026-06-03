@@ -316,26 +316,32 @@ export async function getPlaybackState() {
 
 export function formatMs(ms) {
   if (ms == null) return '';
-  const totalSeconds = Math.floor(ms / 1000);
+  const totalSeconds = ms / 1000;
   const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  const seconds = totalSeconds - minutes * 60;
+  // Show fractional seconds only when there's a fractional part
+  if (seconds % 1 === 0) {
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+  const whole = Math.floor(seconds);
+  const frac = Math.round((seconds - whole) * 10);
+  return `${minutes}:${whole.toString().padStart(2, '0')}.${frac}`;
 }
 
 export function parseTimeToMs(timeStr) {
   if (!timeStr || !timeStr.trim()) return null;
   const parts = timeStr.trim().split(':');
   if (parts.length === 2) {
-    const minutes = parseInt(parts[0], 10);
-    const seconds = parseInt(parts[1], 10);
+    const minutes = parseFloat(parts[0]);
+    const seconds = parseFloat(parts[1]);
     if (!isNaN(minutes) && !isNaN(seconds) && minutes >= 0 && seconds >= 0 && seconds < 60) {
-      return (minutes * 60 + seconds) * 1000;
+      return Math.round((Math.floor(minutes) * 60 + seconds) * 1000);
     }
   }
-  // Also try just seconds
-  const secs = parseInt(timeStr, 10);
+  // Also try just seconds (e.g. "5.5")
+  const secs = parseFloat(timeStr);
   if (!isNaN(secs) && secs >= 0) {
-    return secs * 1000;
+    return Math.round(secs * 1000);
   }
   return null;
 }
