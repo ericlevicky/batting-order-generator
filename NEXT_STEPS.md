@@ -10,14 +10,14 @@ The Batting Order Generator is now a **Progressive Web App (PWA)** that can be i
 Once you're happy with the changes, merge this pull request to `main`.
 
 ### 2. It Deploys Automatically! ✨
-Your GitHub Actions workflow will automatically deploy to Netlify when merged to `main`.
+Your GitHub Actions workflow will automatically deploy to Vercel when merged to `main`.
 
 ### 3. Test the Installation
 Once deployed:
 
 **On iPhone:**
 1. Open Safari on your iPhone
-2. Go to your Netlify URL (e.g., `your-app.netlify.app`)
+2. Go to your Vercel URL (e.g., `your-app.vercel.app`)
 3. Tap the Share button (square with arrow)
 4. Tap "Add to Home Screen"
 5. Tap "Add"
@@ -26,14 +26,14 @@ Once deployed:
 
 **On Android:**
 1. Open Chrome on your Android phone
-2. Go to your Netlify URL
+2. Go to your Vercel URL
 3. Tap the "Install" banner that appears
 4. Or tap menu (⋮) → "Install app"
 5. The app icon appears on your home screen!
 
 **On Desktop:**
 1. Open Chrome or Edge
-2. Go to your Netlify URL
+2. Go to your Vercel URL
 3. Look for install icon (➕) in address bar
 4. Click "Install"
 5. App opens in its own window!
@@ -46,7 +46,7 @@ Once you've tested it, share with your users:
 🎉 The Batting Order Generator is now installable!
 
 Install on your phone:
-1. Visit [your-netlify-url.app]
+1. Visit [your-vercel-url.app]
 2. Tap "Add to Home Screen" (iPhone) or "Install" (Android)
 3. Use it like any other app!
 

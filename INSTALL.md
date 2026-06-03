@@ -9,7 +9,7 @@
 
 ## 📱 Install on iPhone/iPad
 
-1. Open **Safari** (not Chrome!) and go to: **[your-app-url.netlify.app]**
+1. Open **Safari** (not Chrome!) and go to: **[your-app-url.vercel.app]**
 2. Tap the **Share button** (square with arrow ⬆️)
 3. Scroll down and tap **"Add to Home Screen"**
 4. Tap **"Add"** in the top right
@@ -17,7 +17,7 @@
 
 ## 📱 Install on Android
 
-1. Open **Chrome** and go to: **[your-app-url.netlify.app]**
+1. Open **Chrome** and go to: **[your-app-url.vercel.app]**
 2. Tap the **"Install"** banner at the bottom
    - Or tap **⋮ (menu)** → **"Install app"**
 3. Tap **"Install"**
@@ -26,13 +26,13 @@
 ## 💻 Install on Computer
 
 ### Chrome or Edge:
-1. Go to: **[your-app-url.netlify.app]**
+1. Go to: **[your-app-url.vercel.app]**
 2. Look for the **install icon** (➕) in the address bar
 3. Click it and select **"Install"**
 4. The app opens in its own window!
 
 ### Safari (Mac):
-1. Go to: **[your-app-url.netlify.app]**
+1. Go to: **[your-app-url.vercel.app]**
 2. Click **Share** → **Add to Dock**
 
 ## ✨ What to Expect

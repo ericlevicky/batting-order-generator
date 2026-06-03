@@ -18,7 +18,7 @@ This app is now a **Progressive Web App (PWA)**! This means users can install it
 ## 📲 How to Install on iPhone/iPad
 
 1. **Open in Safari** (must use Safari, not Chrome)
-   - Go to your deployed URL (e.g., your-app.netlify.app)
+   - Go to your deployed URL (e.g., your-app.vercel.app)
 
 2. **Tap the Share button** 
    - The square with an arrow pointing up (at the bottom on iPhone, top on iPad)
@@ -99,17 +99,17 @@ Similar to iOS - use Share → Add to Dock
 - ✅ **Fast loading** - Cached resources load instantly
 - ✅ **App-like** - Runs in standalone mode (no browser UI)
 - ✅ **Responsive** - Works on all screen sizes
-- ✅ **Secure** - Requires HTTPS (Netlify provides this)
+- ✅ **Secure** - Requires HTTPS (Vercel provides this)
 
 ## 🚀 Deployment
 
 Your PWA will work automatically when deployed to:
-- ✅ Netlify (current setup)
-- ✅ Vercel
+- ✅ Vercel (current setup)
+- ✅ Netlify
 - ✅ GitHub Pages (with HTTPS)
 - ✅ Any host with HTTPS
 
-**Note**: PWAs require HTTPS to work. Your Netlify deployment already has this!
+**Note**: PWAs require HTTPS to work. Your Vercel deployment already has this!
 
 ## 🧪 Testing Your PWA
 
@@ -135,7 +135,7 @@ Your PWA will work automatically when deployed to:
 
 ### Testing on Mobile
 
-1. **Deploy to Netlify** (or your host)
+1. **Deploy to Vercel** (or your host)
 2. **Open on your phone**:
    - Use your phone's browser
    - Visit the deployed URL
@@ -243,7 +243,7 @@ Tell your users:
 
 > **Install the Batting Order Generator app:**
 > 
-> 1. Visit [your-url.netlify.app] on your phone
+> 1. Visit [your-url.vercel.app] on your phone
 > 2. Tap "Add to Home Screen" (iPhone) or "Install" (Android)
 > 3. Use it like any other app!
 > 

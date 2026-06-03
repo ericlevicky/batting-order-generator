@@ -75,7 +75,7 @@ Security check: **No vulnerabilities ✅**
 
 ## 🌐 Deployment
 
-Your app is ready to deploy! Once on Netlify (or any HTTPS host):
+Your app is ready to deploy! Once on Vercel (or any HTTPS host):
 
 1. **Users visit your URL**
 2. **Install prompt appears** (or use browser menu)
@@ -87,7 +87,7 @@ Your app is ready to deploy! Once on Netlify (or any HTTPS host):
 > **Try the new Batting Order Generator app!**
 > 
 > 📱 Install it on your phone:
-> 1. Visit [your-url.netlify.app]
+> 1. Visit [your-url.vercel.app]
 > 2. Tap "Add to Home Screen" (iPhone) or "Install" (Android)
 > 3. Use it like any other app!
 > 
@@ -107,7 +107,7 @@ Your app is ready to deploy! Once on Netlify (or any HTTPS host):
 
 ## 🎯 Next Steps
 
-1. **Deploy to Netlify** (already configured!)
+1. **Deploy to Vercel** (already configured!)
 2. **Test installation** on your phone
 3. **Share with users** - they can install immediately
 4. **Enjoy FREE distribution!** 🎉
@@ -131,7 +131,7 @@ See [PWA_GUIDE.md](./PWA_GUIDE.md) for details.
 ## 💡 Tips
 
 - **Test on real devices** - Simulators don't show full PWA experience
-- **Use HTTPS** - PWA requires it (Netlify provides this automatically)
+- **Use HTTPS** - PWA requires it (Vercel provides this automatically)
 - **Check browser DevTools** - Application tab shows PWA status
 - **Share widely** - Anyone can install, no barriers!
 
