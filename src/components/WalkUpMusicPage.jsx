@@ -199,12 +199,18 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
     }
 
     try {
-      // Fetch devices fresh and prefer smartphone (iPhone) for playback
+      // Fetch devices fresh and only target a smartphone (iPhone) for playback.
+      // We explicitly avoid selecting smart speakers/displays (e.g. Echo Show)
+      // which can appear in the device list and steal playback.
       let targetDeviceId = null;
       try {
         const devs = await getAvailableDevices();
         const smartphone = devs.find(d => d.type === 'Smartphone');
-        targetDeviceId = smartphone?.id || devs.find(d => d.is_active)?.id || devs[0]?.id || null;
+        if (smartphone) {
+          targetDeviceId = smartphone.id;
+        }
+        // If no smartphone found, don't fall back to other devices —
+        // Spotify will route to the user's last active mobile session.
       } catch {
         // Continue without a device ID — Spotify will use the last active device
       }

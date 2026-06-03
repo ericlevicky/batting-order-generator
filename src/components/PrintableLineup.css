@@ -162,7 +162,7 @@
 
   .lineup-table {
     width: 100%;
-    table-layout: fixed;
+    table-layout: auto;
     font-size: 0.75rem;
     page-break-inside: avoid;
     border-collapse: collapse;
@@ -198,8 +198,6 @@
     border: 1px solid #ccc;
     color: black !important;
     font-size: 0.75rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
