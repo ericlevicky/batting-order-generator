@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   isAuthenticated,
   startAuthFlow,
@@ -831,10 +831,7 @@ function AppleConfigTab({
 
 function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
   const hasExistingAppleConfig = currentConfig?.musicType === 'apple' && currentConfig?.trackName;
-  const initialQuery = useMemo(
-    () => [currentConfig?.trackName, currentConfig?.artistName].filter(Boolean).join(' '),
-    [currentConfig?.trackName, currentConfig?.artistName]
-  );
+  const initialQuery = [currentConfig?.trackName, currentConfig?.artistName].filter(Boolean).join(' ');
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -856,7 +853,9 @@ function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
   const [endTime, setEndTime] = useState(currentConfig?.endMs != null ? formatMs(currentConfig.endMs) : '');
   const searchTimerRef = useRef(null);
 
-  useEffect(() => () => clearTimeout(searchTimerRef.current), []);
+  useEffect(() => {
+    return () => clearTimeout(searchTimerRef.current);
+  }, []);
 
   const handleSearch = useCallback((value) => {
     setQuery(value);
