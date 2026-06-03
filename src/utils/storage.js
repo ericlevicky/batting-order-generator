@@ -207,14 +207,71 @@ export const setPlayerWalkUpSong = (teamId, playerName, songConfig) => {
   if (!data[teamId]) {
     data[teamId] = { musicType: 'spotify', spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
   }
-  data[teamId].players[playerName] = songConfig;
+  // Store per-service: merge new config into existing player entry preserving the other service
+  const existing = data[teamId].players[playerName] || {};
+  const serviceKey = songConfig.musicType === 'apple' ? 'apple' : 'spotify';
+  data[teamId].players[playerName] = {
+    ...existing,
+    [serviceKey]: songConfig,
+  };
   saveWalkUpMusicData(data);
 };
 
-export const removePlayerWalkUpSong = (teamId, playerName) => {
+// Helper: resolve the effective song config for a player based on the active music service.
+// Supports both the new dual-service format ({ spotify: {...}, apple: {...} }) and the
+// legacy flat format ({ musicType, trackName, ... }).
+export const resolvePlayerSongConfig = (playerConfig, activeMusicType) => {
+  if (!playerConfig) return null;
+  // New dual-service format
+  if (playerConfig.spotify || playerConfig.apple) {
+    const preferred = activeMusicType === 'apple' ? playerConfig.apple : playerConfig.spotify;
+    if (preferred) return preferred;
+    // Fall back to whichever service has a song
+    return playerConfig.spotify || playerConfig.apple || null;
+  }
+  // Legacy flat format — return as-is
+  return playerConfig;
+};
+
+// Helper: check if a player has any song configured (either service)
+export const playerHasSong = (playerConfig) => {
+  if (!playerConfig) return false;
+  if (playerConfig.spotify || playerConfig.apple) return true;
+  // Legacy flat format
+  if (playerConfig.trackName) return true;
+  return false;
+};
+
+// Helper: get the song config for a specific service (for config tab display)
+export const getPlayerServiceConfig = (playerConfig, serviceType) => {
+  if (!playerConfig) return null;
+  if (playerConfig.spotify || playerConfig.apple) {
+    return serviceType === 'apple' ? playerConfig.apple : playerConfig.spotify;
+  }
+  // Legacy flat format — return if it matches the requested service
+  if (playerConfig.musicType === serviceType) return playerConfig;
+  return null;
+};
+
+export const removePlayerWalkUpSong = (teamId, playerName, serviceType) => {
   const data = getWalkUpMusicData();
   if (data[teamId]?.players) {
-    delete data[teamId].players[playerName];
+    const playerConfig = data[teamId].players[playerName];
+    if (playerConfig && (playerConfig.spotify || playerConfig.apple)) {
+      // New dual-service format: remove only the specified service
+      if (serviceType) {
+        delete playerConfig[serviceType];
+        // If no services remain, remove the player entirely
+        if (!playerConfig.spotify && !playerConfig.apple) {
+          delete data[teamId].players[playerName];
+        }
+      } else {
+        delete data[teamId].players[playerName];
+      }
+    } else {
+      // Legacy format or no serviceType: remove entirely
+      delete data[teamId].players[playerName];
+    }
     saveWalkUpMusicData(data);
   }
 };

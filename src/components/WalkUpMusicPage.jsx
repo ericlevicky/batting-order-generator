@@ -27,6 +27,9 @@ import {
   setTeamApplePlaylist,
   setPlayerWalkUpSong,
   removePlayerWalkUpSong,
+  resolvePlayerSongConfig,
+  playerHasSong,
+  getPlayerServiceConfig,
 } from '../utils/storage';
 import './WalkUpMusicPage.css';
 
@@ -243,7 +246,10 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
     };
 
     setPlayerWalkUpSong(teamId, playerName, songConfig);
-    const updated = { ...walkUpConfig, players: { ...walkUpConfig.players, [playerName]: songConfig } };
+    // Merge into local state preserving the other service's config
+    const existing = walkUpConfig.players[playerName] || {};
+    const merged = { ...existing, spotify: songConfig };
+    const updated = { ...walkUpConfig, players: { ...walkUpConfig.players, [playerName]: merged } };
     setWalkUpConfig(updated);
     setEditingPlayer(null);
     showToast(`Walk-up song set for ${playerName}`, 'success');
@@ -251,23 +257,42 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
 
   const handleAssignAppleSong = (playerName, songConfig) => {
     setPlayerWalkUpSong(teamId, playerName, songConfig);
-    const updated = { ...walkUpConfig, players: { ...walkUpConfig.players, [playerName]: songConfig } };
+    // Merge into local state preserving the other service's config
+    const existing = walkUpConfig.players[playerName] || {};
+    const merged = { ...existing, apple: songConfig };
+    const updated = { ...walkUpConfig, players: { ...walkUpConfig.players, [playerName]: merged } };
     setWalkUpConfig(updated);
     setEditingPlayer(null);
     showToast(`Walk-up song set for ${playerName}`, 'success');
   };
 
   const handleRemoveSong = (playerName) => {
-    removePlayerWalkUpSong(teamId, playerName);
+    const serviceType = walkUpConfig.musicType;
+    removePlayerWalkUpSong(teamId, playerName, serviceType);
     const updatedPlayers = { ...walkUpConfig.players };
-    delete updatedPlayers[playerName];
+    const playerConfig = updatedPlayers[playerName];
+    if (playerConfig && (playerConfig.spotify || playerConfig.apple)) {
+      delete playerConfig[serviceType];
+      if (!playerConfig.spotify && !playerConfig.apple) {
+        delete updatedPlayers[playerName];
+      }
+    } else {
+      delete updatedPlayers[playerName];
+    }
     setWalkUpConfig({ ...walkUpConfig, players: updatedPlayers });
   };
 
   // --- Playback Handlers ---
 
   const handlePlay = useCallback(async (playerName) => {
-    const config = walkUpConfig.players[playerName];
+    const playerConfig = walkUpConfig.players[playerName];
+    if (!playerConfig) {
+      showToast(`No walk-up song configured for ${playerName}`, 'error');
+      return;
+    }
+
+    // Resolve the correct song config based on the globally selected music service
+    const config = resolvePlayerSongConfig(playerConfig, walkUpConfig.musicType);
     if (!config) {
       showToast(`No walk-up song configured for ${playerName}`, 'error');
       return;
@@ -279,10 +304,7 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
       stopTimerRef.current = null;
     }
 
-    // Determine which provider to use for this player's song.
-    // Prefer the per-player musicType (set when the song was assigned) over the
-    // global walkUpConfig.musicType so that songs assigned via one provider still
-    // play correctly even when the user switches the active provider.
+    // Use the resolved config's musicType to determine playback method
     const effectiveMusicType = config.musicType || walkUpConfig.musicType;
 
     // Apple Music playback via deep link
@@ -636,7 +658,7 @@ function PageConfigTab({
           ) : (
             <div className="walkup-page-player-list">
               {activePlayers.map((player) => {
-                const songConfig = walkUpConfig.players[player.name];
+                const songConfig = getPlayerServiceConfig(walkUpConfig.players[player.name], 'spotify');
 
                 return (
                   <div key={player.id} className="walkup-page-player-item">
@@ -685,7 +707,7 @@ function PageConfigTab({
         <SongPickerModal
           playerName={editingPlayer}
           tracks={playlistTracks}
-          currentConfig={walkUpConfig.players[editingPlayer]}
+          currentConfig={getPlayerServiceConfig(walkUpConfig.players[editingPlayer], 'spotify')}
           onSave={(track, startTime, endTime) => onAssignSong(editingPlayer, track, startTime, endTime)}
           onCancel={() => onEditPlayer(null)}
         />
@@ -809,7 +831,7 @@ function AppleConfigTab({
         <h3>🎤 Player Songs</h3>
         <div className="walkup-page-player-list">
           {activePlayers.map((player) => {
-            const songConfig = walkUpConfig.players[player.name];
+            const songConfig = getPlayerServiceConfig(walkUpConfig.players[player.name], 'apple');
 
             return (
               <div key={player.id} className="walkup-page-player-item">
@@ -851,7 +873,7 @@ function AppleConfigTab({
       {editingPlayer && (
         <AppleSongPickerModal
           playerName={editingPlayer}
-          currentConfig={walkUpConfig.players[editingPlayer]}
+          currentConfig={getPlayerServiceConfig(walkUpConfig.players[editingPlayer], 'apple')}
           onSave={(songConfig) => onAssignSong(editingPlayer, songConfig)}
           onCancel={() => onEditPlayer(null)}
         />
@@ -1038,7 +1060,10 @@ function PagePlayTab({
   onPrevBatter,
   onSetBatterIndex,
 }) {
-  const configuredPlayers = activePlayers.filter((p) => walkUpConfig.players[p.name]);
+  const configuredPlayers = activePlayers.filter((p) => {
+    const playerConfig = walkUpConfig.players[p.name];
+    return playerConfig && resolvePlayerSongConfig(playerConfig, walkUpConfig.musicType);
+  });
   const hasGameHistory = gameHistory && gameHistory.length > 0;
 
   const battingOrder = (() => {
@@ -1090,7 +1115,7 @@ function PagePlayTab({
       {!gameMode && (
         <div className="walkup-page-play-list">
           {configuredPlayers.map((player) => {
-            const song = walkUpConfig.players[player.name];
+            const song = resolvePlayerSongConfig(walkUpConfig.players[player.name], walkUpConfig.musicType);
             const isPlaying = currentlyPlaying === player.name;
             return (
               <div
@@ -1145,7 +1170,7 @@ function PagePlayTab({
             <>
               <div className="walkup-page-batting-order">
                 {battingOrder.map((batter, index) => {
-                  const song = walkUpConfig.players[batter.name];
+                  const song = resolvePlayerSongConfig(walkUpConfig.players[batter.name], walkUpConfig.musicType);
                   const isCurrent = index === currentBatterIndex;
                   const isPlaying = currentlyPlaying === batter.name;
                   return (
@@ -1184,7 +1209,7 @@ function PagePlayTab({
                   className="walkup-page-btn-play-current"
                   onClick={() => {
                     const batter = battingOrder[currentBatterIndex];
-                    if (batter && walkUpConfig.players[batter.name]) {
+                    if (batter && resolvePlayerSongConfig(walkUpConfig.players[batter.name], walkUpConfig.musicType)) {
                       if (currentlyPlaying === batter.name) {
                         onPause();
                       } else {
