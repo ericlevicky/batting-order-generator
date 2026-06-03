@@ -8,6 +8,8 @@ import {
   getPlaylistTracks,
   playTrack,
   pausePlayback,
+  getPlaybackState,
+  transferPlayback,
   formatMs,
   parseTimeToMs,
   getAvailableDevices,
@@ -99,6 +101,34 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
       loadPlaylistTracks(walkUpConfig.spotifyPlaylistId);
     }
   }, [authenticated, walkUpConfig.spotifyPlaylistId]);
+
+  // Keepalive: poll Spotify every 20s to prevent device session from going inactive
+  useEffect(() => {
+    if (!authenticated) return;
+
+    const KEEPALIVE_INTERVAL_MS = 20000;
+
+    const keepalive = async () => {
+      try {
+        const preferredId = getPreferredDeviceId();
+        if (!preferredId) return;
+
+        const devices = await getAvailableDevices();
+        const preferred = devices.find(d => d.id === preferredId);
+
+        // If device exists but is inactive, re-transfer without playing
+        if (preferred && !preferred.is_active) {
+          await transferPlayback(preferredId, false);
+        }
+      } catch {
+        // Silently ignore keepalive errors — don't disrupt the user
+      }
+    };
+
+    const intervalId = setInterval(keepalive, KEEPALIVE_INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [authenticated]);
 
   const loadPlaylists = async () => {
     setLoadingPlaylists(true);

@@ -77,6 +77,7 @@ export function clearTokens() {
   localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
   localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
   localStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
+  localStorage.removeItem(STORAGE_KEYS.PREFERRED_DEVICE);
 }
 
 export function getPreferredDeviceId() {
@@ -296,12 +297,12 @@ export async function getAvailableDevices() {
   return data.devices || [];
 }
 
-export async function transferPlayback(deviceId) {
+export async function transferPlayback(deviceId, play = true) {
   await spotifyFetch('/me/player', {
     method: 'PUT',
     body: JSON.stringify({
       device_ids: [deviceId],
-      play: true,
+      play,
     }),
   });
 }
