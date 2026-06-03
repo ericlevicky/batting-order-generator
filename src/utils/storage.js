@@ -52,6 +52,13 @@ export const deleteTeam = (teamId) => {
   delete history[teamId];
   saveTeamHistory(history);
   
+  // Also delete walk-up music data for this team
+  const walkUpMusic = getWalkUpMusicData();
+  if (walkUpMusic[teamId]) {
+    delete walkUpMusic[teamId];
+    saveWalkUpMusicData(walkUpMusic);
+  }
+  
   // Clear current team if it was deleted
   if (getCurrentTeamId() === teamId) {
     setCurrentTeamId(null);
@@ -536,10 +543,8 @@ export const importAllData = (csvContent) => {
       const mergedWalkUpMusic = Object.assign({}, existingWalkUpMusic);
       Object.entries(walkUpMusic).forEach(([teamId, config]) => {
         const newTeamId = teamIdMapping[teamId] || teamId;
-        // Only import if no existing config for this team
-        if (!mergedWalkUpMusic[newTeamId]) {
-          mergedWalkUpMusic[newTeamId] = config;
-        }
+        // Always import walk-up music for imported teams (overwrite stale data)
+        mergedWalkUpMusic[newTeamId] = config;
       });
       saveWalkUpMusicData(mergedWalkUpMusic);
     }
