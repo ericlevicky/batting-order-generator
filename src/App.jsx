@@ -10,6 +10,7 @@ import FeatureSuggestion from './components/FeatureSuggestion';
 import UpdateNotification from './components/UpdateNotification';
 import ToastContainer from './components/ToastContainer';
 import ConfirmDialog from './components/ConfirmDialog';
+import WalkUpMusic from './components/WalkUpMusic';
 import { generateLineup } from './utils/lineupGenerator';
 import {
   getTeams,
@@ -46,6 +47,7 @@ function App() {
   const [lastGeneratedGameId, setLastGeneratedGameId] = useState(null);
   const [presetTouched, setPresetTouched] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
+  const [showWalkUpMusic, setShowWalkUpMusic] = useState(false);
   const initialSelectRef = useRef(true);
 
   // Load teams and current team on mount
@@ -221,6 +223,15 @@ function App() {
             <p>Generate batting orders and field positions for your game</p>
           </div>
           <div className="header-actions">
+            {currentTeam && players.filter(p => p.active !== false).length > 0 && (
+              <button
+                className="btn-walkup-music"
+                onClick={() => setShowWalkUpMusic(true)}
+                title="Walk-up music player"
+              >
+                🎵 Walk-Up Music
+              </button>
+            )}
             <button
               className="btn-feature-suggestion"
               onClick={() => setShowFeatureSuggestion(true)}
@@ -339,6 +350,17 @@ function App() {
           onClose={() => setShowFeatureSuggestion(false)}
           onSubmitSuccess={(issueNumber) => showToast(`Feature request #${issueNumber} submitted! Thank you.`, 'success')}
           onSubmitError={(message) => showToast(message, 'error')}
+        />
+      )}
+
+      {showWalkUpMusic && currentTeam && (
+        <WalkUpMusic
+          teamId={currentTeamId}
+          teamName={currentTeam.name}
+          players={players}
+          gameHistory={gameHistory}
+          onClose={() => setShowWalkUpMusic(false)}
+          onShowToast={showToast}
         />
       )}
 

@@ -3,7 +3,8 @@
 const STORAGE_KEYS = {
   TEAMS: 'batting_order_teams',
   CURRENT_TEAM: 'batting_order_current_team',
-  TEAM_HISTORY: 'batting_order_team_history'
+  TEAM_HISTORY: 'batting_order_team_history',
+  WALKUP_MUSIC: 'batting_order_walkup_music'
 };
 
 // Team Management
@@ -173,6 +174,54 @@ export const shuffleArray = (array) => {
     shuffled[j] = temp;
   }
   return shuffled;
+};
+
+// Walk-Up Music Configuration
+const getWalkUpMusicData = () => {
+  const data = localStorage.getItem(STORAGE_KEYS.WALKUP_MUSIC);
+  return data ? JSON.parse(data) : {};
+};
+
+const saveWalkUpMusicData = (data) => {
+  localStorage.setItem(STORAGE_KEYS.WALKUP_MUSIC, JSON.stringify(data));
+};
+
+export const getTeamWalkUpMusic = (teamId) => {
+  const data = getWalkUpMusicData();
+  return data[teamId] || { spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
+};
+
+export const saveTeamWalkUpMusic = (teamId, walkUpMusic) => {
+  const data = getWalkUpMusicData();
+  data[teamId] = walkUpMusic;
+  saveWalkUpMusicData(data);
+};
+
+export const setPlayerWalkUpSong = (teamId, playerName, songConfig) => {
+  const data = getWalkUpMusicData();
+  if (!data[teamId]) {
+    data[teamId] = { spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
+  }
+  data[teamId].players[playerName] = songConfig;
+  saveWalkUpMusicData(data);
+};
+
+export const removePlayerWalkUpSong = (teamId, playerName) => {
+  const data = getWalkUpMusicData();
+  if (data[teamId]?.players) {
+    delete data[teamId].players[playerName];
+    saveWalkUpMusicData(data);
+  }
+};
+
+export const setTeamPlaylist = (teamId, playlistId, playlistName) => {
+  const data = getWalkUpMusicData();
+  if (!data[teamId]) {
+    data[teamId] = { spotifyPlaylistId: null, spotifyPlaylistName: null, players: {} };
+  }
+  data[teamId].spotifyPlaylistId = playlistId;
+  data[teamId].spotifyPlaylistName = playlistName;
+  saveWalkUpMusicData(data);
 };
 
 // Import/Export functionality
