@@ -38,35 +38,43 @@ Data,History,"{\\"12345\\":[]}"`;
   });
 
   describe('generateShareUrl', () => {
-    it('should produce a URL with #import= fragment', async () => {
+    it('should produce a URL with ?data= query parameter', async () => {
       const csv = 'Type,Key,Value\nData,Teams,"{}"';
       const url = await generateShareUrl(csv);
-      expect(url).toContain('#import=');
+      expect(url).toContain('?data=');
       expect(url).toMatch(/^https?:\/\//);
     });
   });
 
   describe('getSharedDataFromUrl', () => {
-    const originalLocation = window.location;
-
     afterEach(() => {
-      // Reset hash
+      // Reset hash and search
       window.location.hash = '';
+      history.replaceState(null, '', window.location.pathname);
     });
 
-    it('should return null when no hash is present', async () => {
+    it('should return null when no data is present', async () => {
+      history.replaceState(null, '', window.location.pathname);
       window.location.hash = '';
       const result = await getSharedDataFromUrl();
       expect(result).toBeNull();
     });
 
-    it('should return null for unrelated hashes', async () => {
+    it('should return null for unrelated query params or hashes', async () => {
       window.location.hash = '#something-else';
       const result = await getSharedDataFromUrl();
       expect(result).toBeNull();
     });
 
-    it('should decompress data from a valid #import= hash', async () => {
+    it('should decompress data from a valid ?data= query parameter', async () => {
+      const csv = 'Type,Key,Value\nData,Teams,"{}"';
+      const compressed = await compressToBase64Url(csv);
+      history.replaceState(null, '', `${window.location.pathname}?data=${compressed}`);
+      const result = await getSharedDataFromUrl();
+      expect(result).toBe(csv);
+    });
+
+    it('should decompress data from a legacy #import= hash', async () => {
       const csv = 'Type,Key,Value\nData,Teams,"{}"';
       const compressed = await compressToBase64Url(csv);
       window.location.hash = `#import=${compressed}`;
@@ -76,7 +84,13 @@ Data,History,"{\\"12345\\":[]}"`;
   });
 
   describe('clearShareDataFromUrl', () => {
-    it('should clear an #import= hash', () => {
+    it('should clear a ?data= query parameter', () => {
+      history.replaceState(null, '', `${window.location.pathname}?data=abc123`);
+      clearShareDataFromUrl();
+      expect(window.location.search).toBe('');
+    });
+
+    it('should clear a legacy #import= hash', () => {
       window.location.hash = '#import=abc123';
       clearShareDataFromUrl();
       expect(window.location.hash).toBe('');

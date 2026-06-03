@@ -85,20 +85,35 @@ export const decompressFromBase64Url = async (base64url) => {
 };
 
 /**
- * Generate a shareable URL containing compressed app data in the URL fragment.
- * Uses the hash (#) to avoid sending data to the server.
+ * Generate a shareable URL containing compressed app data as a query parameter.
+ * Uses a query parameter so the URL is recognized as a clickable link by messaging platforms.
  */
 export const generateShareUrl = async (csvData) => {
   const compressed = await compressToBase64Url(csvData);
   const baseUrl = window.location.origin + window.location.pathname;
-  return `${baseUrl}#import=${compressed}`;
+  return `${baseUrl}?data=${compressed}`;
 };
 
 /**
  * Check the current URL for shared import data.
  * Returns the decompressed CSV string if found, otherwise null.
+ * Supports both query parameter (?data=) and legacy hash fragment (#import=).
  */
 export const getSharedDataFromUrl = async () => {
+  // Check query parameter first (new format)
+  const params = new URLSearchParams(window.location.search);
+  const queryData = params.get('data');
+  if (queryData) {
+    try {
+      const csvData = await decompressFromBase64Url(queryData);
+      return csvData;
+    } catch (error) {
+      console.error('Failed to decompress shared data from URL:', error);
+      return null;
+    }
+  }
+
+  // Fall back to legacy hash fragment format
   const hash = window.location.hash;
   if (!hash || !hash.startsWith('#import=')) {
     return null;
@@ -117,10 +132,17 @@ export const getSharedDataFromUrl = async () => {
 };
 
 /**
- * Clear the import data from the URL hash without reloading.
+ * Clear the import data from the URL without reloading.
+ * Handles both query parameter and legacy hash fragment formats.
  */
 export const clearShareDataFromUrl = () => {
-  if (window.location.hash.startsWith('#import=')) {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('data')) {
+    params.delete('data');
+    const newSearch = params.toString();
+    const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash;
+    history.replaceState(null, '', newUrl);
+  } else if (window.location.hash.startsWith('#import=')) {
     history.replaceState(null, '', window.location.pathname + window.location.search);
   }
 };
