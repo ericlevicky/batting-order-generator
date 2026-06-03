@@ -246,7 +246,8 @@ function App() {
       hasCatcher,
       historyWithoutCurrent,
       rotatingBattingOrder,
-      null
+      null,
+      true // randomize to produce a different result
     );
     setLineup(generatedLineup);
     setWizardLineup(generatedLineup);
@@ -296,6 +297,13 @@ function App() {
 
   const currentTeam = currentTeamId ? teams[currentTeamId] : null;
 
+  // After generating in wizard mode, show result once lineup is set
+  useEffect(() => {
+    if (viewMode === 'wizard' && lineup) {
+      setWizardLineup(lineup);
+    }
+  }, [lineup, viewMode]);
+
   // If Walk-Up Music page is active, render it as a full page
   if (showWalkUpMusic && currentTeam) {
     return (
@@ -308,13 +316,6 @@ function App() {
       />
     );
   }
-
-  // After generating in wizard mode, show result once lineup is set
-  useEffect(() => {
-    if (viewMode === 'wizard' && lineup) {
-      setWizardLineup(lineup);
-    }
-  }, [lineup, viewMode]);
 
   // Determine if we should show the wizard flow
   const showWizardFlow = viewMode === 'wizard' && currentTeam && players.length > 0;
