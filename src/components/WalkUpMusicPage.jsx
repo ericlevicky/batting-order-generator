@@ -708,6 +708,7 @@ function PageConfigTab({
           playerName={editingPlayer}
           tracks={playlistTracks}
           currentConfig={getPlayerServiceConfig(walkUpConfig.players[editingPlayer], 'spotify')}
+          otherServiceConfig={getPlayerServiceConfig(walkUpConfig.players[editingPlayer], 'apple')}
           onSave={(track, startTime, endTime) => onAssignSong(editingPlayer, track, startTime, endTime)}
           onCancel={() => onEditPlayer(null)}
         />
@@ -718,11 +719,16 @@ function PageConfigTab({
 
 // --- Song Picker Modal ---
 
-function SongPickerModal({ playerName, tracks, currentConfig, onSave, onCancel }) {
+function SongPickerModal({ playerName, tracks, currentConfig, otherServiceConfig, onSave, onCancel }) {
+  // If no current config but other service is configured, use it for prefill hints
+  const prefillSource = currentConfig || otherServiceConfig;
   const [selectedTrackId, setSelectedTrackId] = useState(currentConfig?.trackId || '');
-  const [startTime, setStartTime] = useState(currentConfig ? formatMs(currentConfig.startMs) : '0:00');
-  const [endTime, setEndTime] = useState(currentConfig?.endMs != null ? formatMs(currentConfig.endMs) : '');
-  const [searchFilter, setSearchFilter] = useState('');
+  const [startTime, setStartTime] = useState(prefillSource ? formatMs(prefillSource.startMs) : '0:00');
+  const [endTime, setEndTime] = useState(prefillSource?.endMs != null ? formatMs(prefillSource.endMs) : '');
+  const initialSearchFilter = !currentConfig && otherServiceConfig
+    ? [otherServiceConfig.trackName, otherServiceConfig.artistName].filter(Boolean).join(' ')
+    : '';
+  const [searchFilter, setSearchFilter] = useState(initialSearchFilter);
 
   const filteredTracks = searchFilter
     ? tracks.filter(
@@ -874,6 +880,7 @@ function AppleConfigTab({
         <AppleSongPickerModal
           playerName={editingPlayer}
           currentConfig={getPlayerServiceConfig(walkUpConfig.players[editingPlayer], 'apple')}
+          otherServiceConfig={getPlayerServiceConfig(walkUpConfig.players[editingPlayer], 'spotify')}
           onSave={(songConfig) => onAssignSong(editingPlayer, songConfig)}
           onCancel={() => onEditPlayer(null)}
         />
@@ -884,9 +891,11 @@ function AppleConfigTab({
 
 // --- Apple Music Song Picker Modal ---
 
-function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
+function AppleSongPickerModal({ playerName, currentConfig, otherServiceConfig, onSave, onCancel }) {
   const hasExistingAppleConfig = currentConfig?.musicType === 'apple' && currentConfig?.trackName;
-  const initialQuery = [currentConfig?.trackName, currentConfig?.artistName].filter(Boolean).join(' ');
+  // If no Apple config but Spotify is configured, use Spotify info for prefill
+  const prefillSource = currentConfig || otherServiceConfig;
+  const initialQuery = [prefillSource?.trackName, prefillSource?.artistName].filter(Boolean).join(' ');
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -904,8 +913,8 @@ function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
         }
       : null
   );
-  const [startTime, setStartTime] = useState(currentConfig ? formatMs(currentConfig.startMs) : '0:00');
-  const [endTime, setEndTime] = useState(currentConfig?.endMs != null ? formatMs(currentConfig.endMs) : '');
+  const [startTime, setStartTime] = useState(prefillSource ? formatMs(prefillSource.startMs) : '0:00');
+  const [endTime, setEndTime] = useState(prefillSource?.endMs != null ? formatMs(prefillSource.endMs) : '');
   const searchTimerRef = useRef(null);
 
   useEffect(() => {
