@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import LineupGrid from './LineupGrid';
+import { formatPlayerName } from '../utils/formatPlayerName';
 import { getTeamWalkUpMusic } from '../utils/storage';
 import './WizardResult.css';
 
@@ -9,10 +10,19 @@ function WizardResult({ lineup, numInnings, teamId, teamName, onStartOver, onReg
   const printRef = useRef(null);
 
   const handleShare = async () => {
-    const text = `${teamName} - Today's Lineup`;
+    const title = `${teamName} - Today's Lineup`;
+    const lines = [`⚾ ${teamName}${gameNumber ? ` — Game #${gameNumber}` : ''} Lineup`];
+    lines.push(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+    lines.push('');
+    if (lineup?.battingOrder) {
+      lineup.battingOrder.forEach((player, index) => {
+        lines.push(`${index + 1}. ${formatPlayerName(player)}`);
+      });
+    }
+    const text = lines.join('\n');
     if (navigator.share) {
       try {
-        await navigator.share({ title: text, text: text });
+        await navigator.share({ title, text });
       } catch (e) {
         // User cancelled share
       }
