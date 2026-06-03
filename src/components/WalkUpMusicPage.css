@@ -1166,3 +1166,23 @@
   color: rgba(52, 211, 153, 0.8);
   margin-top: 0.125rem;
 }
+
+.walkup-page-search-error {
+  font-size: 0.8rem;
+  color: #f87171;
+  padding: 0.25rem 0;
+}
+
+.walkup-page-selected-track {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  margin-bottom: 0.25rem;
+}
+
+.walkup-page-selected-label {
+  color: rgba(255, 255, 255, 0.5);
+  margin-right: 0.25rem;
+}

@@ -1,6 +1,8 @@
 // Apple Music utilities
-// Uses deep links for playback (opens in Apple Music app on device)
-// No API auth required - works fully offline with downloaded music
+// Uses the public iTunes Search API for song search (no developer token required),
+// and deep links for playback (opens in Apple Music app on device).
+
+// --- Deep Link Utilities ---
 
 /**
  * Generate an Apple Music deep link for a track.
@@ -59,4 +61,35 @@ export function createAppleMusicSongConfig({ trackName, artistName, appleMusicUr
     endMs: endMs || null,
     musicType: 'apple',
   };
+}
+
+// --- iTunes Search API ---
+// Apple's public search API — no developer token or authentication required.
+
+/**
+ * Search for songs using the iTunes Search API.
+ * Returns an array of track objects compatible with the walk-up music config.
+ */
+export async function searchAppleMusicSongs(query, limit = 20) {
+  if (!query.trim()) return [];
+
+  const url = `https://itunes.apple.com/search?${new URLSearchParams({
+    term: query.trim(),
+    entity: 'song',
+    limit: String(limit),
+  })}`;
+
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`iTunes search failed (${response.status})`);
+
+  const data = await response.json();
+  return (data.results || []).map((item) => ({
+    id: String(item.trackId),
+    name: item.trackName || 'Unknown',
+    artist: item.artistName || '',
+    album: item.collectionName || '',
+    durationMs: item.trackTimeMillis || 0,
+    albumArt: item.artworkUrl100 || null,
+    appleMusicUrl: item.trackViewUrl || '',
+  }));
 }

@@ -18,7 +18,7 @@ import {
   selectBestDevice,
   filterPlayableDevices,
 } from '../utils/spotify';
-import { playAppleMusicTrack } from '../utils/appleMusic';
+import { playAppleMusicTrack, searchAppleMusicSongs } from '../utils/appleMusic';
 import {
   getTeamWalkUpMusic,
   setTeamPlaylist,
@@ -505,7 +505,6 @@ function WalkUpMusicPage({ teamId, teamName, players, gameHistory, onBack }) {
             walkUpConfig={walkUpConfig}
             activePlayers={activePlayers}
             editingPlayer={editingPlayer}
-            onSavePlaylist={handleSaveApplePlaylist}
             onEditPlayer={setEditingPlayer}
             onAssignSong={handleAssignAppleSong}
             onRemoveSong={handleRemoveSong}
@@ -761,50 +760,15 @@ function AppleConfigTab({
   walkUpConfig,
   activePlayers,
   editingPlayer,
-  onSavePlaylist,
   onEditPlayer,
   onAssignSong,
   onRemoveSong,
 }) {
-  const [playlistUrl, setPlaylistUrl] = useState(walkUpConfig.applePlaylistUrl || '');
-  const [playlistName, setPlaylistName] = useState(walkUpConfig.applePlaylistName || '');
-
-  const handleSavePlaylist = () => {
-    onSavePlaylist(playlistUrl, playlistName);
-  };
-
   return (
     <div className="walkup-page-config">
       {/* Apple Music Info */}
       <div className="walkup-page-status-bar">
         <span className="walkup-page-connected">🍎 Apple Music (No login required)</span>
-      </div>
-
-      {/* Playlist Reference (Optional) */}
-      <div className="walkup-page-playlist-section">
-        <h3>📋 Playlist Reference (Optional)</h3>
-        <p className="walkup-page-apple-info">
-          Enter your Apple Music playlist name for reference. Songs are assigned manually below and will play through the Apple Music app on your device.
-        </p>
-        <div className="walkup-page-apple-playlist-form">
-          <input
-            type="text"
-            className="walkup-page-apple-input"
-            placeholder="Playlist name (e.g., Walk-Up Songs)"
-            value={playlistName}
-            onChange={(e) => setPlaylistName(e.target.value)}
-          />
-          <input
-            type="text"
-            className="walkup-page-apple-input"
-            placeholder="Apple Music playlist URL (optional)"
-            value={playlistUrl}
-            onChange={(e) => setPlaylistUrl(e.target.value)}
-          />
-          <button className="walkup-page-btn-save-playlist" onClick={handleSavePlaylist}>
-            Save Playlist Info
-          </button>
-        </div>
       </div>
 
       {/* Player Song Assignments */}
@@ -824,12 +788,12 @@ function AppleConfigTab({
                 {songConfig && (
                   <div className="walkup-page-song-assigned">
                     <div className="walkup-page-song-details">
+                      {songConfig.albumArt && (
+                        <img src={songConfig.albumArt} alt="" className="walkup-page-album-art" />
+                      )}
                       <div className="walkup-page-song-text">
                         <div className="walkup-page-song-title">{songConfig.trackName}</div>
                         <div className="walkup-page-song-artist">{songConfig.artistName}</div>
-                        {songConfig.appleMusicUrl && (
-                          <div className="walkup-page-song-url">🔗 Link configured</div>
-                        )}
                       </div>
                     </div>
                     <div className="walkup-page-song-actions">
@@ -850,7 +814,7 @@ function AppleConfigTab({
         </div>
       </div>
 
-      {/* Edit Modal for Apple Music */}
+      {/* Song Search Modal for Apple Music */}
       {editingPlayer && (
         <AppleSongPickerModal
           playerName={editingPlayer}
@@ -866,20 +830,58 @@ function AppleConfigTab({
 // --- Apple Music Song Picker Modal ---
 
 function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
-  const [trackName, setTrackName] = useState(currentConfig?.trackName || '');
-  const [artistName, setArtistName] = useState(currentConfig?.artistName || '');
-  const [appleMusicUrl, setAppleMusicUrl] = useState(currentConfig?.appleMusicUrl || '');
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const [selectedTrack, setSelectedTrack] = useState(
+    currentConfig?.trackName
+      ? {
+          id: currentConfig.appleMusicUrl || currentConfig.trackName,
+          name: currentConfig.trackName,
+          artist: currentConfig.artistName || '',
+          album: '',
+          durationMs: 0,
+          albumArt: currentConfig.albumArt || null,
+          appleMusicUrl: currentConfig.appleMusicUrl || '',
+        }
+      : null
+  );
   const [startTime, setStartTime] = useState(currentConfig ? formatMs(currentConfig.startMs) : '0:00');
   const [endTime, setEndTime] = useState(currentConfig?.endMs != null ? formatMs(currentConfig.endMs) : '');
+  const searchTimerRef = useRef(null);
+
+  const handleSearch = (value) => {
+    setQuery(value);
+    setSearchError(null);
+    clearTimeout(searchTimerRef.current);
+    if (!value.trim()) {
+      setResults([]);
+      return;
+    }
+    searchTimerRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const tracks = await searchAppleMusicSongs(value);
+        setResults(tracks);
+      } catch (err) {
+        setSearchError(err.message);
+        setResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+  };
 
   const handleSave = () => {
-    if (!trackName.trim()) return;
+    if (!selectedTrack) return;
     const startMs = parseTimeToMs(startTime) || 0;
     const endMs = parseTimeToMs(endTime);
     onSave({
-      trackName: trackName.trim(),
-      artistName: artistName.trim(),
-      appleMusicUrl: appleMusicUrl.trim(),
+      trackName: selectedTrack.name,
+      artistName: selectedTrack.artist,
+      albumArt: selectedTrack.albumArt,
+      appleMusicUrl: selectedTrack.appleMusicUrl,
       startMs,
       endMs,
       musicType: 'apple',
@@ -890,40 +892,51 @@ function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
     <div className="walkup-page-modal-overlay" onClick={onCancel}>
       <div className="walkup-page-modal" onClick={(e) => e.stopPropagation()}>
         <div className="walkup-page-modal-header">
-          <h3>🍎 Set Song for {playerName}</h3>
+          <h3>🍎 Search Song for {playerName}</h3>
           <button className="walkup-page-modal-close" onClick={onCancel}>✕</button>
         </div>
 
         <div className="walkup-page-modal-body">
-          <div className="walkup-page-apple-form">
-            <div className="walkup-page-apple-field">
-              <label>Song Name *</label>
-              <input
-                type="text"
-                value={trackName}
-                onChange={(e) => setTrackName(e.target.value)}
-                placeholder="Enter song name"
-              />
+          <input
+            type="text"
+            className="walkup-page-search-input"
+            placeholder="Search Apple Music songs..."
+            value={query}
+            onChange={(e) => handleSearch(e.target.value)}
+            autoFocus
+          />
+
+          {searching && <div className="walkup-page-loading">Searching...</div>}
+          {searchError && <div className="walkup-page-search-error">⚠️ {searchError}</div>}
+
+          {results.length > 0 && (
+            <div className="walkup-page-track-list">
+              {results.map((track) => (
+                <div
+                  key={track.id}
+                  className={`walkup-page-track-item ${selectedTrack?.id === track.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedTrack(track)}
+                >
+                  {track.albumArt && <img src={track.albumArt} alt="" className="walkup-page-track-art" />}
+                  <div className="walkup-page-track-info">
+                    <div className="walkup-page-track-name">{track.name}</div>
+                    <div className="walkup-page-track-artist">{track.artist}</div>
+                  </div>
+                  <div className="walkup-page-track-duration">{formatMs(track.durationMs)}</div>
+                </div>
+              ))}
             </div>
-            <div className="walkup-page-apple-field">
-              <label>Artist</label>
-              <input
-                type="text"
-                value={artistName}
-                onChange={(e) => setArtistName(e.target.value)}
-                placeholder="Enter artist name"
-              />
+          )}
+
+          {selectedTrack && (
+            <div className="walkup-page-selected-track">
+              <span className="walkup-page-selected-label">Selected:</span>
+              <strong>{selectedTrack.name}</strong>
+              {selectedTrack.artist && <span> — {selectedTrack.artist}</span>}
             </div>
-            <div className="walkup-page-apple-field">
-              <label>Apple Music URL (optional)</label>
-              <input
-                type="text"
-                value={appleMusicUrl}
-                onChange={(e) => setAppleMusicUrl(e.target.value)}
-                placeholder="https://music.apple.com/..."
-              />
-              <small>If provided, tapping play will open this song in Apple Music app</small>
-            </div>
+          )}
+
+          {selectedTrack && (
             <div className="walkup-page-time-config">
               <div className="walkup-page-time-field">
                 <label>Start Time (m:ss)</label>
@@ -944,11 +957,11 @@ function AppleSongPickerModal({ playerName, currentConfig, onSave, onCancel }) {
                 />
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="walkup-page-modal-footer">
-          <button className="walkup-page-btn-save" onClick={handleSave} disabled={!trackName.trim()}>
+          <button className="walkup-page-btn-save" onClick={handleSave} disabled={!selectedTrack}>
             Save
           </button>
           <button className="walkup-page-btn-cancel" onClick={onCancel}>

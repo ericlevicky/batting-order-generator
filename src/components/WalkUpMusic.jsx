@@ -16,7 +16,7 @@ import {
   selectBestDevice,
   filterPlayableDevices,
 } from '../utils/spotify';
-import { playAppleMusicTrack } from '../utils/appleMusic';
+import { playAppleMusicTrack, searchAppleMusicSongs } from '../utils/appleMusic';
 import {
   getTeamWalkUpMusic,
   saveTeamWalkUpMusic,
@@ -477,7 +477,6 @@ function WalkUpMusic({ teamId, teamName, players, gameHistory, onClose }) {
               walkUpConfig={walkUpConfig}
               activePlayers={activePlayers}
               editingPlayer={editingPlayer}
-              onSavePlaylist={handleSaveApplePlaylist}
               onEditPlayer={setEditingPlayer}
               onAssignSong={handleAssignAppleSong}
               onRemoveSong={handleRemoveSong}
@@ -724,50 +723,15 @@ function AppleConfigTab({
   walkUpConfig,
   activePlayers,
   editingPlayer,
-  onSavePlaylist,
   onEditPlayer,
   onAssignSong,
   onRemoveSong,
 }) {
-  const [playlistUrl, setPlaylistUrl] = useState(walkUpConfig.applePlaylistUrl || '');
-  const [playlistName, setPlaylistName] = useState(walkUpConfig.applePlaylistName || '');
-
-  const handleSavePlaylist = () => {
-    onSavePlaylist(playlistUrl, playlistName);
-  };
-
   return (
     <div className="walkup-config">
       {/* Apple Music Info */}
       <div className="walkup-status-bar">
         <span className="walkup-connected">🍎 Apple Music (No login required)</span>
-      </div>
-
-      {/* Playlist Reference */}
-      <div className="walkup-playlist-section">
-        <h3>📋 Playlist Reference (Optional)</h3>
-        <p className="walkup-apple-info">
-          Enter your Apple Music playlist name for reference. Songs are assigned manually below and will play through the Apple Music app on your device.
-        </p>
-        <div className="walkup-apple-playlist-form">
-          <input
-            type="text"
-            className="walkup-apple-input"
-            placeholder="Playlist name (e.g., Walk-Up Songs)"
-            value={playlistName}
-            onChange={(e) => setPlaylistName(e.target.value)}
-          />
-          <input
-            type="text"
-            className="walkup-apple-input"
-            placeholder="Apple Music playlist URL (optional)"
-            value={playlistUrl}
-            onChange={(e) => setPlaylistUrl(e.target.value)}
-          />
-          <button className="btn-walkup-save" onClick={handleSavePlaylist}>
-            Save Playlist Info
-          </button>
-        </div>
       </div>
 
       {/* Player Song Assignments */}
@@ -788,12 +752,12 @@ function AppleConfigTab({
                 {songConfig && !isEditing && (
                   <div className="walkup-song-assigned">
                     <div className="walkup-song-details">
+                      {songConfig.albumArt && (
+                        <img src={songConfig.albumArt} alt="" className="walkup-album-art" />
+                      )}
                       <div>
                         <div className="walkup-song-title">{songConfig.trackName}</div>
                         <div className="walkup-song-artist">{songConfig.artistName}</div>
-                        {songConfig.appleMusicUrl && (
-                          <div className="walkup-song-url">🔗 Link configured</div>
-                        )}
                       </div>
                     </div>
                     <div className="walkup-song-actions">
@@ -828,20 +792,58 @@ function AppleConfigTab({
 // --- Apple Music Song Picker ---
 
 function AppleSongPicker({ currentConfig, onSave, onCancel }) {
-  const [trackName, setTrackName] = useState(currentConfig?.trackName || '');
-  const [artistName, setArtistName] = useState(currentConfig?.artistName || '');
-  const [appleMusicUrl, setAppleMusicUrl] = useState(currentConfig?.appleMusicUrl || '');
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const [selectedTrack, setSelectedTrack] = useState(
+    currentConfig?.trackName
+      ? {
+          id: currentConfig.appleMusicUrl || currentConfig.trackName,
+          name: currentConfig.trackName,
+          artist: currentConfig.artistName || '',
+          album: '',
+          durationMs: 0,
+          albumArt: currentConfig.albumArt || null,
+          appleMusicUrl: currentConfig.appleMusicUrl || '',
+        }
+      : null
+  );
   const [startTime, setStartTime] = useState(currentConfig ? formatMs(currentConfig.startMs) : '0:00');
   const [endTime, setEndTime] = useState(currentConfig?.endMs != null ? formatMs(currentConfig.endMs) : '');
+  const searchTimerRef = useRef(null);
+
+  const handleSearch = (value) => {
+    setQuery(value);
+    setSearchError(null);
+    clearTimeout(searchTimerRef.current);
+    if (!value.trim()) {
+      setResults([]);
+      return;
+    }
+    searchTimerRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const tracks = await searchAppleMusicSongs(value);
+        setResults(tracks);
+      } catch (err) {
+        setSearchError(err.message);
+        setResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+  };
 
   const handleSave = () => {
-    if (!trackName.trim()) return;
+    if (!selectedTrack) return;
     const startMs = parseTimeToMs(startTime) || 0;
     const endMs = parseTimeToMs(endTime);
     onSave({
-      trackName: trackName.trim(),
-      artistName: artistName.trim(),
-      appleMusicUrl: appleMusicUrl.trim(),
+      trackName: selectedTrack.name,
+      artistName: selectedTrack.artist,
+      albumArt: selectedTrack.albumArt,
+      appleMusicUrl: selectedTrack.appleMusicUrl,
       startMs,
       endMs,
       musicType: 'apple',
@@ -850,35 +852,46 @@ function AppleSongPicker({ currentConfig, onSave, onCancel }) {
 
   return (
     <div className="walkup-song-picker">
-      <div className="walkup-apple-form">
-        <div className="walkup-apple-field">
-          <label>Song Name *</label>
-          <input
-            type="text"
-            value={trackName}
-            onChange={(e) => setTrackName(e.target.value)}
-            placeholder="Enter song name"
-          />
+      <input
+        type="text"
+        className="walkup-search-input"
+        placeholder="Search Apple Music songs..."
+        value={query}
+        onChange={(e) => handleSearch(e.target.value)}
+        autoFocus
+      />
+
+      {searching && <div className="walkup-loading">Searching...</div>}
+      {searchError && <div className="walkup-search-error">⚠️ {searchError}</div>}
+
+      {results.length > 0 && (
+        <div className="walkup-track-list">
+          {results.map((track) => (
+            <div
+              key={track.id}
+              className={`walkup-track-item ${selectedTrack?.id === track.id ? 'selected' : ''}`}
+              onClick={() => setSelectedTrack(track)}
+            >
+              {track.albumArt && <img src={track.albumArt} alt="" className="walkup-track-art" />}
+              <div className="walkup-track-info">
+                <div className="walkup-track-name">{track.name}</div>
+                <div className="walkup-track-artist">{track.artist}</div>
+              </div>
+              <div className="walkup-track-duration">{formatMs(track.durationMs)}</div>
+            </div>
+          ))}
         </div>
-        <div className="walkup-apple-field">
-          <label>Artist</label>
-          <input
-            type="text"
-            value={artistName}
-            onChange={(e) => setArtistName(e.target.value)}
-            placeholder="Enter artist name"
-          />
+      )}
+
+      {selectedTrack && (
+        <div className="walkup-selected-track">
+          <span className="walkup-selected-label">Selected:</span>
+          <strong>{selectedTrack.name}</strong>
+          {selectedTrack.artist && <span> — {selectedTrack.artist}</span>}
         </div>
-        <div className="walkup-apple-field">
-          <label>Apple Music URL (optional)</label>
-          <input
-            type="text"
-            value={appleMusicUrl}
-            onChange={(e) => setAppleMusicUrl(e.target.value)}
-            placeholder="https://music.apple.com/..."
-          />
-          <small>If provided, tapping play will open this song in Apple Music app</small>
-        </div>
+      )}
+
+      {selectedTrack && (
         <div className="walkup-time-config">
           <div className="walkup-time-field">
             <label>Start Time (m:ss)</label>
@@ -899,10 +912,10 @@ function AppleSongPicker({ currentConfig, onSave, onCancel }) {
             />
           </div>
         </div>
-      </div>
+      )}
 
       <div className="walkup-picker-actions">
-        <button className="btn-walkup-save" onClick={handleSave} disabled={!trackName.trim()}>
+        <button className="btn-walkup-save" onClick={handleSave} disabled={!selectedTrack}>
           Save
         </button>
         <button className="btn-walkup-cancel" onClick={onCancel}>
