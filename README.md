@@ -33,6 +33,7 @@ You can now install this on your iPhone, Android, or computer - **completely FRE
 - **Responsive Design**: Field overlay on desktop, list view on mobile
 - **Statistics Tracking**: View each player's infield, outfield, and bench time
 - **Print Support**: Print-optimized layout for game day
+- **Walk-Up Music**: Play walk-up songs for each batter via Spotify Connect
 
 ## Requirements
 
@@ -75,6 +76,49 @@ You can now install this on your iPhone, Android, or computer - **completely FRE
 4. Configure innings, outfielders, and catcher option
 5. Click "Generate Lineup" to create the rotation
 6. Print or save the lineup for game day
+
+## Walk-Up Music (Spotify Connect)
+
+Play custom walk-up songs for each batter during the game using your Spotify account. Music plays through Spotify Connect on any active device (phone, speaker, computer).
+
+### Prerequisites
+
+- A **Spotify Premium** account (required for playback control)
+- A **Spotify Developer App** with a Client ID — see setup below
+- An active Spotify playback device (open Spotify on your phone, speaker, or computer)
+
+### Setting Up Your Spotify App
+
+1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Click **Create App**
+3. Fill in a name (e.g. "Batting Order Music") and description
+4. Set the **Redirect URI** to your app's URL (e.g. `https://your-site.netlify.app/` for production or `http://localhost:5173/` for local dev)
+5. Check **Web API** under "Which API/SDKs are you planning to use?"
+6. Save the app and copy your **Client ID**
+
+### Connecting Spotify
+
+1. Click the **🎵 Walk-Up Music** button in the app
+2. Click **Configure Client ID** and paste in your Spotify Client ID
+3. Click **Connect to Spotify** — you'll be redirected to Spotify to authorize the app
+4. After approving, you'll be redirected back and connected
+
+> **Note:** You cannot reuse a token from a different site. Each app has its own Client ID and must go through its own OAuth login flow. The app uses the secure PKCE authorization flow, so no backend or client secret is needed.
+
+### Configuring Walk-Up Songs
+
+1. Once connected, select a **playlist** from your Spotify library to use as your song source
+2. For each player, click the edit button to assign a song from the playlist
+3. Optionally set a **start time** and **end time** (e.g. `0:30` to `0:45`) to play just the best part of the song
+4. Song assignments are saved locally and persist between sessions
+
+### Game Day Playback
+
+- **Config tab**: Assign and manage songs for each player
+- **Play tab**: Tap a player's name to play their walk-up song; tap again to stop
+- **Game Mode**: Select a saved game to follow the batting order — use the next/previous batter buttons to advance through the lineup and auto-play each batter's song
+- Music plays on whichever device is currently active in Spotify (phone, Bluetooth speaker, etc.)
+- If playback fails, make sure Spotify is open and playing on at least one device
 
 ## Troubleshooting
 
