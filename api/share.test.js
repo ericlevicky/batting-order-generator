@@ -112,6 +112,29 @@ describe('api/share handler', () => {
       expect(res._json).toMatchObject({ error: 'Missing data to share' });
     });
 
+    it('returns 400 when body is undefined', async () => {
+      const res = makeRes();
+      await handler({ method: 'POST', body: undefined, query: {} }, res);
+      expect(res._status).toBe(400);
+      expect(res._json).toMatchObject({ error: 'Missing data to share' });
+    });
+
+    it('accepts a JSON string body', async () => {
+      put.mockResolvedValue({ url: 'https://example.com/shares/uuid' });
+      const csvData = 'Type,Key,Value\nData,Teams,"{}"';
+      const res = makeRes();
+      await handler({ method: 'POST', body: JSON.stringify({ data: csvData }), query: {} }, res);
+      expect(res._status).toBe(201);
+      expect(res._json).toHaveProperty('id');
+    });
+
+    it('returns 400 when body is an invalid JSON string', async () => {
+      const res = makeRes();
+      await handler({ method: 'POST', body: 'not-json', query: {} }, res);
+      expect(res._status).toBe(400);
+      expect(res._json).toMatchObject({ error: 'Invalid request body' });
+    });
+
     it('stores the data and returns a UUID', async () => {
       put.mockResolvedValue({ url: 'https://example.com/shares/uuid' });
       const csvData = 'Type,Key,Value\nData,Teams,"{}"';

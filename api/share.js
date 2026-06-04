@@ -2,7 +2,8 @@ import { put, list } from '@vercel/blob';
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  // Trim to guard against accidental whitespace from copy-paste in the dashboard
+  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
 
   // Check that blob storage is configured
   if (!token) {
@@ -47,7 +48,14 @@ export default async function handler(req, res) {
 
   // POST: store shared data and return an ID
   if (req.method === 'POST') {
-    const { data } = req.body;
+    let data;
+    try {
+      // req.body may be a parsed object, a raw JSON string, or undefined depending on the runtime
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+      data = body.data;
+    } catch {
+      return res.status(400).json({ error: 'Invalid request body' });
+    }
 
     if (!data) {
       return res.status(400).json({ error: 'Missing data to share' });
