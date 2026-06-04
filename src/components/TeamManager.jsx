@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { exportAllData, importAllData, getTeams } from '../utils/storage';
-import { generateShareUrlViaApi } from '../utils/shareUrl';
+import { generateShareUrl, generateShareUrlViaApi } from '../utils/shareUrl';
 import './TeamManager.css';
 
 function TeamManager({ 
@@ -78,7 +78,14 @@ function TeamManager({
   const handleShareLink = async () => {
     try {
       const csv = exportAllData();
-      const shareUrl = await generateShareUrlViaApi(csv);
+      let shareUrl;
+      try {
+        shareUrl = await generateShareUrlViaApi(csv);
+      } catch (apiError) {
+        console.warn('Share API unavailable, falling back to compressed URL:', apiError.message);
+        shareUrl = await generateShareUrl(csv);
+        onShowToast?.('Storage unavailable — using a longer URL instead. Set up Vercel Blob to enable short links.', 'warning');
+      }
 
       // Try native share first (mobile), fall back to clipboard
       if (navigator.share) {

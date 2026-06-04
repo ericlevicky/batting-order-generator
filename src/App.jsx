@@ -406,6 +406,7 @@ function App() {
               onStartOver={() => { setWizardLineup(null); setLineup(null); }}
               onRegenerate={handleRegenerateLineup}
               onShowWalkUpMusic={() => setShowWalkUpMusic(true)}
+              onShowToast={showToast}
             />
           </div>
         )}

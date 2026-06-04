@@ -1,10 +1,10 @@
 import React, { useRef } from 'react';
 import LineupGrid from './LineupGrid';
 import { getTeamWalkUpMusic, exportAllData } from '../utils/storage';
-import { generateShareUrlViaApi } from '../utils/shareUrl';
+import { generateShareUrl, generateShareUrlViaApi } from '../utils/shareUrl';
 import './WizardResult.css';
 
-function WizardResult({ lineup, numInnings, teamId, teamName, onStartOver, onRegenerate, onShowWalkUpMusic, players, gameNumber }) {
+function WizardResult({ lineup, numInnings, teamId, teamName, onStartOver, onRegenerate, onShowWalkUpMusic, onShowToast, players, gameNumber }) {
   const walkUpMusic = teamId ? getTeamWalkUpMusic(teamId) : null;
   const hasActivePlayers = players && players.filter(p => p.active !== false).length > 0;
   const printRef = useRef(null);
@@ -12,7 +12,14 @@ function WizardResult({ lineup, numInnings, teamId, teamName, onStartOver, onReg
   const handleShare = async () => {
     try {
       const csv = exportAllData();
-      const shareUrl = await generateShareUrlViaApi(csv);
+      let shareUrl;
+      try {
+        shareUrl = await generateShareUrlViaApi(csv);
+      } catch (apiError) {
+        console.warn('Share API unavailable, falling back to compressed URL:', apiError.message);
+        shareUrl = await generateShareUrl(csv);
+        onShowToast?.('Storage unavailable — using a longer URL instead. Set up Vercel Blob to enable short links.', 'warning');
+      }
 
       if (navigator.share) {
         await navigator.share({
