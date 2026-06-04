@@ -590,3 +590,309 @@ export const importAllData = (csvContent) => {
     };
   }
 };
+
+/**
+ * Parse CSV import content into structured data without applying it.
+ * Returns { teams, history, walkUpMusic, currentTeamId } or throws on invalid data.
+ */
+export const parseImportContent = (csvContent) => {
+  const rows = parseCSV(csvContent);
+
+  if (rows.length === 0) {
+    throw new Error('CSV file is empty');
+  }
+
+  const header = rows[0];
+  if (!Array.isArray(header) || header.length < 3 || header[0] !== 'Type' || header[1] !== 'Key' || header[2] !== 'Value') {
+    throw new Error('Invalid CSV format - missing required headers');
+  }
+
+  let teams = null;
+  let history = null;
+  let currentTeamId = null;
+  let walkUpMusic = null;
+
+  for (let i = 1; i < rows.length; i++) {
+    const parts = rows[i];
+    if (parts.length < 3) continue;
+
+    const type = unescapeCSV(parts[0]);
+    const key = unescapeCSV(parts[1]);
+    const value = unescapeCSV(parts[2]);
+
+    if (type === 'Metadata' && key === 'CurrentTeamId') {
+      currentTeamId = value || null;
+    } else if (type === 'Data' && key === 'Teams') {
+      teams = JSON.parse(value);
+    } else if (type === 'Data' && key === 'History') {
+      history = JSON.parse(value);
+    } else if (type === 'Data' && key === 'WalkUpMusic') {
+      walkUpMusic = JSON.parse(value);
+    }
+  }
+
+  if (teams === null) {
+    throw new Error('Invalid data - Teams information is missing');
+  }
+  if (history === null) {
+    throw new Error('Invalid data - History information is missing');
+  }
+
+  // Normalize players
+  Object.values(teams).forEach(team => {
+    if (team && Array.isArray(team.players)) {
+      team.players = team.players.map(function(p) {
+        if (p && typeof p === 'object') {
+          var clone = Object.assign({}, p);
+          if (clone.active === undefined) {
+            clone.active = true;
+          }
+          return clone;
+        }
+        return p;
+      });
+    }
+  });
+
+  return { teams, history, walkUpMusic: walkUpMusic || {}, currentTeamId };
+};
+
+/**
+ * Analyze import data against current state and return conflicts for teams that
+ * match by name. Each conflict describes differences so the user can choose what to keep.
+ *
+ * Returns:
+ * {
+ *   conflicts: [{ importTeamId, existingTeamId, teamName, importGames, existingGames,
+ *                  musicDifferences, playerDifferences, recommendation }],
+ *   newTeams: [{ teamId, team }]  // teams with no name match (will be added fresh)
+ * }
+ */
+export const analyzeImportConflicts = (csvContent) => {
+  const importData = parseImportContent(csvContent);
+  const existingTeams = getTeams();
+  const existingHistory = getTeamHistory();
+  const existingWalkUpMusic = getWalkUpMusicData();
+
+  const conflicts = [];
+  const newTeams = [];
+
+  // Build lookup of existing teams by lowercase name
+  const existingByName = {};
+  Object.entries(existingTeams).forEach(([id, team]) => {
+    existingByName[team.name.toLowerCase()] = { id, team };
+  });
+
+  Object.entries(importData.teams).forEach(([importTeamId, importTeam]) => {
+    const match = existingByName[importTeam.name.toLowerCase()];
+    if (!match) {
+      newTeams.push({ teamId: importTeamId, team: importTeam });
+      return;
+    }
+
+    const existingTeamId = match.id;
+    const existingTeam = match.team;
+
+    // Compare game counts
+    const importGames = (importData.history[importTeamId] || []).length;
+    const existingGames = (existingHistory[existingTeamId] || []).length;
+
+    // Compare walk-up music
+    const importMusic = importData.walkUpMusic[importTeamId] || {};
+    const existingMusic = existingWalkUpMusic[existingTeamId] || {};
+    const musicDifferences = compareMusicConfigs(existingMusic, importMusic, existingTeam.players || [], importTeam.players || []);
+
+    // Compare players
+    const playerDifferences = comparePlayerLists(existingTeam.players || [], importTeam.players || []);
+
+    // Determine recommendation
+    let recommendation;
+    if (importGames > existingGames) {
+      recommendation = 'import'; // Import has more data, replace
+    } else if (existingGames > importGames) {
+      recommendation = 'keep'; // Keep current, optionally update music
+    } else {
+      recommendation = 'equal'; // Same game count, ask user
+    }
+
+    conflicts.push({
+      importTeamId,
+      existingTeamId,
+      teamName: existingTeam.name,
+      importGames,
+      existingGames,
+      importPlayers: importTeam.players || [],
+      existingPlayers: existingTeam.players || [],
+      musicDifferences,
+      playerDifferences,
+      recommendation
+    });
+  });
+
+  return { conflicts, newTeams, importData };
+};
+
+/**
+ * Compare two music configs and return differences.
+ */
+const compareMusicConfigs = (existingMusic, importMusic, existingPlayers, importPlayers) => {
+  const differences = [];
+
+  // Compare playlist settings
+  if ((existingMusic.spotifyPlaylistId || '') !== (importMusic.spotifyPlaylistId || '')) {
+    differences.push({
+      type: 'playlist',
+      service: 'spotify',
+      existing: existingMusic.spotifyPlaylistName || existingMusic.spotifyPlaylistId || '(none)',
+      imported: importMusic.spotifyPlaylistName || importMusic.spotifyPlaylistId || '(none)'
+    });
+  }
+
+  if ((existingMusic.applePlaylistUrl || '') !== (importMusic.applePlaylistUrl || '')) {
+    differences.push({
+      type: 'playlist',
+      service: 'apple',
+      existing: existingMusic.applePlaylistName || existingMusic.applePlaylistUrl || '(none)',
+      imported: importMusic.applePlaylistName || importMusic.applePlaylistUrl || '(none)'
+    });
+  }
+
+  // Compare player songs
+  const allPlayerNames = new Set([
+    ...Object.keys(existingMusic.players || {}),
+    ...Object.keys(importMusic.players || {})
+  ]);
+
+  allPlayerNames.forEach(playerName => {
+    const existingSong = (existingMusic.players || {})[playerName];
+    const importSong = (importMusic.players || {})[playerName];
+
+    if (JSON.stringify(existingSong) !== JSON.stringify(importSong)) {
+      differences.push({
+        type: 'playerSong',
+        playerName,
+        existing: describeSongConfig(existingSong),
+        imported: describeSongConfig(importSong)
+      });
+    }
+  });
+
+  return differences;
+};
+
+const describeSongConfig = (config) => {
+  if (!config) return '(none)';
+  // Dual-service format
+  if (config.spotify || config.apple) {
+    const parts = [];
+    if (config.spotify?.trackName) parts.push(`Spotify: ${config.spotify.trackName}`);
+    if (config.apple?.trackName) parts.push(`Apple: ${config.apple.trackName}`);
+    return parts.length ? parts.join(', ') : '(none)';
+  }
+  // Legacy flat format
+  if (config.trackName) return config.trackName;
+  return '(none)';
+};
+
+/**
+ * Compare player lists and return differences.
+ */
+const comparePlayerLists = (existingPlayers, importPlayers) => {
+  const differences = [];
+  const existingNames = new Set(existingPlayers.map(p => p.name.toLowerCase()));
+  const importNames = new Set(importPlayers.map(p => p.name.toLowerCase()));
+
+  importPlayers.forEach(p => {
+    if (!existingNames.has(p.name.toLowerCase())) {
+      differences.push({ type: 'added', player: p });
+    }
+  });
+
+  existingPlayers.forEach(p => {
+    if (!importNames.has(p.name.toLowerCase())) {
+      differences.push({ type: 'removed', player: p });
+    }
+  });
+
+  return differences;
+};
+
+/**
+ * Apply an import with user-provided resolutions for each conflicting team.
+ *
+ * resolutions is an array of objects:
+ * { existingTeamId, importTeamId, action: 'replace' | 'keep' | 'keep_update_music' }
+ *
+ * - 'replace': fully replace team with import data (players, games, music)
+ * - 'keep': keep current state entirely
+ * - 'keep_update_music': keep current players and games, but replace music with import
+ */
+export const applyImportWithResolutions = (importData, resolutions, newTeams) => {
+  try {
+    const existingTeams = getTeams();
+    const existingHistory = getTeamHistory();
+    const existingWalkUpMusic = getWalkUpMusicData();
+
+    const mergedTeams = Object.assign({}, existingTeams);
+    const mergedHistory = Object.assign({}, existingHistory);
+    const mergedWalkUpMusic = Object.assign({}, existingWalkUpMusic);
+
+    // Process conflict resolutions
+    resolutions.forEach(({ existingTeamId, importTeamId, action }) => {
+      const importTeam = importData.teams[importTeamId];
+      const importGames = importData.history[importTeamId] || [];
+      const importMusic = importData.walkUpMusic[importTeamId];
+
+      if (action === 'replace') {
+        // Replace team data entirely with import
+        mergedTeams[existingTeamId] = Object.assign({}, importTeam, {
+          id: existingTeamId,
+          name: mergedTeams[existingTeamId].name, // keep existing name (same match)
+          updatedAt: new Date().toISOString()
+        });
+        mergedHistory[existingTeamId] = importGames;
+        if (importMusic) {
+          mergedWalkUpMusic[existingTeamId] = importMusic;
+        }
+      } else if (action === 'keep_update_music') {
+        // Keep current team and games, but update music from import
+        if (importMusic) {
+          mergedWalkUpMusic[existingTeamId] = importMusic;
+        }
+      }
+      // action === 'keep': do nothing, keep existing data
+    });
+
+    // Add new teams (no name conflict)
+    newTeams.forEach(({ teamId, team }) => {
+      const finalId = mergedTeams[teamId]
+        ? Date.now().toString() + Math.random().toString(36).slice(2, 11)
+        : teamId;
+      mergedTeams[finalId] = Object.assign({}, team, {
+        id: finalId,
+        updatedAt: new Date().toISOString()
+      });
+      if (importData.history[teamId]) {
+        mergedHistory[finalId] = importData.history[teamId];
+      }
+      if (importData.walkUpMusic[teamId]) {
+        mergedWalkUpMusic[finalId] = importData.walkUpMusic[teamId];
+      }
+    });
+
+    // Save everything
+    saveTeams(mergedTeams);
+    saveTeamHistory(mergedHistory);
+    saveWalkUpMusicData(mergedWalkUpMusic);
+
+    // Set current team if applicable
+    const newCurrentTeamId = importData.currentTeamId;
+    if (newCurrentTeamId && mergedTeams[newCurrentTeamId]) {
+      setCurrentTeamId(newCurrentTeamId);
+    }
+
+    return { success: true, teamsCount: newTeams.length + resolutions.filter(r => r.action === 'replace').length };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};

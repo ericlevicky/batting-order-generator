@@ -14,6 +14,8 @@ import {
   deleteGameFromHistory,
   exportAllData,
   importAllData,
+  analyzeImportConflicts,
+  applyImportWithResolutions,
 } from '../utils/storage';
 
 // Mock localStorage
@@ -655,6 +657,283 @@ Data,History,{}`;
       
       const history = getTeamGameHistory(team1Id);
       expect(history.length).toBe(1);
+    });
+  });
+
+  describe('Import conflict analysis', () => {
+    it('should detect no conflicts when importing a new team', () => {
+      localStorage.clear();
+      createTeam('Existing Team', [{ name: 'Player 1', number: '1' }]);
+
+      const importTeamId = 'new-team-id';
+      const importTeamData = {
+        [importTeamId]: {
+          id: importTeamId,
+          name: 'Brand New Team',
+          players: [{ name: 'Player 2', number: '2' }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      };
+
+      const csv = `Type,Key,Value
+Metadata,ExportedAt,${new Date().toISOString()}
+Metadata,CurrentTeamId,${importTeamId}
+Data,Teams,"${JSON.stringify(importTeamData).replace(/"/g, '""')}"
+Data,History,"{}"
+Data,WalkUpMusic,"{}"`;
+
+      const analysis = analyzeImportConflicts(csv);
+      expect(analysis.conflicts.length).toBe(0);
+      expect(analysis.newTeams.length).toBe(1);
+      expect(analysis.newTeams[0].team.name).toBe('Brand New Team');
+    });
+
+    it('should detect conflict when import has same team name', () => {
+      localStorage.clear();
+      const existingTeamId = createTeam('My Team', [{ name: 'Player 1', number: '1' }]);
+
+      // Add 2 games to existing team
+      const mockLineup = { battingOrder: [{ name: 'Player 1', number: '1' }], innings: [], positions: [] };
+      saveLineupToHistory(existingTeamId, mockLineup, { numInnings: 6 });
+      saveLineupToHistory(existingTeamId, mockLineup, { numInnings: 6 });
+
+      const importTeamId = 'import-team-id';
+      const importTeamData = {
+        [importTeamId]: {
+          id: importTeamId,
+          name: 'My Team',
+          players: [{ name: 'Player 1', number: '1' }, { name: 'Player 2', number: '2' }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      };
+      const importHistory = {
+        [importTeamId]: [
+          { id: 'g1', gameNumber: 1, date: new Date().toISOString(), lineup: mockLineup, settings: {}, battingOrder: [] },
+          { id: 'g2', gameNumber: 2, date: new Date().toISOString(), lineup: mockLineup, settings: {}, battingOrder: [] },
+          { id: 'g3', gameNumber: 3, date: new Date().toISOString(), lineup: mockLineup, settings: {}, battingOrder: [] },
+        ]
+      };
+
+      const csv = `Type,Key,Value
+Metadata,ExportedAt,${new Date().toISOString()}
+Metadata,CurrentTeamId,${importTeamId}
+Data,Teams,"${JSON.stringify(importTeamData).replace(/"/g, '""')}"
+Data,History,"${JSON.stringify(importHistory).replace(/"/g, '""')}"
+Data,WalkUpMusic,"{}"`;
+
+      const analysis = analyzeImportConflicts(csv);
+      expect(analysis.conflicts.length).toBe(1);
+      expect(analysis.newTeams.length).toBe(0);
+
+      const conflict = analysis.conflicts[0];
+      expect(conflict.teamName).toBe('My Team');
+      expect(conflict.existingGames).toBe(2);
+      expect(conflict.importGames).toBe(3);
+      expect(conflict.recommendation).toBe('import'); // import has more games
+    });
+
+    it('should recommend keep when existing has more games', () => {
+      localStorage.clear();
+      const existingTeamId = createTeam('My Team', [{ name: 'Player 1', number: '1' }]);
+
+      const mockLineup = { battingOrder: [{ name: 'Player 1', number: '1' }], innings: [], positions: [] };
+      saveLineupToHistory(existingTeamId, mockLineup, { numInnings: 6 });
+      saveLineupToHistory(existingTeamId, mockLineup, { numInnings: 6 });
+      saveLineupToHistory(existingTeamId, mockLineup, { numInnings: 6 });
+
+      const importTeamId = 'import-team-id';
+      const importTeamData = {
+        [importTeamId]: {
+          id: importTeamId,
+          name: 'My Team',
+          players: [{ name: 'Player 1', number: '1' }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      };
+      const importHistory = {
+        [importTeamId]: [
+          { id: 'g1', gameNumber: 1, date: new Date().toISOString(), lineup: mockLineup, settings: {}, battingOrder: [] },
+        ]
+      };
+
+      const csv = `Type,Key,Value
+Metadata,ExportedAt,${new Date().toISOString()}
+Metadata,CurrentTeamId,${importTeamId}
+Data,Teams,"${JSON.stringify(importTeamData).replace(/"/g, '""')}"
+Data,History,"${JSON.stringify(importHistory).replace(/"/g, '""')}"
+Data,WalkUpMusic,"{}"`;
+
+      const analysis = analyzeImportConflicts(csv);
+      expect(analysis.conflicts[0].recommendation).toBe('keep');
+      expect(analysis.conflicts[0].existingGames).toBe(3);
+      expect(analysis.conflicts[0].importGames).toBe(1);
+    });
+
+    it('should apply replace resolution correctly', () => {
+      localStorage.clear();
+      const existingTeamId = createTeam('My Team', [{ name: 'Player 1', number: '1' }]);
+      const mockLineup = { battingOrder: [{ name: 'Player 1', number: '1' }], innings: [], positions: [] };
+      saveLineupToHistory(existingTeamId, mockLineup, { numInnings: 6 });
+
+      const importTeamId = 'import-team-id';
+      const importTeamData = {
+        [importTeamId]: {
+          id: importTeamId,
+          name: 'My Team',
+          players: [{ name: 'Player A', number: '10' }, { name: 'Player B', number: '20' }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      };
+      const importHistory = {
+        [importTeamId]: [
+          { id: 'g1', gameNumber: 1, date: new Date().toISOString(), lineup: mockLineup, settings: {}, battingOrder: [] },
+          { id: 'g2', gameNumber: 2, date: new Date().toISOString(), lineup: mockLineup, settings: {}, battingOrder: [] },
+        ]
+      };
+
+      const csv = `Type,Key,Value
+Metadata,ExportedAt,${new Date().toISOString()}
+Metadata,CurrentTeamId,${importTeamId}
+Data,Teams,"${JSON.stringify(importTeamData).replace(/"/g, '""')}"
+Data,History,"${JSON.stringify(importHistory).replace(/"/g, '""')}"
+Data,WalkUpMusic,"{}"`;
+
+      const analysis = analyzeImportConflicts(csv);
+      const resolutions = [{
+        existingTeamId,
+        importTeamId,
+        action: 'replace'
+      }];
+
+      const result = applyImportWithResolutions(analysis.importData, resolutions, analysis.newTeams);
+      expect(result.success).toBe(true);
+
+      const teams = getTeams();
+      expect(teams[existingTeamId].players.length).toBe(2);
+      expect(teams[existingTeamId].players[0].name).toBe('Player A');
+
+      const history = getTeamGameHistory(existingTeamId);
+      expect(history.length).toBe(2);
+    });
+
+    it('should apply keep_update_music resolution correctly', () => {
+      localStorage.clear();
+      const existingTeamId = createTeam('My Team', [{ name: 'Player 1', number: '1' }]);
+      const mockLineup = { battingOrder: [{ name: 'Player 1', number: '1' }], innings: [], positions: [] };
+      saveLineupToHistory(existingTeamId, mockLineup, { numInnings: 6 });
+      saveLineupToHistory(existingTeamId, mockLineup, { numInnings: 6 });
+
+      const importTeamId = 'import-team-id';
+      const importTeamData = {
+        [importTeamId]: {
+          id: importTeamId,
+          name: 'My Team',
+          players: [{ name: 'Player X', number: '99' }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      };
+      const importHistory = { [importTeamId]: [] };
+      const importMusic = {
+        [importTeamId]: {
+          musicType: 'spotify',
+          spotifyPlaylistId: 'playlist123',
+          spotifyPlaylistName: 'Team Playlist',
+          players: { 'Player 1': { spotify: { trackName: 'Song A', trackUri: 'uri:a' } } }
+        }
+      };
+
+      const csv = `Type,Key,Value
+Metadata,ExportedAt,${new Date().toISOString()}
+Metadata,CurrentTeamId,${importTeamId}
+Data,Teams,"${JSON.stringify(importTeamData).replace(/"/g, '""')}"
+Data,History,"${JSON.stringify(importHistory).replace(/"/g, '""')}"
+Data,WalkUpMusic,"${JSON.stringify(importMusic).replace(/"/g, '""')}"`;
+
+      const analysis = analyzeImportConflicts(csv);
+      const resolutions = [{
+        existingTeamId,
+        importTeamId,
+        action: 'keep_update_music'
+      }];
+
+      const result = applyImportWithResolutions(analysis.importData, resolutions, analysis.newTeams);
+      expect(result.success).toBe(true);
+
+      // Players should be unchanged (kept)
+      const teams = getTeams();
+      expect(teams[existingTeamId].players.length).toBe(1);
+      expect(teams[existingTeamId].players[0].name).toBe('Player 1');
+
+      // Games should be unchanged (kept)
+      const history = getTeamGameHistory(existingTeamId);
+      expect(history.length).toBe(2);
+
+      // Music should be updated from import
+      const walkUpMusic = JSON.parse(localStorage.getItem('batting_order_walkup_music'));
+      expect(walkUpMusic[existingTeamId].spotifyPlaylistId).toBe('playlist123');
+      expect(walkUpMusic[existingTeamId].players['Player 1'].spotify.trackName).toBe('Song A');
+    });
+
+    it('should detect music differences in conflict analysis', () => {
+      localStorage.clear();
+      const existingTeamId = createTeam('My Team', [{ name: 'Player 1', number: '1' }]);
+
+      // Set existing music
+      const existingMusicData = {
+        [existingTeamId]: {
+          musicType: 'spotify',
+          spotifyPlaylistId: 'old-playlist',
+          spotifyPlaylistName: 'Old Playlist',
+          players: { 'Player 1': { spotify: { trackName: 'Old Song', trackUri: 'uri:old' } } }
+        }
+      };
+      localStorage.setItem('batting_order_walkup_music', JSON.stringify(existingMusicData));
+
+      const importTeamId = 'import-team-id';
+      const importTeamData = {
+        [importTeamId]: {
+          id: importTeamId,
+          name: 'My Team',
+          players: [{ name: 'Player 1', number: '1' }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      };
+      const importMusic = {
+        [importTeamId]: {
+          musicType: 'spotify',
+          spotifyPlaylistId: 'new-playlist',
+          spotifyPlaylistName: 'New Playlist',
+          players: { 'Player 1': { spotify: { trackName: 'New Song', trackUri: 'uri:new' } } }
+        }
+      };
+
+      const csv = `Type,Key,Value
+Metadata,ExportedAt,${new Date().toISOString()}
+Metadata,CurrentTeamId,${importTeamId}
+Data,Teams,"${JSON.stringify(importTeamData).replace(/"/g, '""')}"
+Data,History,"${JSON.stringify({ [importTeamId]: [] }).replace(/"/g, '""')}"
+Data,WalkUpMusic,"${JSON.stringify(importMusic).replace(/"/g, '""')}"`;
+
+      const analysis = analyzeImportConflicts(csv);
+      expect(analysis.conflicts.length).toBe(1);
+      
+      const musicDiffs = analysis.conflicts[0].musicDifferences;
+      expect(musicDiffs.length).toBeGreaterThan(0);
+      
+      const playlistDiff = musicDiffs.find(d => d.type === 'playlist');
+      expect(playlistDiff).toBeDefined();
+      expect(playlistDiff.existing).toBe('Old Playlist');
+      expect(playlistDiff.imported).toBe('New Playlist');
+
+      const songDiff = musicDiffs.find(d => d.type === 'playerSong');
+      expect(songDiff).toBeDefined();
+      expect(songDiff.playerName).toBe('Player 1');
     });
   });
 });
