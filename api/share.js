@@ -2,8 +2,10 @@ import { put, list } from '@vercel/blob';
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+
   // Check that blob storage is configured
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  if (!token) {
     return res.status(503).json({ error: 'Blob storage is not configured', reason: 'BLOB_READ_WRITE_TOKEN is not set' });
   }
 
@@ -23,7 +25,7 @@ export default async function handler(req, res) {
 
     try {
       // List blobs with the prefix to find our file
-      const { blobs } = await list({ prefix: `shares/${id}` });
+      const { blobs } = await list({ prefix: `shares/${id}`, token });
 
       if (blobs.length === 0) {
         return res.status(404).json({ error: 'Share not found' });
@@ -58,6 +60,7 @@ export default async function handler(req, res) {
       await put(pathname, data, {
         access: 'public',
         contentType: 'text/plain',
+        token,
       });
 
       return res.status(201).json({ id });
