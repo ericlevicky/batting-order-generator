@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import LineupGrid from './LineupGrid';
-import { getTeamWalkUpMusic } from '../utils/storage';
+import { getTeamWalkUpMusic, exportAllData } from '../utils/storage';
+import { generateShareUrlViaApi } from '../utils/shareUrl';
 import './WizardResult.css';
 
 function WizardResult({ lineup, numInnings, teamId, teamName, onStartOver, onRegenerate, onShowWalkUpMusic, players, gameNumber }) {
@@ -9,12 +10,23 @@ function WizardResult({ lineup, numInnings, teamId, teamName, onStartOver, onReg
   const printRef = useRef(null);
 
   const handleShare = async () => {
-    const text = `${teamName} - Today's Lineup`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: text, text: text });
-      } catch (e) {
-        // User cancelled share
+    try {
+      const csv = exportAllData();
+      const shareUrl = await generateShareUrlViaApi(csv);
+
+      if (navigator.share) {
+        await navigator.share({
+          title: `${teamName} - Today's Lineup`,
+          url: shareUrl
+        });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        window.prompt('Copy this link to share your lineup:', shareUrl);
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        // Silently handle errors
       }
     }
   };

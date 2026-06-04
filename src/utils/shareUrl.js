@@ -162,7 +162,12 @@ export const generateShareUrlViaApi = async (csvData) => {
     });
 
     if (!response.ok) {
-      throw new Error('API returned ' + response.status);
+      const errorBody = await response.json().catch((parseErr) => {
+        console.warn('Could not parse error response:', parseErr.message);
+        return {};
+      });
+      const reason = errorBody.reason ? ` (${errorBody.reason})` : '';
+      throw new Error('API returned ' + response.status + reason);
     }
 
     const { id } = await response.json();

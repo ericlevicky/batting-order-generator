@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { compressToBase64Url, decompressFromBase64Url, generateShareUrl, getSharedDataFromUrl, clearShareDataFromUrl } from './shareUrl';
+import { compressToBase64Url, decompressFromBase64Url, generateShareUrl, getSharedDataFromUrl, clearShareDataFromUrl, generateShareUrlViaApi, getSharedIdFromUrl, fetchSharedDataById } from './shareUrl';
 
 describe('shareUrl utilities', () => {
   describe('compressToBase64Url / decompressFromBase64Url', () => {
@@ -100,6 +100,102 @@ Data,History,"{\\"12345\\":[]}"`;
       window.location.hash = '#other';
       clearShareDataFromUrl();
       expect(window.location.hash).toBe('#other');
+    });
+  });
+
+  describe('generateShareUrlViaApi', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should call the share API and return a URL with ?share=<id>', async () => {
+      const mockId = '12345678-1234-1234-1234-123456789abc';
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ id: mockId }),
+      });
+
+      const csv = 'Type,Key,Value\nData,Teams,"{}"';
+      const url = await generateShareUrlViaApi(csv);
+
+      expect(global.fetch).toHaveBeenCalledWith('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: csv }),
+      });
+      expect(url).toContain(`?share=${mockId}`);
+    });
+
+    it('should fall back to compressed URL when the API returns a non-OK response', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ error: 'Failed', reason: 'Store not found' }),
+      });
+
+      const csv = 'Type,Key,Value\nData,Teams,"{}"';
+      const url = await generateShareUrlViaApi(csv);
+      expect(url).toContain('?data=');
+    });
+
+    it('should fall back to compressed URL when the fetch itself fails', async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+
+      const csv = 'Type,Key,Value\nData,Teams,"{}"';
+      const url = await generateShareUrlViaApi(csv);
+      expect(url).toContain('?data=');
+    });
+  });
+
+  describe('getSharedIdFromUrl', () => {
+    afterEach(() => {
+      history.replaceState(null, '', window.location.pathname);
+    });
+
+    it('should return the share ID from a ?share= query parameter', () => {
+      const id = '12345678-1234-1234-1234-123456789abc';
+      history.replaceState(null, '', `${window.location.pathname}?share=${id}`);
+      expect(getSharedIdFromUrl()).toBe(id);
+    });
+
+    it('should return null when no share parameter is present', () => {
+      history.replaceState(null, '', window.location.pathname);
+      expect(getSharedIdFromUrl()).toBeNull();
+    });
+  });
+
+  describe('fetchSharedDataById', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should fetch and return shared data from the API', async () => {
+      const csvData = 'Type,Key,Value\nData,Teams,"{}"';
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: csvData }),
+      });
+
+      const result = await fetchSharedDataById('test-id');
+      expect(global.fetch).toHaveBeenCalledWith('/api/share?id=test-id');
+      expect(result).toBe(csvData);
+    });
+
+    it('should return null when the API returns an error', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+      });
+
+      const result = await fetchSharedDataById('nonexistent-id');
+      expect(result).toBeNull();
+    });
+
+    it('should return null when the fetch fails', async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+
+      const result = await fetchSharedDataById('test-id');
+      expect(result).toBeNull();
     });
   });
 });
