@@ -126,24 +126,22 @@ Data,History,"{\\"12345\\":[]}"`;
       expect(url).toContain(`?share=${mockId}`);
     });
 
-    it('should fall back to compressed URL when the API returns a non-OK response', async () => {
+    it('should throw when the API returns a non-OK response', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
-        status: 500,
-        json: () => Promise.resolve({ error: 'Failed', reason: 'Store not found' }),
+        status: 503,
+        json: () => Promise.resolve({ error: 'Blob storage is not configured', reason: 'BLOB_READ_WRITE_TOKEN is not set' }),
       });
 
       const csv = 'Type,Key,Value\nData,Teams,"{}"';
-      const url = await generateShareUrlViaApi(csv);
-      expect(url).toContain('?data=');
+      await expect(generateShareUrlViaApi(csv)).rejects.toThrow('API returned 503');
     });
 
-    it('should fall back to compressed URL when the fetch itself fails', async () => {
+    it('should throw when the fetch itself fails', async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
       const csv = 'Type,Key,Value\nData,Teams,"{}"';
-      const url = await generateShareUrlViaApi(csv);
-      expect(url).toContain('?data=');
+      await expect(generateShareUrlViaApi(csv)).rejects.toThrow('Network error');
     });
   });
 

@@ -151,33 +151,27 @@ export const clearShareDataFromUrl = () => {
 /**
  * Generate a shareable URL by persisting data to Vercel Blob via the API.
  * Returns a short URL with ?share=<uuid>.
- * Falls back to the compressed URL approach if the API call fails.
+ * Throws if the API call fails so callers can handle the error and fall back.
  */
 export const generateShareUrlViaApi = async (csvData) => {
-  try {
-    const response = await fetch('/api/share', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: csvData }),
+  const response = await fetch('/api/share', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: csvData }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch((parseErr) => {
+      console.warn('Could not parse error response:', parseErr.message);
+      return {};
     });
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch((parseErr) => {
-        console.warn('Could not parse error response:', parseErr.message);
-        return {};
-      });
-      const reason = errorBody.reason ? ` (${errorBody.reason})` : '';
-      throw new Error('API returned ' + response.status + reason);
-    }
-
-    const { id } = await response.json();
-    const baseUrl = window.location.origin + window.location.pathname;
-    return `${baseUrl}?share=${id}`;
-  } catch (error) {
-    // Fall back to compressed URL if API is unavailable
-    console.warn('Share API unavailable, falling back to compressed URL:', error.message);
-    return generateShareUrl(csvData);
+    const reason = errorBody.reason ? ` (${errorBody.reason})` : '';
+    throw new Error('API returned ' + response.status + reason);
   }
+
+  const { id } = await response.json();
+  const baseUrl = window.location.origin + window.location.pathname;
+  return `${baseUrl}?share=${id}`;
 };
 
 /**
