@@ -66,7 +66,7 @@ export default async function handler(req, res) {
       const pathname = `shares/${id}`;
 
       await put(pathname, data, {
-        access: 'public',
+        access: 'private',
         contentType: 'text/plain',
         token,
       });
