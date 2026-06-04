@@ -150,7 +150,7 @@ describe('api/share handler', () => {
       expect(put).toHaveBeenCalledWith(
         `shares/${id}`,
         csvData,
-        { access: 'public', contentType: 'text/plain', token: 'vercel_blob_rw_teststore_token123' },
+        { access: 'private', contentType: 'text/plain', token: 'vercel_blob_rw_teststore_token123' },
       );
     });
 
