@@ -32,8 +32,10 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Share not found' });
       }
 
-      // Fetch the blob content
-      const response = await fetch(blobs[0].url);
+      // Fetch the blob content (private blobs require the token for authorization)
+      const response = await fetch(blobs[0].url, {
+        headers: { Authorization: 'Bearer ' + token },
+      });
       if (!response.ok) {
         return res.status(500).json({ error: 'Failed to retrieve shared data' });
       }

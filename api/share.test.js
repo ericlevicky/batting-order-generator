@@ -79,7 +79,9 @@ describe('api/share handler', () => {
 
       expect(res._status).toBe(200);
       expect(res._json).toEqual({ data: csvData });
-      expect(global.fetch).toHaveBeenCalledWith('https://example.com/shares/uuid');
+      expect(global.fetch).toHaveBeenCalledWith('https://example.com/shares/uuid', {
+        headers: { Authorization: 'Bearer ' + process.env.BLOB_READ_WRITE_TOKEN },
+      });
     });
 
     it('returns 500 when blob fetch fails', async () => {
