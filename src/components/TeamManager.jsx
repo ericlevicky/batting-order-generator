@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { exportAllData, importAllData, getTeams } from '../utils/storage';
+import { exportAllData, importAllData, getTeams, analyzeImportConflicts, applyImportWithResolutions } from '../utils/storage';
 import { generateShareUrl, generateShareUrlViaApi } from '../utils/shareUrl';
+import ImportConflictDialog from './ImportConflictDialog';
 import './TeamManager.css';
 
 function TeamManager({ 
@@ -18,6 +19,7 @@ function TeamManager({
   const [newTeamName, setNewTeamName] = useState('');
   const [isRenaming, setIsRenaming] = useState(null);
   const [renameValue, setRenameValue] = useState('');
+  const [importConflict, setImportConflict] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleCreate = () => {
@@ -120,7 +122,24 @@ function TeamManager({
     reader.onload = (e) => {
       const content = e.target?.result;
       if (typeof content === 'string') {
-        const confirmMsg = 'Import teams from backup file? Teams will be merged with your existing teams. If team names conflict, a number will be added to make them unique.';
+        processImportContent(content);
+      }
+      // Reset file input
+      event.target.value = '';
+    };
+    reader.readAsText(file);
+  };
+
+  const processImportContent = (content) => {
+    try {
+      const analysis = analyzeImportConflicts(content);
+
+      if (analysis.conflicts.length > 0) {
+        // Show conflict resolution dialog
+        setImportConflict({ analysis, content });
+      } else {
+        // No conflicts — just do a simple import of new teams
+        const confirmMsg = `Import ${analysis.newTeams.length} new team(s)? They will be added to your existing teams.`;
         onRequestConfirm?.({
           title: 'Import Data',
           message: confirmMsg,
@@ -128,13 +147,9 @@ function TeamManager({
           cancelLabel: 'Cancel',
           destructive: false,
           onConfirm: () => {
-            const result = importAllData(content);
+            const result = applyImportWithResolutions(analysis.importData, [], analysis.newTeams);
             if (result.success) {
-              const importedNames = Object.values(getTeams())
-                .slice(-result.teamsCount)
-                .map(t => t.name)
-                .join(', ');
-              onShowToast?.(`Imported ${result.teamsCount} team(s): ${importedNames}`, 'success');
+              onShowToast?.(`Imported ${analysis.newTeams.length} new team(s)`, 'success');
               onDataImported?.();
             } else {
               onShowToast?.('Error importing data: ' + result.error, 'error');
@@ -142,10 +157,31 @@ function TeamManager({
           }
         });
       }
-      // Reset file input
-      event.target.value = '';
-    };
-    reader.readAsText(file);
+    } catch (error) {
+      onShowToast?.('Error reading import file: ' + error.message, 'error');
+    }
+  };
+
+  const handleConflictResolve = (resolutions) => {
+    if (!importConflict) return;
+    const { analysis } = importConflict;
+    const result = applyImportWithResolutions(analysis.importData, resolutions, analysis.newTeams);
+    setImportConflict(null);
+    if (result.success) {
+      const actions = resolutions.map(r => r.action);
+      const replaced = actions.filter(a => a === 'replace').length;
+      const musicUpdated = actions.filter(a => a === 'keep_update_music').length;
+      const kept = actions.filter(a => a === 'keep').length;
+      const parts = [];
+      if (replaced) parts.push(`${replaced} replaced`);
+      if (musicUpdated) parts.push(`${musicUpdated} music updated`);
+      if (kept) parts.push(`${kept} kept`);
+      if (analysis.newTeams.length) parts.push(`${analysis.newTeams.length} new`);
+      onShowToast?.(`Import complete: ${parts.join(', ')}`, 'success');
+      onDataImported?.();
+    } else {
+      onShowToast?.('Error importing data: ' + result.error, 'error');
+    }
   };
 
   const teamList = Object.values(teams);
@@ -298,6 +334,15 @@ function TeamManager({
           style={{ display: 'none' }}
         />
       </div>
+
+      {importConflict && (
+        <ImportConflictDialog
+          conflicts={importConflict.analysis.conflicts}
+          newTeams={importConflict.analysis.newTeams}
+          onResolve={handleConflictResolve}
+          onCancel={() => setImportConflict(null)}
+        />
+      )}
     </div>
   );
 }

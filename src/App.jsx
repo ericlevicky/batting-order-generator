@@ -10,6 +10,7 @@ import FeatureSuggestion from './components/FeatureSuggestion';
 import UpdateNotification from './components/UpdateNotification';
 import ToastContainer from './components/ToastContainer';
 import ConfirmDialog from './components/ConfirmDialog';
+import ImportConflictDialog from './components/ImportConflictDialog';
 import WalkUpMusicPage from './components/WalkUpMusicPage';
 import LineupWizard from './components/LineupWizard';
 import WizardResult from './components/WizardResult';
@@ -30,7 +31,9 @@ import {
   deleteAllGamesFromHistory,
   replaceGameInHistory,
   importAllData,
-  getTeamWalkUpMusic
+  getTeamWalkUpMusic,
+  analyzeImportConflicts,
+  applyImportWithResolutions
 } from './utils/storage';
 import { getSharedDataFromUrl, clearShareDataFromUrl, getSharedIdFromUrl, fetchSharedDataById } from './utils/shareUrl';
 import './App.css';
@@ -57,6 +60,7 @@ function App() {
   const [showWalkUpMusic, setShowWalkUpMusic] = useState(false);
   const [viewMode, setViewMode] = useState('wizard'); // 'wizard' or 'classic'
   const [wizardLineup, setWizardLineup] = useState(null);
+  const [importConflict, setImportConflict] = useState(null);
   const initialSelectRef = useRef(true);
 
   // Load teams and current team on mount
@@ -97,32 +101,38 @@ function App() {
 
       if (!sharedCsv) return;
 
-      setConfirmDialog({
-        title: 'Import Shared Data',
-        message: 'Someone shared their team data with you. Would you like to import it? Teams will be merged with your existing teams.',
-        confirmLabel: 'Import',
-        cancelLabel: 'Cancel',
-        destructive: false,
-        onConfirm: () => {
-          clearShareDataFromUrl();
-          const result = importAllData(sharedCsv);
-          if (result.success) {
-            const loadedTeams = getTeams();
-            setTeams(loadedTeams);
-            const currentId = getCurrentTeamId();
-            if (currentId && loadedTeams[currentId]) {
-              setCurrentTeamIdState(currentId);
-              loadTeamData(currentId);
+      try {
+        const analysis = analyzeImportConflicts(sharedCsv);
+        clearShareDataFromUrl();
+
+        if (analysis.conflicts.length > 0) {
+          // Show conflict resolution dialog
+          setImportConflict({ analysis, content: sharedCsv });
+        } else if (analysis.newTeams.length > 0) {
+          // No conflicts, just new teams — confirm and add
+          setConfirmDialog({
+            title: 'Import Shared Data',
+            message: `Someone shared ${analysis.newTeams.length} team(s) with you. Would you like to import them?`,
+            confirmLabel: 'Import',
+            cancelLabel: 'Cancel',
+            destructive: false,
+            onConfirm: () => {
+              const result = applyImportWithResolutions(analysis.importData, [], analysis.newTeams);
+              if (result.success) {
+                handleDataImported();
+                showToast(`Imported ${analysis.newTeams.length} team(s) from shared link!`, 'success');
+              } else {
+                showToast('Error importing shared data: ' + result.error, 'error');
+              }
             }
-            showToast(`Imported ${result.teamsCount} team(s) from shared link!`, 'success');
-          } else {
-            showToast('Error importing shared data: ' + result.error, 'error');
-          }
-        },
-        onCancel: () => {
-          clearShareDataFromUrl();
+          });
+        } else {
+          showToast('Shared data contains no new teams to import.', 'info');
         }
-      });
+      } catch (error) {
+        clearShareDataFromUrl();
+        showToast('Error reading shared data: ' + error.message, 'error');
+      }
     };
 
     handleSharedUrl();
@@ -307,6 +317,28 @@ function App() {
       setPlayers([]);
       setLineup(null);
       setGameHistory([]);
+    }
+  };
+
+  const handleImportConflictResolve = (resolutions) => {
+    if (!importConflict) return;
+    const { analysis } = importConflict;
+    const result = applyImportWithResolutions(analysis.importData, resolutions, analysis.newTeams);
+    setImportConflict(null);
+    if (result.success) {
+      handleDataImported();
+      const actions = resolutions.map(r => r.action);
+      const replaced = actions.filter(a => a === 'replace').length;
+      const musicUpdated = actions.filter(a => a === 'keep_update_music').length;
+      const kept = actions.filter(a => a === 'keep').length;
+      const parts = [];
+      if (replaced) parts.push(`${replaced} replaced`);
+      if (musicUpdated) parts.push(`${musicUpdated} music updated`);
+      if (kept) parts.push(`${kept} kept`);
+      if (analysis.newTeams.length) parts.push(`${analysis.newTeams.length} new`);
+      showToast(`Import complete: ${parts.join(', ')}`, 'success');
+    } else {
+      showToast('Error importing data: ' + result.error, 'error');
     }
   };
 
@@ -518,6 +550,15 @@ function App() {
             confirmDialog.onConfirm?.();
             setConfirmDialog(null);
           }}
+        />
+      )}
+
+      {importConflict && (
+        <ImportConflictDialog
+          conflicts={importConflict.analysis.conflicts}
+          newTeams={importConflict.analysis.newTeams}
+          onResolve={handleImportConflictResolve}
+          onCancel={() => setImportConflict(null)}
         />
       )}
       
